@@ -1,0 +1,7 @@
+<!-- !The doc is supported by [blowfish partials](https://blowfish.page/docs/partials/) -->
+<!-- Add ==highlight== support -->
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        document.body.innerHTML = document.body.innerHTML.replace(/==(.*?)==/g, '<mark>$1</mark>');
+    });
+</script>

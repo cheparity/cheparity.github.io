@@ -1,0 +1,14 @@
+[[imports]]
+disable = false
+path = "github.com/nunocoracao/blowfish/v2"
+[[imports]]
+path = "github.com/KKKZOZ/hugo-admonitions"
+
+[markup.goldmark.renderer]
+unsafe = true
+
+[markup.goldmark.extensions.passthrough]
+enable = true
+[markup.goldmark.extensions.passthrough.delimiters]
+block = [['$$', '$$'], ['\\[', '\\]']]
+inline = [['\\(', '\\)']]

@@ -1,0 +1,6 @@
+<!-- !The doc is supported by [blowfish partials](https://blowfish.page/docs/partials/) -->
+<!-- !If you want to load sth dynamically (eg., shortcode、front matter etc) then you should use this file. Instead use extend-head.html -->
+<!-- Add katex support by autodetecting the `$` and `$$` -->
+{{ if (findRE `\${1,2}(?s:.)+?\${1,2}` .RawContent 1) }}
+{{ partial "katex.html" .}}
+{{ end }}

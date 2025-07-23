@@ -1,0 +1,28 @@
+# -- Markup --
+# These settings are required for the theme to function.
+
+[goldmark]
+  [goldmark.renderer]
+    unsafe = true
+    [goldmark.extensions]
+    mark = true
+    highlight = true
+    strikethrough = true
+  [goldmark.parser]
+  [markup.goldmark.parser.math]
+  inlineDoubleOpen = "$$"  # Default for block math
+        inlineDoubleClose = "$$"
+        inlineSingleOpen = "$"   # Enable single $ for inline
+        inlineSingleClose = "$"
+  [goldmark.extensions.passthrough]
+    enable = true
+    [goldmark.extensions.passthrough.delimiters]
+      block = [['$$', '$$'], ['\\[', '\\]']]
+      inline = [['\\(', '\\)']]
+
+[highlight]
+  noClasses = false
+
+[tableOfContents]
+  startLevel = 2
+  endLevel = 4
