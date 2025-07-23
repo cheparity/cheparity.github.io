@@ -1,10 +1,11 @@
 ---
-title: 做个具身智能的Review
-description: 
 aliases: []
-modified: 2025-07-23T19:48:10+08:00
-date: 2025-07-21T19:07:00+08:00
+date: 2025-07-21 19:07:00+08:00
+description: null
+draft: false
+modified: 2025-07-23 19:48:10+08:00
 tags: []
+title: 做个具身智能的Review
 ---
 
 # EAI Review

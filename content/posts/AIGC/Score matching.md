@@ -1,11 +1,14 @@
 ---
-title: Score matching详解！
-description: 
-aliases: [得分匹配]
+aliases:
+- 得分匹配
+date: 2025-07-21 13:07:00+08:00
+description: null
+draft: false
+modified: 2025-07-23 20:49:00+08:00
 source: https://andrewcharlesjones.github.io/journal/21-score-matching.html
-date: 2025-07-21T13:07:00+08:00
-modified: 2025-07-23T20:49:00+08:00
-tags: [cornerstone]
+tags:
+- cornerstone
+title: Score matching详解！
 ---
 
 我觉得 [Score matching by Andy Jones](https://andrewcharlesjones.github.io/journal/21-score-matching.html) 说得挺清楚了，所以这一篇笔记主要是回忆性质，记下几个 key point 和 key idea。
