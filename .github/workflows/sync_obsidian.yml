@@ -52,7 +52,7 @@ jobs:
       - name: Build Hugo Site
         run: |
           cd hugo-blog
-          hugo --minify
+          hugo --minify --gc --cleanDestinationDir
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
