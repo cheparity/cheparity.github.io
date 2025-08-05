@@ -105,4 +105,5 @@ for item in Path(vault).rglob("*.md"):
     frontmatter.dump(article, dst)
 
 # copy images in Obsidian's assets/ to /static/assets
-shutil.copytree(vault / assets, "static")
+if (vault / assets).exists():
+    shutil.copytree(vault / assets, "static")
