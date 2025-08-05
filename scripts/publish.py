@@ -22,7 +22,7 @@ parser.add_argument(
 parser.add_argument(
     "--page",
     type=str,
-    default="_pages",
+    default="pages",
     help="Page folder name (source) to determine which folder in Obsidian Vault should be compied as content/page.",
 )
 args = parser.parse_args()
@@ -56,7 +56,7 @@ for root in Path(vault).rglob("*.md"):
     if ".obsidian" in root.parts or page in root.parts:
         continue
     article = frontmatter.load(str(root))
-    if "post" not in article.keys() or article["post"] == False:
+    if "post" not in article or not article["post"]:
         continue
 
     dst = post_dest / root.relative_to(vault)
