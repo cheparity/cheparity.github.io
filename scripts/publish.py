@@ -95,15 +95,14 @@ for item in Path(vault).rglob("*.md"):
     if "post" not in article or not article["post"]:
         continue
 
-    dst = (content / "page") / item.relative_to(vault)
+    dst = (content / "posts") / item.relative_to(vault)
     dst.parent.mkdir(parents=True, exist_ok=True)
     shutil.copy2(item, dst)
     article = frontmatter.load(dst)
     del article["post"]
-    article.content = fix_paths(article.content)
     article["draft"] = False
     frontmatter.dump(article, dst)
 
 # copy images in Obsidian's assets/ to /static/assets
 if (vault / assets).exists():
-    shutil.copytree(vault / assets, "static")
+    shutil.copytree(vault / assets, "static", dirs_exist_ok=True)
