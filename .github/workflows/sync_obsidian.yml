@@ -52,6 +52,7 @@ jobs:
         run: |
           cd hugo-blog
           hugo --minify --gc --cleanDestinationDir
+          echo "niyuta.eu.org" > public/CNAME
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
