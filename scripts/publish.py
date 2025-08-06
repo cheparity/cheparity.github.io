@@ -99,6 +99,7 @@ for item in vault.rglob("*.md"):
 
 # print(image_paths)
 # delete unused assets
+Path("static/assets").mkdir(exist_ok=True)
 for item in Path("static/assets").iterdir():
     if str(item.relative_to(Path("static"))) not in image_paths:
         item.unlink()  # delete item
