@@ -46,7 +46,6 @@ jobs:
         run: |
           cd hugo-blog
           uv run --no-project --with python-frontmatter ./scripts/publish.py \
-            --content ./content \
             --vault ../obsidian-vault/MindHub
 
       - name: Build Hugo Site

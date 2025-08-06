@@ -35,74 +35,62 @@ def fix_paths(content: str):
     return content, image_paths
 
 
-parser = argparse.ArgumentParser()
-parser.add_argument(
-    "--content",
-    type=str,
-    help="Content path (destination), used by hugo blog.",
-    required=True,
-)
-parser.add_argument(
-    "--vault",
-    type=str,
-    help="Vault path (source) of Obsidian articles.",
-    required=True,
-)
+def get_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--vault",
+        type=str,
+        help="Vault path (source) of Obsidian articles.",
+        required=True,
+    )
 
-parser.add_argument(
-    "--page",
-    type=str,
-    default="pages",
-    help="Page folder name (source) to determine which folder in Obsidian Vault should be compied as content/page.",
-)
+    parser.add_argument(
+        "--page",
+        type=str,
+        default="pages",
+        help="Page folder name (source) to determine which folder in Obsidian Vault should be compied as content/page.",
+    )
 
-parser.add_argument(
-    "--assets",
-    type=str,
-    default="assets",
-    help="Assets folder name (source) to store images, audio, etc. Will be directly moved to hugo's `static/assets`",
-)
+    parser.add_argument(
+        "--assets",
+        type=str,
+        default="assets",
+        help="Assets folder name (source) to store images, audio, etc. Will be directly moved to hugo's `static/assets`",
+    )
 
-args = parser.parse_args()
+    return parser.parse_args()
 
+
+args = get_args()
 vault = Path(args.vault)
-content = Path(args.content)
-page = Path(args.page)
-assets = Path(args.assets)
-
+vault_page = Path(args.page)
+vault_assets = Path(args.assets)
 
 #! [DANGEROUS] Remove everything in original hugo/content folder
-shutil.rmtree(content / "posts", ignore_errors=True)
-shutil.rmtree(content / "page", ignore_errors=True)
+shutil.rmtree("content/posts", ignore_errors=True)
 
 #! Copy files from Obsidian vaults to content folder
-(content / "posts").mkdir(parents=True, exist_ok=True)
-(content / "page").mkdir(parents=True, exist_ok=True)
-
 # copy profile pages
-for item in (vault / page).iterdir():
-    dst = content / "page" / item.name
-    if item.is_dir():
-        shutil.copytree(item, dst, dirs_exist_ok=True)
-    else:
-        shutil.copy2(item, dst)
-
-# copy notes
-for item in Path(vault).rglob("*.md"):
-    if ".obsidian" in item.parts or page in item.parts:
-        continue
-    article = frontmatter.load(str(item))
-    if "post" not in article or not article["post"]:
-        continue
-
-    dst = (content / "posts") / item.relative_to(vault)
-    dst.parent.mkdir(parents=True, exist_ok=True)
-    shutil.copy2(item, dst)
-    article = frontmatter.load(dst)
-    del article["post"]
-    article["draft"] = False
-    frontmatter.dump(article, dst)
+# `content/page` will be overide
+if (vault / vault_page).exists():
+    shutil.copytree(vault / vault_page, "content/page", dirs_exist_ok=True)
 
 # copy images in Obsidian's assets/ to /static/assets
-if (vault / assets).exists():
-    shutil.copytree(vault / assets, "static", dirs_exist_ok=True)
+if (vault / vault_assets).exists():
+    shutil.copytree(vault / vault_assets, "static/assets", dirs_exist_ok=True)
+
+# copy notes to `content/posts`
+for item in Path(vault).rglob("*.md"):
+    if ".obsidian" in item.parts or vault_page in item.parts:
+        continue
+    article_fm = frontmatter.load(str(item))
+    if "post" not in article_fm or not article_fm["post"]:
+        continue
+
+    dst = Path("content/posts") / item.relative_to(vault)
+    dst.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(item, dst)
+    article_fm = frontmatter.load(dst)
+    del article_fm["post"]
+    article_fm["draft"] = False
+    frontmatter.dump(article_fm, dst)
