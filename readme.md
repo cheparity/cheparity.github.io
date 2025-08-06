@@ -3,7 +3,7 @@
 ## Obsidian notes publishing scripts
 
 ```bash
-uv run --no-project --with python-frontmatter .\scripts\publish.py --content ./content --vault D:\Workspace\MirrorBasalt\MindHub\
+uv run --no-project --with python-frontmatter .\scripts\publish.py --vault D:\Workspace\MirrorBasalt\MindHub\                    
 ```
 
 ## Debugging notes

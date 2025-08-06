@@ -32,7 +32,7 @@ def fix_paths(content: str):
         content,
     )
 
-    return content, image_paths
+    return content
 
 
 def get_args():
@@ -80,7 +80,7 @@ if (vault / vault_assets).exists():
     shutil.copytree(vault / vault_assets, "static/assets", dirs_exist_ok=True)
 
 # copy notes to `content/posts`
-for item in Path(vault).rglob("*.md"):
+for item in vault.rglob("*.md"):
     if ".obsidian" in item.parts or vault_page in item.parts:
         continue
     article_fm = frontmatter.load(str(item))
@@ -91,6 +91,14 @@ for item in Path(vault).rglob("*.md"):
     dst.parent.mkdir(parents=True, exist_ok=True)
     shutil.copy2(item, dst)
     article_fm = frontmatter.load(dst)
+    article_fm.content = fix_paths(article_fm.content)
+
     del article_fm["post"]
     article_fm["draft"] = False
     frontmatter.dump(article_fm, dst)
+
+# print(image_paths)
+# delete unused assets
+for item in Path("static/assets").iterdir():
+    if str(item.relative_to(Path("static"))) not in image_paths:
+        item.unlink()  # delete item
