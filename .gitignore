@@ -37,3 +37,6 @@ go.work.sum
 # Hugo
 public/
 resources/
+content/page/**
+content/posts/**
+static/assets/**
