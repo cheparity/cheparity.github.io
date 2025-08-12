@@ -34,7 +34,6 @@ def fix_paths(content: str):
 
     return content
 
-
 def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -60,46 +59,51 @@ def get_args():
 
     return parser.parse_args()
 
+def main():
+    args = get_args()
+    vault = Path(args.vault)
+    vault_page = Path(args.page)
+    vault_assets = Path(args.assets)
 
-args = get_args()
-vault = Path(args.vault)
-vault_page = Path(args.page)
-vault_assets = Path(args.assets)
+    #! [DANGEROUS] Remove everything in original hugo/content folder
+    shutil.rmtree("content/posts", ignore_errors=True)
 
-#! [DANGEROUS] Remove everything in original hugo/content folder
-shutil.rmtree("content/posts", ignore_errors=True)
+    #! Copy files from Obsidian vaults to content folder
+    # copy profile pages
+    # `content/page` will be overide
+    if (vault / vault_page).exists():
+        shutil.copytree(vault / vault_page, "content/page", dirs_exist_ok=True)
 
-#! Copy files from Obsidian vaults to content folder
-# copy profile pages
-# `content/page` will be overide
-if (vault / vault_page).exists():
-    shutil.copytree(vault / vault_page, "content/page", dirs_exist_ok=True)
+    # copy images in Obsidian's assets/ to /static/assets
+    if (vault / vault_assets).exists():
+        shutil.copytree(vault / vault_assets, "static/assets", dirs_exist_ok=True)
 
-# copy images in Obsidian's assets/ to /static/assets
-if (vault / vault_assets).exists():
-    shutil.copytree(vault / vault_assets, "static/assets", dirs_exist_ok=True)
+    # copy notes to `content/posts`
+    for item in vault.rglob("*.md"):
+        if ".obsidian" in item.parts or vault_page in item.parts:
+            continue
+        article_fm = frontmatter.load(str(item))
+        if "post" not in article_fm or not article_fm["post"]:
+            continue
 
-# copy notes to `content/posts`
-for item in vault.rglob("*.md"):
-    if ".obsidian" in item.parts or vault_page in item.parts:
-        continue
-    article_fm = frontmatter.load(str(item))
-    if "post" not in article_fm or not article_fm["post"]:
-        continue
+        dst = Path("content/posts") / item.relative_to(vault)
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(item, dst)
+        article_fm = frontmatter.load(dst)
+        article_fm.content = fix_paths(article_fm.content)
+        # trim the front matters: del `post`, change `title` to filename and `draft: false`
+        del article_fm["post"]
+        article_fm["title"] = dst.stem
+        article_fm["draft"] = False
+        frontmatter.dump(article_fm, dst)
 
-    dst = Path("content/posts") / item.relative_to(vault)
-    dst.parent.mkdir(parents=True, exist_ok=True)
-    shutil.copy2(item, dst)
-    article_fm = frontmatter.load(dst)
-    article_fm.content = fix_paths(article_fm.content)
+    # print(image_paths)
+    # delete unused assets
+    Path("static/assets").mkdir(parents=True, exist_ok=True)
+    for item in Path("static/assets").iterdir():
+        if str(item.relative_to(Path("static"))) not in image_paths:
+            item.unlink()  # delete item
 
-    del article_fm["post"]
-    article_fm["draft"] = False
-    frontmatter.dump(article_fm, dst)
 
-# print(image_paths)
-# delete unused assets
-Path("static/assets").mkdir(parents=True, exist_ok=True)
-for item in Path("static/assets").iterdir():
-    if str(item.relative_to(Path("static"))) not in image_paths:
-        item.unlink()  # delete item
+if __name__ == "__main__":
+    main()
