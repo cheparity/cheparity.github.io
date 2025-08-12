@@ -93,7 +93,8 @@ def main():
         article_fm.content = fix_paths(article_fm.content)
         # trim the front matters: del `post`, change `title` to filename and `draft: false`
         del article_fm["post"]
-        article_fm["title"] = dst.stem
+        #! hugo does not support chinese path
+        # article_fm["title"] = dst.stem
         article_fm["draft"] = False
         frontmatter.dump(article_fm, dst)
 
