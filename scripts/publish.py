@@ -34,6 +34,7 @@ def fix_paths(content: str):
 
     return content
 
+
 def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -59,8 +60,11 @@ def get_args():
 
     return parser.parse_args()
 
+
 def main():
     args = get_args()
+    print(f"Vault path: {args.vault}")
+
     vault = Path(args.vault)
     vault_page = Path(args.page)
     vault_assets = Path(args.assets)
@@ -72,10 +76,12 @@ def main():
     # copy profile pages
     # `content/page` will be overide
     if (vault / vault_page).exists():
+        print(f"Copy page dir {(vault / vault_page).absolute()}")
         shutil.copytree(vault / vault_page, "content/page", dirs_exist_ok=True)
 
     # copy images in Obsidian's assets/ to /static/assets
     if (vault / vault_assets).exists():
+        print(f"Copy assets dir {(vault / vault_page).absolute()}")
         shutil.copytree(vault / vault_assets, "static/assets", dirs_exist_ok=True)
 
     # copy notes to `content/posts`
@@ -86,6 +92,7 @@ def main():
         if "post" not in article_fm or not article_fm["post"]:
             continue
 
+        print(f"Copy notes {item.name}")
         dst = Path("content/posts") / item.relative_to(vault)
         dst.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(item, dst)
@@ -94,7 +101,8 @@ def main():
         # trim the front matters: del `post`, change `title` to filename and `draft: false`
         del article_fm["post"]
         #! hugo does not support chinese path
-        # article_fm["title"] = dst.stem
+        article_fm["title"] = dst.stem
+        print(f"Note stem: {dst.stem}")
         article_fm["draft"] = False
         frontmatter.dump(article_fm, dst)
 
