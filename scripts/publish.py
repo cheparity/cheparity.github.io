@@ -54,7 +54,7 @@ def get_args():
     parser.add_argument(
         "--assets",
         type=str,
-        default="attachments",
+        default="assets",
         help="Assets folder name (source) to store images, audio, etc. Will be directly moved to hugo's `static/assets`",
     )
 
