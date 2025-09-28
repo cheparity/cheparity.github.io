@@ -6,6 +6,14 @@
 uv run --no-project --with python-frontmatter .\scripts\publish.py --vault D:\Workspace\MirrorBasalt\MindHub\                    
 ```
 
+## Hugo
+
+Preview:
+
+```bash
+hugo server
+```
+
 ## Debugging notes
 
 If met style error, you should check `config/_default/hugo.toml`:
