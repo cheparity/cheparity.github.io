@@ -12,7 +12,7 @@ all: publish preview
 # Publish Obsidian notes
 .PHONY: publish
 publish:
-    uv run --no-project --with python-frontmatter .\scripts\publish.py --vault $(VAULT_PATH)
+    uv run --no-project --with python-frontmatter ./scripts/publish.py --vault $(VAULT_PATH)
 
 # Start Hugo preview server
 .PHONY: preview
