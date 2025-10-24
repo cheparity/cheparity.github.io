@@ -1,8 +1,9 @@
 name: Sync Obsidian to Hugo
 
 on:
-  schedule:
-    - cron: '0 20 * * *'  # UTC 20:00 (北京时间次日4:00)
+  workflow_dispatch:
+  # schedule:
+  #   - cron: '0 20 * * *'  # UTC 20:00 (北京时间次日4:00)
   push:
     branches:
       - master
@@ -23,7 +24,7 @@ jobs:
       - name: Checkout Hugo Blog
         uses: actions/checkout@v4
         with:
-          repository: cheparity/cheparity.github.io
+          repository: cheparity/FluxBasalt
           token: ${{ secrets.GITHUB_TOKEN }}
           path: hugo-blog
 
