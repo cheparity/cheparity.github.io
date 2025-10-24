@@ -24,7 +24,7 @@ jobs:
       - name: Checkout Hugo Blog
         uses: actions/checkout@v4
         with:
-          repository: cheparity/FluxBasalt
+          repository: cheparity/cheparity.github.io
           token: ${{ secrets.GITHUB_TOKEN }}
           path: hugo-blog
 
