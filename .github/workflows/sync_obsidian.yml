@@ -20,17 +20,17 @@ jobs:
     permissions:
       contents: write
     steps:
-      - name: Checkout Hugo Blog
+      - name: Checkout Hugo
         uses: actions/checkout@v4
         with:
-          repository: cheparity/Basalt
+          repository: cheparity/cheparity.github.io
           token: ${{ secrets.GITHUB_TOKEN }}
           path: hugo-blog
 
       - name: Checkout Obsidian Vault
         uses: actions/checkout@v4
         with:
-          repository: cheparity/MirrorBasalt
+          repository: cheparity/Basalt
           token: ${{ secrets.PERSONAL_TOKEN }}  # 需要创建有 repo 权限的 PAT
           path: obsidian-vault
 
