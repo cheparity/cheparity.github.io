@@ -5,7 +5,7 @@
 # theme = "blowfish" # UNCOMMENT THIS LINE
 #! Switching to "/" when debugging locally
 # baseURL = "https://cheparity.github.io/"
-baseURL = "https://niyuta.eu.org/"
+baseURL = "http://niyuta.eu.org/"
 
 defaultContentLanguage = "en"
 
