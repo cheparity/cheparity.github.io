@@ -2,3 +2,5 @@ github.com/KKKZOZ/hugo-admonitions v0.10.1 h1:ZJU157gve6JhmB5fHKWjwgRI80s+mFyCqA
 github.com/KKKZOZ/hugo-admonitions v0.10.1/go.mod h1:4PsJAsqo3mS3VzAtDLa8k0ds+CJQUWZhAo9kLi1NRlM=
 github.com/nunocoracao/blowfish/v2 v2.88.1 h1:6CKXJj5czkShice8/3CIxX/hRMfvaolTEqSNTwiBWi4=
 github.com/nunocoracao/blowfish/v2 v2.88.1/go.mod h1:4SkMc+Ht8gpQCwArqiHMBDP3soxi2OWuAhVney+cuyk=
+github.com/nunocoracao/blowfish/v2 v2.94.0 h1:mJGW6V3vi3u4rJ24mV5iTVDXbe0MjcTzI/OwvZsWeU4=
+github.com/nunocoracao/blowfish/v2 v2.94.0/go.mod h1:4SkMc+Ht8gpQCwArqiHMBDP3soxi2OWuAhVney+cuyk=

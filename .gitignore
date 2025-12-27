@@ -40,3 +40,4 @@ resources/
 content/page/**
 content/posts/**
 static/assets/**
+.aider*

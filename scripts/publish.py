@@ -120,9 +120,11 @@ def main():
 
     # print(image_paths)
     # delete unused assets
-    Path("static/assets").mkdir(parents=True, exist_ok=True)
+    global image_paths
+    image_paths = {Path(p) for p in image_paths}
+
     for item in Path("static/assets").iterdir():
-        if str(item.relative_to(Path("static"))) not in image_paths:
+        if item.relative_to(Path("static")) not in image_paths:
             item.unlink()  # delete item
 
 
