@@ -11,14 +11,14 @@ image_paths = set()
 def fix_paths(content: str):
     # rule: ![](assets/xxx.jpg) -> ![](/assets/xxx.jpg)
     content = re.sub(
-        r"!\[.*?\]\((\s*assets/[^)]+)\)",
+        r"!\[.*?\]\((\s*attachments/[^)]+)\)",
         lambda m: image_paths.add(m.group(1).strip()) or f"![](/{m.group(1).strip()})",
         content,
     )
 
     # rule: <img src="assets/xxx.jpg"> -> <img src="/assets/xxx.jpg">
     content = re.sub(
-        r'<img([^>]+?)src="\s*(assets/[^"]+)"',
+        r'<img([^>]+?)src="\s*(attachments/[^"]+)"',
         lambda m: image_paths.add(m.group(2).strip())
         or f'<img{m.group(1)}src="/{m.group(2).strip()}"',
         content,
@@ -26,8 +26,8 @@ def fix_paths(content: str):
 
     # rule: ![[assets/xxx.jpg]] -> ![](/assets/xxx.jpg)
     content = re.sub(
-        r"!\[\[\s*assets/([^\]]+?)\s*\]\]",
-        lambda m: image_paths.add(f"assets/{m.group(1).strip()}")
+        r"!\[\[\s*attachments/([^\]]+?)\s*\]\]",
+        lambda m: image_paths.add(f"attachments/{m.group(1).strip()}")
         or f"![](/assets/{m.group(1).strip()})",
         content,
     )
