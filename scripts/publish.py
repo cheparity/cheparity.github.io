@@ -9,26 +9,38 @@ image_paths = set()
 
 
 def fix_paths(content: str):
-    # rule: ![](assets/xxx.jpg) -> ![](/assets/xxx.jpg)
+    # Helper to process attachment paths
+    def process_attachment_path(match, group_num=1):
+        # Remove 'attachments/' prefix and any leading/trailing whitespace
+        path_str = match.group(group_num).strip()
+        # Remove 'attachments/' prefix
+        if path_str.startswith('attachments/'):
+            rel_path = path_str[len('attachments/'):]
+        else:
+            rel_path = path_str
+        # Add to image_paths with 'assets/' prefix
+        image_paths.add(f"assets/{rel_path}")
+        # Return with '/assets/' prefix
+        return f"/assets/{rel_path}"
+    
+    # rule: ![](attachments/xxx.jpg) -> ![](/assets/xxx.jpg)
     content = re.sub(
         r"!\[.*?\]\((\s*attachments/[^)]+)\)",
-        lambda m: image_paths.add(m.group(1).strip()) or f"![](/{m.group(1).strip()})",
+        lambda m: f"![]({process_attachment_path(m)})",
         content,
     )
 
-    # rule: <img src="assets/xxx.jpg"> -> <img src="/assets/xxx.jpg">
+    # rule: <img src="attachments/xxx.jpg"> -> <img src="/assets/xxx.jpg">
     content = re.sub(
         r'<img([^>]+?)src="\s*(attachments/[^"]+)"',
-        lambda m: image_paths.add(m.group(2).strip())
-        or f'<img{m.group(1)}src="/{m.group(2).strip()}"',
+        lambda m: f'<img{m.group(1)}src="{process_attachment_path(m, 2)}"',
         content,
     )
 
-    # rule: ![[assets/xxx.jpg]] -> ![](/assets/xxx.jpg)
+    # rule: ![[attachments/xxx.jpg]] -> ![](/assets/xxx.jpg)
     content = re.sub(
         r"!\[\[\s*attachments/([^\]]+?)\s*\]\]",
-        lambda m: image_paths.add(f"attachments/{m.group(1).strip()}")
-        or f"![](/assets/{m.group(1).strip()})",
+        lambda m: f"![]({process_attachment_path(m)})",
         content,
     )
 
@@ -79,9 +91,9 @@ def main():
         print(f"Copy page dir {(vault / vault_page).absolute()}")
         shutil.copytree(vault / vault_page, "content/page", dirs_exist_ok=True)
 
-    # copy images in Obsidian's assets/ to /static/assets
+    # copy images in Obsidian's attachments/ to /static/assets
     if (vault / vault_assets).exists():
-        print(f"Copy assets dir {(vault / vault_page).absolute()}")
+        print(f"Copy assets dir {(vault / vault_assets).absolute()}")
         shutil.copytree(vault / vault_assets, "static/assets", dirs_exist_ok=True)
 
     # copy notes to `content/posts`
