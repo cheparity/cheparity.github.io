@@ -186,11 +186,24 @@ if [ "$NO_DOTFILES" = false ]; then
 fi
 
 # =============================================================================
-# Phase 3: opencode (agent)
+# Phase 3: paseo + opencode (agents)
 # =============================================================================
 
-section "Phase 3: opencode (coding agent with web UI)"
+section "Phase 3: paseo + opencode (agents)"
 
+# ---- paseo ----
+echo ""
+echo -e "  ${CYAN}▸${NC} paseo (agent 控制器)"
+if have paseo; then
+    skip "paseo"
+else
+    bun install -g @getpaseo/cli
+    ok "paseo 安装完成"
+fi
+
+# ---- opencode ----
+echo ""
+echo -e "  ${CYAN}▸${NC} opencode (coding agent with web UI)"
 if have opencode; then
     skip "opencode"
 else
@@ -209,9 +222,12 @@ echo -e "${GREEN}═════════════════════
 echo ""
 echo -e "  ${CYAN}source ~/.bashrc${NC}  使环境生效"
 echo ""
+echo -e "  启动 paseo daemon:"
+echo -e "  ${CYAN}paseo daemon start --web-ui${NC}"
+echo ""
 echo -e "  启动 opencode web UI (tmux 中运行):"
 echo -e "  ${CYAN}tmux new -s opencode${NC}"
 echo -e "  ${CYAN}opencode serve --port 5000 --hostname 0.0.0.0${NC}"
 echo ""
-echo -e "  cpolar 暴露公网:"
+echo -e "  cpolar 暴露服务:"
 echo -e "  ${CYAN}cpolar http 5000${NC}"
