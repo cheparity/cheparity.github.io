@@ -6,7 +6,7 @@
 #   curl -fsSL https://raw.githubusercontent.com/cheparity/cheparity.github.io/master/scripts/bootstrap-dev-env.sh | bash
 #
 # Phase 1 (零认证):  基础工具 + 开发运行时
-# Phase 2 (需认证):  GitHub 认证 + chezmoi dotfiles + cpolar 隧道
+# Phase 2 (需认证):  GitHub 认证 + chezmoi dotfiles
 # Phase 3 (agent):   opencode web UI agent
 # =============================================================================
 
@@ -114,7 +114,7 @@ echo -e "${GREEN}  Phase 1 完成${NC}"
 echo -e "${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 
 # =============================================================================
-# Phase 2: GitHub 认证 + dotfiles + cpolar
+# Phase 2: GitHub 认证 + dotfiles
 # =============================================================================
 
 if [ "$NO_DOTFILES" = false ]; then
@@ -125,7 +125,7 @@ if [ "$NO_DOTFILES" = false ]; then
     read -r -p "  同步 dotfiles? (y/n): " SYNC
 
     if [[ "$SYNC" =~ ^[Yy]$ ]]; then
-        section "Phase 2: GitHub 认证 + dotfiles + cpolar"
+        section "Phase 2: GitHub 认证 + dotfiles"
 
         # ---- gh auth ----
         echo ""
@@ -163,17 +163,6 @@ if [ "$NO_DOTFILES" = false ]; then
         chezmoi apply
         ok "chezmoi apply 完成"
 
-        # ---- cpolar ----
-        echo ""
-        echo -e "  ${CYAN}▸${NC} cpolar (内网穿透)"
-        if have cpolar; then
-            skip "cpolar"
-        else
-            curl -sL https://git.io/cpolar | sudo bash
-            ok "cpolar 安装完成"
-        fi
-        echo -e "  ${YELLOW}提示: 使用前需注册/登录 cpolar 账号${NC}"
-
         echo ""
         echo -e "${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
         echo -e "${GREEN}  Phase 2 完成${NC}"
@@ -186,30 +175,14 @@ if [ "$NO_DOTFILES" = false ]; then
 fi
 
 # =============================================================================
-# Phase 3: paseo + opencode (agents)
+# Phase 3: agent 工具
 # =============================================================================
 
-section "Phase 3: paseo + opencode (agents)"
+section "Phase 3: agent 工具 (paseo + opencode + oh-my-pi)"
 
-# ---- paseo ----
-echo ""
-echo -e "  ${CYAN}▸${NC} paseo (agent 控制器)"
-if have paseo; then
-    skip "paseo"
-else
-    bun install -g @getpaseo/cli
-    ok "paseo 安装完成"
-fi
-
-# ---- opencode ----
-echo ""
-echo -e "  ${CYAN}▸${NC} opencode (coding agent with web UI)"
-if have opencode; then
-    skip "opencode"
-else
-    curl -fsSL https://opencode.ai/install | bash
-    ok "opencode 安装完成"
-fi
+bun install -g @getpaseo/cli opencode-ai @oh-my-pi/pi-coding-agent
+bun pm -g trust opencode-ai 2>/dev/null || true
+ok "agent 工具安装完成"
 
 # =============================================================================
 # 完成
@@ -229,5 +202,5 @@ echo -e "  启动 opencode web UI (tmux 中运行):"
 echo -e "  ${CYAN}tmux new -s opencode${NC}"
 echo -e "  ${CYAN}opencode serve --port 5000 --hostname 0.0.0.0${NC}"
 echo ""
-echo -e "  cpolar 暴露服务:"
-echo -e "  ${CYAN}cpolar http 5000${NC}"
+echo -e "  如需安装 cpolar (内网穿透):"
+echo -e "  ${CYAN}curl -sL https://git.io/cpolar | sudo bash${NC}"
