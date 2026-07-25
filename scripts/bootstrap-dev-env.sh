@@ -27,6 +27,14 @@ have()    { command -v "$1" >/dev/null 2>&1; }
 NO_DOTFILES=false
 [[ "${1:-}" == "--no-dotfiles" ]] && NO_DOTFILES=true
 
+# 架构检测 (jq / gh 二进制下载用)
+ARCH=$(uname -m)
+case "$ARCH" in
+    x86_64)  ARCH=amd64 ;;
+    aarch64) ARCH=arm64 ;;
+    *)       warn "未识别架构 $ARCH, 默认 amd64"; ARCH=amd64 ;;
+esac
+
 # =============================================================================
 # Phase 1: 基础工具 + 开发运行时（零认证）
 # =============================================================================
@@ -39,7 +47,7 @@ echo -e "  ${CYAN}▸${NC} 系统依赖 (apt)"
 
 sudo apt-get update -qq
 
-APT_PKGS=(build-essential curl git tmux jq unzip p7zip-full)
+APT_PKGS=(build-essential curl git tmux unzip p7zip-full)
 TO_INSTALL=()
 for pkg in "${APT_PKGS[@]}"; do
     dpkg -s "$pkg" &>/dev/null && skip "$pkg" || TO_INSTALL+=("$pkg")
@@ -47,6 +55,19 @@ done
 if [ ${#TO_INSTALL[@]} -gt 0 ]; then
     sudo apt-get install -y -qq "${TO_INSTALL[@]}"
     ok "已安装: ${TO_INSTALL[*]}"
+fi
+
+# ---- jq ----
+echo ""
+echo -e "  ${CYAN}▸${NC} jq (JSON 处理器)"
+if have jq; then
+    skip "jq"
+else
+    curl -fsSL "https://github.com/jqlang/jq/releases/download/jq-1.7.1/jq-linux-${ARCH}" \
+        -o /tmp/jq
+    chmod +x /tmp/jq
+    sudo mv /tmp/jq /usr/local/bin/jq
+    ok "jq 安装完成"
 fi
 
 # ---- Rust (rustup) ----
@@ -99,12 +120,11 @@ echo -e "  ${CYAN}▸${NC} GitHub CLI"
 if have gh; then
     skip "gh"
 else
-    curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg \
-        | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg status=none
-    echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" \
-        | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
-    sudo apt-get update -qq
-    sudo apt-get install -y -qq gh
+    GH_VERSION=$(curl -fsSL https://api.github.com/repos/cli/cli/releases/latest | jq -r '.tag_name' | sed 's/^v//')
+    curl -fsSL "https://github.com/cli/cli/releases/download/v${GH_VERSION}/gh_${GH_VERSION}_linux_${ARCH}.tar.gz" \
+        | tar xz -C /tmp
+    sudo mv "/tmp/gh_${GH_VERSION}_linux_${ARCH}/bin/gh" /usr/local/bin/gh
+    rm -rf "/tmp/gh_${GH_VERSION}_linux_${ARCH}"
     ok "gh 安装完成"
 fi
 
