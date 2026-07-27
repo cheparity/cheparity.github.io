@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 # =============================================================================
-# bootstrap-dev-env.sh — Ubuntu 新机器一键安装开发环境
+# bootstrap-dev-env.sh — One-click dev environment setup for a fresh Ubuntu machine
 #
-# 用法:
+# Usage:
 #   curl -fsSL https://raw.githubusercontent.com/cheparity/cheparity.github.io/master/scripts/bootstrap-dev-env.sh | bash
 #
-# Phase 1 (零认证):  基础工具 + 开发运行时
-# Phase 2 (需认证):  GitHub 认证 + chezmoi dotfiles
-# Phase 3 (agent):   opencode web UI agent
+# Phase 1 (no auth):  Base tools + dev runtimes
+# Phase 2 (auth):     GitHub auth + chezmoi dotfiles
+# Phase 3 (agent):    omp agent
 # =============================================================================
 
 set -euo pipefail
@@ -19,7 +19,7 @@ NC='\033[0m'
 
 section() { echo -e "\n${CYAN}==>${NC} ${CYAN}$1${NC}"; }
 ok()      { echo -e "  ${GREEN}✓${NC} $1"; }
-skip()    { echo -e "  ${YELLOW}○${NC} $1 (已安装, 跳过)"; }
+skip()    { echo -e "  ${YELLOW}○${NC} $1 (already installed, skipping)"; }
 warn()    { echo -e "  ${YELLOW}⚠${NC} $1"; }
 
 have()    { command -v "$1" >/dev/null 2>&1; }
@@ -27,39 +27,48 @@ have()    { command -v "$1" >/dev/null 2>&1; }
 NO_DOTFILES=false
 [[ "${1:-}" == "--no-dotfiles" ]] && NO_DOTFILES=true
 
-# 架构检测 (jq / gh 二进制下载用)
+# Architecture detection (for jq / gh binary downloads)
 ARCH=$(uname -m)
 case "$ARCH" in
     x86_64)  ARCH=amd64 ;;
     aarch64) ARCH=arm64 ;;
-    *)       warn "未识别架构 $ARCH, 默认 amd64"; ARCH=amd64 ;;
+    *)       warn "Unrecognized arch $ARCH, defaulting to amd64"; ARCH=amd64 ;;
 esac
 
+# OS detection (apt deps only installed on Ubuntu)
+IS_UBUNTU=false
+if [ -f /etc/os-release ] && grep -qi '^ID=ubuntu' /etc/os-release; then
+    IS_UBUNTU=true
+fi
+
 # =============================================================================
-# Phase 1: 基础工具 + 开发运行时（零认证）
+# Phase 1: Base tools + dev runtimes (no auth)
 # =============================================================================
 
-section "Phase 1: 基础工具 + 开发运行时"
+section "Phase 1: Base tools + dev runtimes"
 
-# ---- apt 依赖 ----
+# ---- apt dependencies ----
 echo ""
-echo -e "  ${CYAN}▸${NC} 系统依赖 (apt)"
+echo -e "  ${CYAN}▸${NC} System dependencies (apt)"
+if [ "$IS_UBUNTU" = true ]; then
+    sudo apt-get update -qq
 
-sudo apt-get update -qq
-
-APT_PKGS=(build-essential curl git tmux unzip p7zip-full)
-TO_INSTALL=()
-for pkg in "${APT_PKGS[@]}"; do
-    dpkg -s "$pkg" &>/dev/null && skip "$pkg" || TO_INSTALL+=("$pkg")
-done
-if [ ${#TO_INSTALL[@]} -gt 0 ]; then
-    sudo apt-get install -y -qq "${TO_INSTALL[@]}"
-    ok "已安装: ${TO_INSTALL[*]}"
+    APT_PKGS=(build-essential curl git tmux unzip p7zip-full)
+    TO_INSTALL=()
+    for pkg in "${APT_PKGS[@]}"; do
+        dpkg -s "$pkg" &>/dev/null && skip "$pkg" || TO_INSTALL+=("$pkg")
+    done
+    if [ ${#TO_INSTALL[@]} -gt 0 ]; then
+        sudo apt-get install -y -qq "${TO_INSTALL[@]}"
+        ok "Installed: ${TO_INSTALL[*]}"
+    fi
+else
+    warn "Not Ubuntu, skipping apt dependencies"
 fi
 
 # ---- jq ----
 echo ""
-echo -e "  ${CYAN}▸${NC} jq (JSON 处理器)"
+echo -e "  ${CYAN}▸${NC} jq (JSON processor)"
 if have jq; then
     skip "jq"
 else
@@ -67,7 +76,7 @@ else
         -o /tmp/jq
     chmod +x /tmp/jq
     sudo mv /tmp/jq /usr/local/bin/jq
-    ok "jq 安装完成"
+    ok "jq installed"
 fi
 
 # ---- Rust (rustup) ----
@@ -78,40 +87,40 @@ if have cargo; then
 else
     curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
     . "$HOME/.cargo/env"
-    ok "rust 安装完成"
+    ok "rust installed"
 fi
 
 # ---- uv ----
 echo ""
-echo -e "  ${CYAN}▸${NC} uv (Python 包管理器)"
+echo -e "  ${CYAN}▸${NC} uv (Python package manager)"
 if have uv; then
     skip "uv"
 else
     curl -LsSf https://astral.sh/uv/install.sh | sh
     export PATH="$HOME/.local/bin:$PATH"
-    ok "uv 安装完成"
+    ok "uv installed"
 fi
 
 # ---- Bun ----
 echo ""
-echo -e "  ${CYAN}▸${NC} Bun (JavaScript 运行时)"
+echo -e "  ${CYAN}▸${NC} Bun (JavaScript runtime)"
 if have bun; then
     skip "bun"
 else
     curl -fsSL https://bun.sh/install | bash
     export PATH="$HOME/.bun/bin:$PATH"
-    ok "bun 安装完成"
+    ok "bun installed"
 fi
 
 # ---- chezmoi ----
 echo ""
-echo -e "  ${CYAN}▸${NC} chezmoi (dotfiles 管理器)"
+echo -e "  ${CYAN}▸${NC} chezmoi (dotfiles manager)"
 if have chezmoi; then
     skip "chezmoi"
 else
     sh -c "$(curl -fsLS get.chezmoi.io)" -- -b "$HOME/.local/bin"
     export PATH="$HOME/.local/bin:$PATH"
-    ok "chezmoi 安装完成 (二进制就绪)"
+    ok "chezmoi installed"
 fi
 
 # ---- gh-cli ----
@@ -125,102 +134,204 @@ else
         | tar xz -C /tmp
     sudo mv "/tmp/gh_${GH_VERSION}_linux_${ARCH}/bin/gh" /usr/local/bin/gh
     rm -rf "/tmp/gh_${GH_VERSION}_linux_${ARCH}"
-    ok "gh 安装完成"
+    ok "gh installed"
+fi
+
+# ---- Neovim ----
+echo ""
+echo -e "  ${CYAN}▸${NC} Neovim (>= 0.11.2, LuaJIT)"
+if have nvim; then
+    skip "nvim"
+else
+    NVIM_ARCH=$([ "$ARCH" = "amd64" ] && echo x86_64 || echo arm64)
+    NVIM_VERSION=$(curl -fsSL https://api.github.com/repos/neovim/neovim/releases/latest | jq -r '.tag_name')
+    curl -fsSL "https://github.com/neovim/neovim/releases/download/${NVIM_VERSION}/nvim-linux-${NVIM_ARCH}.tar.gz" \
+        | sudo tar xz -C /opt
+    sudo ln -sf /opt/nvim-linux-${NVIM_ARCH}/bin/nvim /usr/local/bin/nvim
+    ok "nvim installed"
+fi
+
+# ---- Nerd Fonts ----
+echo ""
+echo -e "  ${CYAN}▸${NC} Nerd Fonts (JetBrainsMono Nerd Font + Iosevka Nerd Font, optional)"
+for FONT in JetBrainsMono Iosevka; do
+    FONT_DIR="$HOME/.local/share/fonts/$FONT"
+    if [ -d "$FONT_DIR" ]; then
+        skip "$FONT Nerd Font"
+    else
+        mkdir -p "$FONT_DIR"
+        curl -fsSL "https://github.com/ryanoasis/nerd-fonts/releases/latest/download/${FONT}.tar.xz" \
+            | tar xJ -C "$FONT_DIR"
+        ok "$FONT Nerd Font installed"
+    fi
+done
+fc-cache -f "$HOME/.local/share/fonts" &>/dev/null || true
+
+# ---- lazygit ----
+echo ""
+echo -e "  ${CYAN}▸${NC} lazygit (optional)"
+if have lazygit; then
+    skip "lazygit"
+else
+    LG_ARCH=$([ "$ARCH" = "amd64" ] && echo x86_64 || echo arm64)
+    LG_VERSION=$(curl -fsSL https://api.github.com/repos/jesseduffield/lazygit/releases/latest | jq -r '.tag_name' | sed 's/^v//')
+    curl -fsSL "https://github.com/jesseduffield/lazygit/releases/download/v${LG_VERSION}/lazygit_${LG_VERSION}_Linux_${LG_ARCH}.tar.gz" \
+        | tar xz -C /tmp lazygit
+    sudo mv /tmp/lazygit /usr/local/bin/lazygit
+    ok "lazygit installed"
+fi
+
+# ---- tree-sitter-cli ----
+echo ""
+echo -e "  ${CYAN}▸${NC} tree-sitter-cli (nvim-treesitter)"
+if have tree-sitter; then
+    skip "tree-sitter"
+else
+    TS_ARCH=$([ "$ARCH" = "amd64" ] && echo x64 || echo arm64)
+    TS_VERSION=$(curl -fsSL https://api.github.com/repos/tree-sitter/tree-sitter/releases/latest | jq -r '.tag_name')
+    curl -fsSL "https://github.com/tree-sitter/tree-sitter/releases/download/${TS_VERSION}/tree-sitter-cli-linux-${TS_ARCH}.zip" \
+        -o /tmp/tree-sitter-cli.zip
+    unzip -o /tmp/tree-sitter-cli.zip -d /tmp/tree-sitter-cli
+    sudo mv /tmp/tree-sitter-cli/tree-sitter /usr/local/bin/tree-sitter
+    rm -rf /tmp/tree-sitter-cli /tmp/tree-sitter-cli.zip
+    ok "tree-sitter-cli installed"
+fi
+
+# ---- fzf ----
+echo ""
+echo -e "  ${CYAN}▸${NC} fzf (fzf-lua, optional)"
+if have fzf; then
+    skip "fzf"
+else
+    FZF_VERSION=$(curl -fsSL https://api.github.com/repos/junegunn/fzf/releases/latest | jq -r '.tag_name' | sed 's/^v//')
+    curl -fsSL "https://github.com/junegunn/fzf/releases/download/v${FZF_VERSION}/fzf-${FZF_VERSION}-linux_${ARCH}.tar.gz" \
+        | tar xz -C /tmp
+    sudo mv /tmp/fzf /usr/local/bin/fzf
+    ok "fzf installed"
+fi
+
+# ---- ripgrep ----
+echo ""
+echo -e "  ${CYAN}▸${NC} ripgrep (fzf-lua live grep)"
+if have rg; then
+    skip "ripgrep"
+else
+    RG_ARCH=$([ "$ARCH" = "amd64" ] && echo x86_64 || echo aarch64)
+    RG_VERSION=$(curl -fsSL https://api.github.com/repos/BurntSushi/ripgrep/releases/latest | jq -r '.tag_name')
+    curl -fsSL "https://github.com/BurntSushi/ripgrep/releases/download/${RG_VERSION}/ripgrep-${RG_VERSION}-${RG_ARCH}-unknown-linux-musl.tar.gz" \
+        | tar xz -C /tmp
+    sudo mv "/tmp/ripgrep-${RG_VERSION}-${RG_ARCH}-unknown-linux-musl/rg" /usr/local/bin/rg
+    rm -rf "/tmp/ripgrep-${RG_VERSION}-${RG_ARCH}-unknown-linux-musl"
+    ok "ripgrep installed"
+fi
+
+# ---- fd ----
+echo ""
+echo -e "  ${CYAN}▸${NC} fd (fzf-lua find files)"
+if have fd || have fdfind; then
+    skip "fd"
+else
+    FD_ARCH=$([ "$ARCH" = "amd64" ] && echo x86_64 || echo aarch64)
+    FD_VERSION=$(curl -fsSL https://api.github.com/repos/sharkdp/fd/releases/latest | jq -r '.tag_name')
+    curl -fsSL "https://github.com/sharkdp/fd/releases/download/${FD_VERSION}/fd-${FD_VERSION}-${FD_ARCH}-unknown-linux-gnu.tar.gz" \
+        | tar xz -C /tmp
+    sudo mv "/tmp/fd-${FD_VERSION}-${FD_ARCH}-unknown-linux-gnu/fd" /usr/local/bin/fd
+    rm -rf "/tmp/fd-${FD_VERSION}-${FD_ARCH}-unknown-linux-gnu"
+    ok "fd installed"
 fi
 
 echo ""
 echo -e "${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-echo -e "${GREEN}  Phase 1 完成${NC}"
+echo -e "${GREEN}  Phase 1 done${NC}"
 echo -e "${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 
 # =============================================================================
-# Phase 2: GitHub 认证 + dotfiles
+# Phase 2: GitHub auth + dotfiles
 # =============================================================================
 
 if [ "$NO_DOTFILES" = false ]; then
     echo ""
-    echo -e "  ${YELLOW}是否同步 dotfiles? 需要 GitHub 认证。${NC}"
-    echo -e "  ${YELLOW}临时机器选 n，之后手动:  gh auth login && chezmoi init cheparity && chezmoi apply${NC}"
+    echo -e "  ${YELLOW}Sync dotfiles? Requires GitHub auth.${NC}"
+    echo -e "  ${YELLOW}On a temporary machine, choose n and run later:  gh auth login && chezmoi init cheparity && chezmoi apply${NC}"
     echo ""
-    read -r -p "  同步 dotfiles? (y/n): " SYNC
+    read -r -p "  Sync dotfiles? (y/n): " SYNC
 
     if [[ "$SYNC" =~ ^[Yy]$ ]]; then
-        section "Phase 2: GitHub 认证 + dotfiles"
+        section "Phase 2: GitHub auth + dotfiles"
 
         # ---- gh auth ----
         echo ""
-        echo -e "  ${CYAN}▸${NC} GitHub 认证"
+        echo -e "  ${CYAN}▸${NC} GitHub auth"
         if gh auth status &>/dev/null; then
-            skip "已登录 GitHub"
+            skip "Already logged in to GitHub"
         else
             gh auth login --hostname github.com --git-protocol ssh --web
-            ok "GitHub 登录完成"
+            ok "GitHub login done"
         fi
 
         # ---- SSH key ----
         echo ""
         echo -e "  ${CYAN}▸${NC} SSH Key"
         if [ -f "$HOME/.ssh/id_ed25519.pub" ]; then
-            skip "SSH key 已存在"
+            skip "SSH key already exists"
         else
             ssh-keygen -t ed25519 -f "$HOME/.ssh/id_ed25519" -N "" -C "cheparity@gmail.com"
-            ok "SSH key 生成完成"
+            ok "SSH key generated"
         fi
-        # 上传到 GitHub（失败不致命，可能已存在）
+        # Upload to GitHub (non-fatal, may already exist)
         gh ssh-key add "$HOME/.ssh/id_ed25519.pub" --title "$(hostname)-$(date +%Y%m%d)" 2>/dev/null \
-            && ok "SSH key 已上传 GitHub" \
-            || skip "SSH key 可能已存在于 GitHub"
+            && ok "SSH key uploaded to GitHub" \
+            || skip "SSH key may already exist on GitHub"
 
         # ---- chezmoi init + apply ----
         echo ""
         echo -e "  ${CYAN}▸${NC} chezmoi sync"
         if [ -d "$HOME/.local/share/chezmoi/.git" ]; then
-            skip "chezmoi 仓库已存在"
+            skip "chezmoi repo already exists"
         else
             chezmoi init git@github.com:cheparity/dotfiles.git
-            ok "chezmoi init 完成"
+            ok "chezmoi init done"
         fi
         chezmoi apply
-        ok "chezmoi apply 完成"
+        ok "chezmoi apply done"
 
         echo ""
         echo -e "${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-        echo -e "${GREEN}  Phase 2 完成${NC}"
+        echo -e "${GREEN}  Phase 2 done${NC}"
         echo -e "${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
     else
         echo ""
-        echo -e "  ${YELLOW}跳过 dotfiles 同步。${NC}"
-        echo -e "  稍后手动: ${CYAN}gh auth login && chezmoi init git@github.com:cheparity/dotfiles.git && chezmoi apply${NC}"
+        echo -e "  ${YELLOW}Skipped dotfiles sync.${NC}"
+        echo -e "  Run later: ${CYAN}gh auth login && chezmoi init git@github.com:cheparity/dotfiles.git && chezmoi apply${NC}"
     fi
 fi
 
 # =============================================================================
-# Phase 3: agent 工具
+# Phase 3: agent tools
 # =============================================================================
 
-section "Phase 3: agent 工具 (paseo + opencode + oh-my-pi)"
+section "Phase 3: Agent tools (omp)"
 
-bun install -g @getpaseo/cli opencode-ai @oh-my-pi/pi-coding-agent
-bun pm -g trust opencode-ai 2>/dev/null || true
-ok "agent 工具安装完成"
+if have omp; then
+    skip "omp"
+else
+    curl -fsSL https://omp.sh/install | sh
+    ok "omp installed"
+fi
 
 # =============================================================================
-# 完成
+# Done
 # =============================================================================
 
 echo ""
 echo -e "${GREEN}══════════════════════════════════════════════════════════${NC}"
-echo -e "${GREEN}  ✓  全部完成！${NC}"
+echo -e "${GREEN}  ✓  All done!${NC}"
 echo -e "${GREEN}══════════════════════════════════════════════════════════${NC}"
 echo ""
-echo -e "  ${CYAN}source ~/.bashrc${NC}  使环境生效"
+echo -e "  ${CYAN}source ~/.bashrc${NC}  to reload environment"
 echo ""
-echo -e "  启动 paseo daemon:"
-echo -e "  ${CYAN}paseo daemon start --web-ui${NC}"
+echo -e "  Start omp:"
+echo -e "  ${CYAN}omp${NC}"
 echo ""
-echo -e "  启动 opencode web UI (tmux 中运行):"
-echo -e "  ${CYAN}tmux new -s opencode${NC}"
-echo -e "  ${CYAN}opencode serve --port 5000 --hostname 0.0.0.0${NC}"
-echo ""
-echo -e "  如需安装 cpolar (内网穿透):"
+echo -e "  To install cpolar (reverse proxy):"
 echo -e "  ${CYAN}curl -sL https://git.io/cpolar | sudo bash${NC}"
