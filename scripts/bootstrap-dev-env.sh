@@ -82,7 +82,7 @@ if [ "$PKG_MGR" = "apt" ]; then
         ok "Installed: ${TO_INSTALL[*]}"
     fi
 elif [ "$PKG_MGR" = "dnf" ]; then
-    DNF_PKGS=(gcc gcc-c++ make curl git tmux unzip p7zip p7zip-plugins)
+    DNF_PKGS=(gcc gcc-c++ make curl git tmux unzip)
     TO_INSTALL=()
     for pkg in "${DNF_PKGS[@]}"; do
         rpm -q "$pkg" &>/dev/null && skip "$pkg" || TO_INSTALL+=("$pkg")
