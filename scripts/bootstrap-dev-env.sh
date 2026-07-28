@@ -24,6 +24,10 @@ warn()    { echo -e "  ${YELLOW}⚠${NC} $1"; }
 
 have()    { command -v "$1" >/dev/null 2>&1; }
 
+# Use sudo only when not root
+SUDO=""
+if [ "$(id -u)" -ne 0 ]; then SUDO="sudo"; fi
+
 NO_DOTFILES=false
 [[ "${1:-}" == "--no-dotfiles" ]] && NO_DOTFILES=true
 
@@ -51,7 +55,7 @@ section "Phase 1: Base tools + dev runtimes"
 echo ""
 echo -e "  ${CYAN}▸${NC} System dependencies (apt)"
 if [ "$IS_UBUNTU" = true ]; then
-    sudo apt-get update -qq
+    $SUDO apt-get update -qq
 
     APT_PKGS=(build-essential curl git tmux unzip p7zip-full)
     TO_INSTALL=()
@@ -59,7 +63,7 @@ if [ "$IS_UBUNTU" = true ]; then
         dpkg -s "$pkg" &>/dev/null && skip "$pkg" || TO_INSTALL+=("$pkg")
     done
     if [ ${#TO_INSTALL[@]} -gt 0 ]; then
-        sudo apt-get install -y -qq "${TO_INSTALL[@]}"
+        $SUDO apt-get install -y -qq "${TO_INSTALL[@]}"
         ok "Installed: ${TO_INSTALL[*]}"
     fi
 else
@@ -75,7 +79,7 @@ else
     curl -fsSL "https://github.com/jqlang/jq/releases/download/jq-1.7.1/jq-linux-${ARCH}" \
         -o /tmp/jq
     chmod +x /tmp/jq
-    sudo mv /tmp/jq /usr/local/bin/jq
+    $SUDO mv /tmp/jq /usr/local/bin/jq
     ok "jq installed"
 fi
 
@@ -123,20 +127,6 @@ else
     ok "chezmoi installed"
 fi
 
-# ---- gh-cli ----
-echo ""
-echo -e "  ${CYAN}▸${NC} GitHub CLI"
-if have gh; then
-    skip "gh"
-else
-    GH_VERSION=$(curl -fsSL https://api.github.com/repos/cli/cli/releases/latest | jq -r '.tag_name' | sed 's/^v//')
-    curl -fsSL "https://github.com/cli/cli/releases/download/v${GH_VERSION}/gh_${GH_VERSION}_linux_${ARCH}.tar.gz" \
-        | tar xz -C /tmp
-    sudo mv "/tmp/gh_${GH_VERSION}_linux_${ARCH}/bin/gh" /usr/local/bin/gh
-    rm -rf "/tmp/gh_${GH_VERSION}_linux_${ARCH}"
-    ok "gh installed"
-fi
-
 # ---- Neovim ----
 echo ""
 echo -e "  ${CYAN}▸${NC} Neovim (>= 0.11.2, LuaJIT)"
@@ -146,8 +136,8 @@ else
     NVIM_ARCH=$([ "$ARCH" = "amd64" ] && echo x86_64 || echo arm64)
     NVIM_VERSION=$(curl -fsSL https://api.github.com/repos/neovim/neovim/releases/latest | jq -r '.tag_name')
     curl -fsSL "https://github.com/neovim/neovim/releases/download/${NVIM_VERSION}/nvim-linux-${NVIM_ARCH}.tar.gz" \
-        | sudo tar xz -C /opt
-    sudo ln -sf /opt/nvim-linux-${NVIM_ARCH}/bin/nvim /usr/local/bin/nvim
+        | $SUDO tar xz -C /opt
+    $SUDO ln -sf /opt/nvim-linux-${NVIM_ARCH}/bin/nvim /usr/local/bin/nvim
     ok "nvim installed"
 fi
 
@@ -177,7 +167,7 @@ else
     LG_VERSION=$(curl -fsSL https://api.github.com/repos/jesseduffield/lazygit/releases/latest | jq -r '.tag_name' | sed 's/^v//')
     curl -fsSL "https://github.com/jesseduffield/lazygit/releases/download/v${LG_VERSION}/lazygit_${LG_VERSION}_Linux_${LG_ARCH}.tar.gz" \
         | tar xz -C /tmp lazygit
-    sudo mv /tmp/lazygit /usr/local/bin/lazygit
+    $SUDO mv /tmp/lazygit /usr/local/bin/lazygit
     ok "lazygit installed"
 fi
 
@@ -192,7 +182,7 @@ else
     curl -fsSL "https://github.com/tree-sitter/tree-sitter/releases/download/${TS_VERSION}/tree-sitter-cli-linux-${TS_ARCH}.zip" \
         -o /tmp/tree-sitter-cli.zip
     unzip -o /tmp/tree-sitter-cli.zip -d /tmp/tree-sitter-cli
-    sudo mv /tmp/tree-sitter-cli/tree-sitter /usr/local/bin/tree-sitter
+    $SUDO mv /tmp/tree-sitter-cli/tree-sitter /usr/local/bin/tree-sitter
     rm -rf /tmp/tree-sitter-cli /tmp/tree-sitter-cli.zip
     ok "tree-sitter-cli installed"
 fi
@@ -206,7 +196,7 @@ else
     FZF_VERSION=$(curl -fsSL https://api.github.com/repos/junegunn/fzf/releases/latest | jq -r '.tag_name' | sed 's/^v//')
     curl -fsSL "https://github.com/junegunn/fzf/releases/download/v${FZF_VERSION}/fzf-${FZF_VERSION}-linux_${ARCH}.tar.gz" \
         | tar xz -C /tmp
-    sudo mv /tmp/fzf /usr/local/bin/fzf
+    $SUDO mv /tmp/fzf /usr/local/bin/fzf
     ok "fzf installed"
 fi
 
@@ -220,7 +210,7 @@ else
     RG_VERSION=$(curl -fsSL https://api.github.com/repos/BurntSushi/ripgrep/releases/latest | jq -r '.tag_name')
     curl -fsSL "https://github.com/BurntSushi/ripgrep/releases/download/${RG_VERSION}/ripgrep-${RG_VERSION}-${RG_ARCH}-unknown-linux-musl.tar.gz" \
         | tar xz -C /tmp
-    sudo mv "/tmp/ripgrep-${RG_VERSION}-${RG_ARCH}-unknown-linux-musl/rg" /usr/local/bin/rg
+    $SUDO mv "/tmp/ripgrep-${RG_VERSION}-${RG_ARCH}-unknown-linux-musl/rg" /usr/local/bin/rg
     rm -rf "/tmp/ripgrep-${RG_VERSION}-${RG_ARCH}-unknown-linux-musl"
     ok "ripgrep installed"
 fi
@@ -235,7 +225,7 @@ else
     FD_VERSION=$(curl -fsSL https://api.github.com/repos/sharkdp/fd/releases/latest | jq -r '.tag_name')
     curl -fsSL "https://github.com/sharkdp/fd/releases/download/${FD_VERSION}/fd-${FD_VERSION}-${FD_ARCH}-unknown-linux-gnu.tar.gz" \
         | tar xz -C /tmp
-    sudo mv "/tmp/fd-${FD_VERSION}-${FD_ARCH}-unknown-linux-gnu/fd" /usr/local/bin/fd
+    $SUDO mv "/tmp/fd-${FD_VERSION}-${FD_ARCH}-unknown-linux-gnu/fd" /usr/local/bin/fd
     rm -rf "/tmp/fd-${FD_VERSION}-${FD_ARCH}-unknown-linux-gnu"
     ok "fd installed"
 fi
@@ -250,6 +240,11 @@ echo -e "${GREEN}━━━━━━━━━━━━━━━━━━━━━
 # =============================================================================
 
 if [ "$NO_DOTFILES" = false ]; then
+    if ! have gh; then
+        echo ""
+        echo -e "  ${YELLOW}gh not installed, skipping dotfiles sync.${NC}"
+        echo -e "  ${YELLOW}Install gh first, then run: ${CYAN}gh auth login && chezmoi init git@github.com:cheparity/dotfiles.git && chezmoi apply${NC}"
+    else
     echo ""
     echo -e "  ${YELLOW}Sync dotfiles? Requires GitHub auth.${NC}"
     echo -e "  ${YELLOW}On a temporary machine, choose n and run later:  gh auth login && chezmoi init cheparity && chezmoi apply${NC}"
@@ -304,19 +299,46 @@ if [ "$NO_DOTFILES" = false ]; then
         echo -e "  ${YELLOW}Skipped dotfiles sync.${NC}"
         echo -e "  Run later: ${CYAN}gh auth login && chezmoi init git@github.com:cheparity/dotfiles.git && chezmoi apply${NC}"
     fi
+    fi
 fi
 
 # =============================================================================
 # Phase 3: agent tools
 # =============================================================================
 
-section "Phase 3: Agent tools (omp)"
+section "Phase 3: Agent tools (optional)"
 
-if have omp; then
-    skip "omp"
+echo ""
+echo -e "  ${YELLOW}Install optional agent tools? (gh, omp)${NC}"
+read -r -p "  Install agent tools? (y/n): " INSTALL_AGENTS
+
+if [[ "$INSTALL_AGENTS" =~ ^[Yy]$ ]]; then
+    # ---- gh-cli ----
+    echo ""
+    echo -e "  ${CYAN}▸${NC} GitHub CLI"
+    if have gh; then
+        skip "gh"
+    else
+        GH_VERSION=$(curl -fsSL https://api.github.com/repos/cli/cli/releases/latest | jq -r '.tag_name' | sed 's/^v//')
+        curl -fsSL "https://github.com/cli/cli/releases/download/v${GH_VERSION}/gh_${GH_VERSION}_linux_${ARCH}.tar.gz" \
+            | tar xz -C /tmp
+        $SUDO mv "/tmp/gh_${GH_VERSION}_linux_${ARCH}/bin/gh" /usr/local/bin/gh
+        rm -rf "/tmp/gh_${GH_VERSION}_linux_${ARCH}"
+        ok "gh installed"
+    fi
+
+    # ---- omp ----
+    echo ""
+    echo -e "  ${CYAN}▸${NC} omp (AI coding agent)"
+    if have omp; then
+        skip "omp"
+    else
+        curl -fsSL https://omp.sh/install | sh
+        ok "omp installed"
+    fi
 else
-    curl -fsSL https://omp.sh/install | sh
-    ok "omp installed"
+    echo ""
+    echo -e "  ${YELLOW}Skipped agent tools.${NC}"
 fi
 
 # =============================================================================
