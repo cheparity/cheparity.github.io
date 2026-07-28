@@ -161,7 +161,7 @@ echo ""
 echo -e "  ${CYAN}▸${NC} Neovim (>= 0.11.2, LuaJIT)"
 if have nvim; then
     skip "nvim"
-elif [ -n "$PKG_MGR" ]; then
+elif [ "$PKG_MGR" = "brew" ] || [ "$PKG_MGR" = "apt" ]; then
     pkg_install neovim
     ok "nvim installed (package manager)"
 else
