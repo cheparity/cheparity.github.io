@@ -82,10 +82,12 @@ if [ "$PKG_MGR" = "apt" ]; then
         ok "Installed: ${TO_INSTALL[*]}"
     fi
 elif [ "$PKG_MGR" = "dnf" ]; then
+    # package -> binary mapping (rpm -q fails for alternatives like curl-minimal)
     DNF_PKGS=(gcc gcc-c++ make curl git tmux unzip)
+    DNF_BINS=(gcc g++     make curl git tmux unzip)
     TO_INSTALL=()
-    for pkg in "${DNF_PKGS[@]}"; do
-        rpm -q "$pkg" &>/dev/null && skip "$pkg" || TO_INSTALL+=("$pkg")
+    for i in "${!DNF_PKGS[@]}"; do
+        have "${DNF_BINS[$i]}" && skip "${DNF_PKGS[$i]}" || TO_INSTALL+=("${DNF_PKGS[$i]}")
     done
     if [ ${#TO_INSTALL[@]} -gt 0 ]; then
         pkg_install "${TO_INSTALL[@]}"
