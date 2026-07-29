@@ -5,13 +5,13 @@
 # Usage:
 #   curl -fsSL https://raw.githubusercontent.com/cheparity/cheparity.github.io/master/scripts/bootstrap-dev-env.sh | bash
 #
-# Phase 1: Base tools + dev runtimes (package manager preferred)
+# Phase 1: Base tools + dev runtimes
 # Phase 2: Dev tools + Neovim ecosystem
 # Phase 3: GitHub CLI + chezmoi dotfiles (interactive)
 # Phase 4: Agent tools
 # =============================================================================
 
-set -euo pipefail
+set -uo pipefail
 
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -104,8 +104,7 @@ if [ "$PKG_MGR" = "brew" ]; then
         brew list "$pkg" &>/dev/null && skip "$pkg" || TO_INSTALL+=("$pkg")
     done
     if [ ${#TO_INSTALL[@]} -gt 0 ]; then
-        brew install "${TO_INSTALL[@]}"
-        ok "Installed: ${TO_INSTALL[*]}"
+        brew install "${TO_INSTALL[@]}" && ok "Installed: ${TO_INSTALL[*]}" || warn "Some packages failed to install"
     fi
 
     BREW_CASKS=(font-jetbrains-mono-nerd-font font-iosevka-nerd-font)
@@ -114,8 +113,7 @@ if [ "$PKG_MGR" = "brew" ]; then
         brew list --cask "$pkg" &>/dev/null && skip "$pkg" || TO_INSTALL+=("$pkg")
     done
     if [ ${#TO_INSTALL[@]} -gt 0 ]; then
-        brew install --cask "${TO_INSTALL[@]}"
-        ok "Installed casks: ${TO_INSTALL[*]}"
+        brew install --cask "${TO_INSTALL[@]}" && ok "Installed casks: ${TO_INSTALL[*]}" || warn "Some casks failed to install"
     fi
 
     ok "All tools installed via Homebrew"
@@ -141,11 +139,9 @@ if [ "$PKG_MGR" = "apt" ]; then
         dpkg -s "$pkg" &>/dev/null && skip "$pkg" || TO_INSTALL+=("$pkg")
     done
     if [ ${#TO_INSTALL[@]} -gt 0 ]; then
-        pkg_install "${TO_INSTALL[@]}"
-        ok "Installed: ${TO_INSTALL[*]}"
+        pkg_install "${TO_INSTALL[@]}" && ok "Installed: ${TO_INSTALL[*]}" || warn "Some packages failed"
     fi
 elif [ "$PKG_MGR" = "dnf" ]; then
-    # package -> binary mapping (rpm -q fails for alternatives like curl-minimal)
     DNF_PKGS=(gcc gcc-c++ make curl git tmux unzip)
     DNF_BINS=(gcc g++     make curl git tmux unzip)
     TO_INSTALL=()
@@ -153,18 +149,7 @@ elif [ "$PKG_MGR" = "dnf" ]; then
         have "${DNF_BINS[$i]}" && skip "${DNF_PKGS[$i]}" || TO_INSTALL+=("${DNF_PKGS[$i]}")
     done
     if [ ${#TO_INSTALL[@]} -gt 0 ]; then
-        pkg_install "${TO_INSTALL[@]}"
-        ok "Installed: ${TO_INSTALL[*]}"
-    fi
-elif [ "$PKG_MGR" = "brew" ]; then
-    BREW_PKGS=(curl git tmux unzip p7zip)
-    TO_INSTALL=()
-    for pkg in "${BREW_PKGS[@]}"; do
-        brew list "$pkg" &>/dev/null && skip "$pkg" || TO_INSTALL+=("$pkg")
-    done
-    if [ ${#TO_INSTALL[@]} -gt 0 ]; then
-        pkg_install "${TO_INSTALL[@]}"
-        ok "Installed: ${TO_INSTALL[*]}"
+        pkg_install "${TO_INSTALL[@]}" && ok "Installed: ${TO_INSTALL[*]}" || warn "Some packages failed"
     fi
 else
     warn "No package manager, skipping system dependencies"
@@ -176,14 +161,11 @@ echo -e "  ${CYAN}▸${NC} jq (JSON processor)"
 if have jq; then
     skip "jq"
 elif [ -n "$PKG_MGR" ]; then
-    pkg_install jq
-    ok "jq installed (package manager)"
+    pkg_install jq && ok "jq installed (package manager)" || warn "jq install failed"
 else
     curl -fsSL --retry 3 "$(gh_url "https://github.com/jqlang/jq/releases/download/jq-1.7.1/jq-linux-${ARCH}")" \
-        -o /tmp/jq
-    chmod +x /tmp/jq
-    $SUDO mv /tmp/jq /usr/local/bin/jq
-    ok "jq installed (binary)"
+        -o /tmp/jq && chmod +x /tmp/jq && $SUDO mv /tmp/jq /usr/local/bin/jq \
+        && ok "jq installed (binary)" || warn "jq install failed"
 fi
 
 # ---- Rust (rustup) ----
@@ -192,9 +174,8 @@ echo -e "  ${CYAN}▸${NC} Rust (rustup → cargo)"
 if have cargo; then
     skip "rust"
 else
-    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-    . "$HOME/.cargo/env"
-    ok "rust installed (rustup)"
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y \
+        && { . "$HOME/.cargo/env"; ok "rust installed (rustup)"; } || warn "rust install failed"
 fi
 
 # ---- Go ----
@@ -206,9 +187,9 @@ else
     GO_ARCH=$([ "$ARCH" = "amd64" ] && echo amd64 || echo arm64)
     GO_VERSION=$(curl -fsSL --retry 3 "https://go.dev/VERSION?m=text" | head -1)
     curl -fsSL --retry 3 "https://go.dev/dl/${GO_VERSION}.linux-${GO_ARCH}.tar.gz" \
-        | $SUDO tar xz -C /usr/local
-    export PATH="/usr/local/go/bin:$PATH"
-    ok "go installed (go.dev)"
+        | $SUDO tar xz -C /usr/local \
+        && { export PATH="/usr/local/go/bin:$PATH"; ok "go installed (go.dev)"; } \
+        || warn "go install failed"
 fi
 export PATH="$HOME/go/bin:$PATH"
 
@@ -218,9 +199,9 @@ echo -e "  ${CYAN}▸${NC} Bun (JavaScript runtime)"
 if have bun; then
     skip "bun"
 else
-    curl -fsSL https://bun.sh/install | bash
-    export PATH="$HOME/.bun/bin:$PATH"
-    ok "bun installed (official script)"
+    curl -fsSL https://bun.sh/install | bash \
+        && { export PATH="$HOME/.bun/bin:$PATH"; ok "bun installed (official script)"; } \
+        || warn "bun install failed"
 fi
 
 # ---- uv ----
@@ -229,9 +210,9 @@ echo -e "  ${CYAN}▸${NC} uv (Python package manager)"
 if have uv; then
     skip "uv"
 else
-    curl -LsSf https://astral.sh/uv/install.sh | sh
-    export PATH="$HOME/.local/bin:$PATH"
-    ok "uv installed (official script)"
+    curl -LsSf https://astral.sh/uv/install.sh | sh \
+        && { export PATH="$HOME/.local/bin:$PATH"; ok "uv installed (official script)"; } \
+        || warn "uv install failed"
 fi
 
 # ---- nvm ----
@@ -239,14 +220,10 @@ echo ""
 echo -e "  ${CYAN}▸${NC} nvm (Node version manager)"
 if have nvm || [ -s "$HOME/.nvm/nvm.sh" ]; then
     skip "nvm"
-elif [ "$PKG_MGR" = "brew" ]; then
-    pkg_install nvm
-    ok "nvm installed (brew)"
 else
-    curl -fsSL --retry 3 https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
-    export NVM_DIR="$HOME/.nvm"
-    . "$NVM_DIR/nvm.sh"
-    ok "nvm installed (official script)"
+    curl -fsSL --retry 3 https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash \
+        && { export NVM_DIR="$HOME/.nvm"; . "$NVM_DIR/nvm.sh"; ok "nvm installed (official script)"; } \
+        || warn "nvm install failed"
 fi
 
 echo ""
@@ -266,50 +243,38 @@ echo -e "  ${CYAN}▸${NC} Neovim (>= 0.11.2, LuaJIT)"
 if have nvim; then
     skip "nvim"
 elif have cargo; then
-    cargo install bob-nvim
-    export PATH="$HOME/.cargo/bin:$PATH"
-    bob install latest
-    bob use latest
-    export PATH="$HOME/.local/share/bob/nvim-bin:$PATH"
-    ok "nvim installed (bob-nvim)"
-elif [ "$PKG_MGR" = "brew" ] || [ "$PKG_MGR" = "apt" ]; then
-    pkg_install neovim
-    ok "nvim installed (package manager)"
+    cargo install bob-nvim && {
+        export PATH="$HOME/.cargo/bin:$PATH"
+        bob install latest && bob use latest
+        export PATH="$HOME/.local/share/bob/nvim-bin:$PATH"
+        ok "nvim installed (bob-nvim)"
+    } || warn "nvim install failed (bob-nvim)"
+elif [ "$PKG_MGR" = "apt" ]; then
+    pkg_install neovim && ok "nvim installed (apt)" || warn "nvim install failed"
 else
     NVIM_ARCH=$([ "$ARCH" = "amd64" ] && echo x86_64 || echo arm64)
     NVIM_VERSION=$(curl -fsSL --retry 3 "$(gh_url "https://api.github.com/repos/neovim/neovim/releases/latest")" | jq -r '.tag_name')
     curl -fsSL --retry 3 "$(gh_url "https://github.com/neovim/neovim/releases/download/${NVIM_VERSION}/nvim-linux-${NVIM_ARCH}.tar.gz")" \
-        | $SUDO tar xz -C /opt
-    $SUDO ln -sf /opt/nvim-linux-${NVIM_ARCH}/bin/nvim /usr/local/bin/nvim
-    ok "nvim installed (binary)"
+        | $SUDO tar xz -C /opt \
+        && { $SUDO ln -sf /opt/nvim-linux-${NVIM_ARCH}/bin/nvim /usr/local/bin/nvim; ok "nvim installed (binary)"; } \
+        || warn "nvim install failed"
 fi
 
 # ---- Nerd Fonts ----
 echo ""
 echo -e "  ${CYAN}▸${NC} Nerd Fonts (JetBrainsMono + Iosevka, optional)"
-if [ "$PKG_MGR" = "brew" ]; then
-    for FONT in font-jetbrains-mono-nerd-font font-iosevka-nerd-font; do
-        if brew list --cask "$FONT" &>/dev/null; then
-            skip "$FONT"
-        else
-            brew install --cask "$FONT"
-            ok "$FONT installed"
-        fi
-    done
-else
-    for FONT in JetBrainsMono Iosevka; do
-        FONT_DIR="$HOME/.local/share/fonts/$FONT"
-        if [ -d "$FONT_DIR" ]; then
-            skip "$FONT Nerd Font"
-        else
-            mkdir -p "$FONT_DIR"
-            curl -fsSL --retry 3 "$(gh_url "https://github.com/ryanoasis/nerd-fonts/releases/latest/download/${FONT}.tar.xz")" \
-                | tar xJ -C "$FONT_DIR"
-            ok "$FONT Nerd Font installed"
-        fi
-    done
-    fc-cache -f "$HOME/.local/share/fonts" &>/dev/null || true
-fi
+for FONT in JetBrainsMono Iosevka; do
+    FONT_DIR="$HOME/.local/share/fonts/$FONT"
+    if [ -d "$FONT_DIR" ]; then
+        skip "$FONT Nerd Font"
+    else
+        mkdir -p "$FONT_DIR"
+        curl -fsSL --retry 3 "$(gh_url "https://github.com/ryanoasis/nerd-fonts/releases/latest/download/${FONT}.tar.xz")" \
+            | tar xJ -C "$FONT_DIR" \
+            && ok "$FONT Nerd Font installed" || warn "$FONT Nerd Font install failed"
+    fi
+done
+fc-cache -f "$HOME/.local/share/fonts" &>/dev/null || true
 
 # ---- tree-sitter-cli ----
 echo ""
@@ -317,23 +282,16 @@ echo -e "  ${CYAN}▸${NC} tree-sitter-cli (nvim-treesitter)"
 if have tree-sitter; then
     skip "tree-sitter"
 elif have cargo; then
-    cargo install tree-sitter-cli
-    ok "tree-sitter-cli installed (cargo)"
-elif [ "$PKG_MGR" = "brew" ]; then
-    pkg_install tree-sitter
-    ok "tree-sitter installed (brew)"
+    cargo install tree-sitter-cli && ok "tree-sitter-cli installed (cargo)" || warn "tree-sitter-cli install failed"
 elif [ "$PKG_MGR" = "apt" ]; then
-    pkg_install tree-sitter-cli
-    ok "tree-sitter-cli installed (apt)"
+    pkg_install tree-sitter-cli && ok "tree-sitter-cli installed (apt)" || warn "tree-sitter-cli install failed"
 else
     TS_ARCH=$([ "$ARCH" = "amd64" ] && echo x64 || echo arm64)
     TS_VERSION=$(curl -fsSL --retry 3 "$(gh_url "https://api.github.com/repos/tree-sitter/tree-sitter/releases/latest")" | jq -r '.tag_name')
     curl -fsSL --retry 3 "$(gh_url "https://github.com/tree-sitter/tree-sitter/releases/download/${TS_VERSION}/tree-sitter-cli-linux-${TS_ARCH}.zip")" \
-        -o /tmp/tree-sitter-cli.zip
-    unzip -o /tmp/tree-sitter-cli.zip -d /tmp/tree-sitter-cli
-    $SUDO mv /tmp/tree-sitter-cli/tree-sitter /usr/local/bin/tree-sitter
-    rm -rf /tmp/tree-sitter-cli /tmp/tree-sitter-cli.zip
-    ok "tree-sitter-cli installed (binary)"
+        -o /tmp/tree-sitter-cli.zip \
+        && { unzip -o /tmp/tree-sitter-cli.zip -d /tmp/tree-sitter-cli; $SUDO mv /tmp/tree-sitter-cli/tree-sitter /usr/local/bin/tree-sitter; rm -rf /tmp/tree-sitter-cli /tmp/tree-sitter-cli.zip; ok "tree-sitter-cli installed (binary)"; } \
+        || warn "tree-sitter-cli install failed"
 fi
 
 # ---- lazygit ----
@@ -342,18 +300,14 @@ echo -e "  ${CYAN}▸${NC} lazygit (optional)"
 if have lazygit; then
     skip "lazygit"
 elif have go; then
-    go install github.com/jesseduffield/lazygit@latest
-    ok "lazygit installed (go)"
-elif [ "$PKG_MGR" = "brew" ]; then
-    pkg_install lazygit
-    ok "lazygit installed (brew)"
+    go install github.com/jesseduffield/lazygit@latest && ok "lazygit installed (go)" || warn "lazygit install failed"
 else
     LG_ARCH=$([ "$ARCH" = "amd64" ] && echo x86_64 || echo arm64)
     LG_VERSION=$(curl -fsSL --retry 3 "$(gh_url "https://api.github.com/repos/jesseduffield/lazygit/releases/latest")" | jq -r '.tag_name' | sed 's/^v//')
     curl -fsSL --retry 3 "$(gh_url "https://github.com/jesseduffield/lazygit/releases/download/v${LG_VERSION}/lazygit_${LG_VERSION}_Linux_${LG_ARCH}.tar.gz")" \
-        | tar xz -C /tmp lazygit
-    $SUDO mv /tmp/lazygit /usr/local/bin/lazygit
-    ok "lazygit installed (binary)"
+        | tar xz -C /tmp lazygit \
+        && { $SUDO mv /tmp/lazygit /usr/local/bin/lazygit; ok "lazygit installed (binary)"; } \
+        || warn "lazygit install failed"
 fi
 
 # ---- fzf ----
@@ -362,17 +316,15 @@ echo -e "  ${CYAN}▸${NC} fzf (fzf-lua, optional)"
 if have fzf; then
     skip "fzf"
 elif have go; then
-    go install github.com/junegunn/fzf@latest
-    ok "fzf installed (go)"
+    go install github.com/junegunn/fzf@latest && ok "fzf installed (go)" || warn "fzf install failed"
 elif [ -n "$PKG_MGR" ]; then
-    pkg_install fzf
-    ok "fzf installed (package manager)"
+    pkg_install fzf && ok "fzf installed (package manager)" || warn "fzf install failed"
 else
     FZF_VERSION=$(curl -fsSL --retry 3 "$(gh_url "https://api.github.com/repos/junegunn/fzf/releases/latest")" | jq -r '.tag_name' | sed 's/^v//')
     curl -fsSL --retry 3 "$(gh_url "https://github.com/junegunn/fzf/releases/download/v${FZF_VERSION}/fzf-${FZF_VERSION}-linux_${ARCH}.tar.gz")" \
-        | tar xz -C /tmp
-    $SUDO mv /tmp/fzf /usr/local/bin/fzf
-    ok "fzf installed (binary)"
+        | tar xz -C /tmp \
+        && { $SUDO mv /tmp/fzf /usr/local/bin/fzf; ok "fzf installed (binary)"; } \
+        || warn "fzf install failed"
 fi
 
 # ---- ripgrep ----
@@ -381,19 +333,16 @@ echo -e "  ${CYAN}▸${NC} ripgrep (fzf-lua live grep)"
 if have rg; then
     skip "ripgrep"
 elif have cargo; then
-    cargo install ripgrep
-    ok "ripgrep installed (cargo)"
+    cargo install ripgrep && ok "ripgrep installed (cargo)" || warn "ripgrep install failed"
 elif [ -n "$PKG_MGR" ]; then
-    pkg_install ripgrep
-    ok "ripgrep installed (package manager)"
+    pkg_install ripgrep && ok "ripgrep installed (package manager)" || warn "ripgrep install failed"
 else
     RG_ARCH=$([ "$ARCH" = "amd64" ] && echo x86_64 || echo aarch64)
     RG_VERSION=$(curl -fsSL --retry 3 "$(gh_url "https://api.github.com/repos/BurntSushi/ripgrep/releases/latest")" | jq -r '.tag_name')
     curl -fsSL --retry 3 "$(gh_url "https://github.com/BurntSushi/ripgrep/releases/download/${RG_VERSION}/ripgrep-${RG_VERSION}-${RG_ARCH}-unknown-linux-musl.tar.gz")" \
-        | tar xz -C /tmp
-    $SUDO mv "/tmp/ripgrep-${RG_VERSION}-${RG_ARCH}-unknown-linux-musl/rg" /usr/local/bin/rg
-    rm -rf "/tmp/ripgrep-${RG_VERSION}-${RG_ARCH}-unknown-linux-musl"
-    ok "ripgrep installed (binary)"
+        | tar xz -C /tmp \
+        && { $SUDO mv "/tmp/ripgrep-${RG_VERSION}-${RG_ARCH}-unknown-linux-musl/rg" /usr/local/bin/rg; rm -rf "/tmp/ripgrep-${RG_VERSION}-${RG_ARCH}-unknown-linux-musl"; ok "ripgrep installed (binary)"; } \
+        || warn "ripgrep install failed"
 fi
 
 # ---- fd ----
@@ -402,25 +351,18 @@ echo -e "  ${CYAN}▸${NC} fd (fzf-lua find files)"
 if have fd || have fdfind; then
     skip "fd"
 elif have cargo; then
-    cargo install fd-find
-    ok "fd installed (cargo)"
+    cargo install fd-find && ok "fd installed (cargo)" || warn "fd install failed"
 elif [ "$PKG_MGR" = "apt" ]; then
-    pkg_install fd-find
-    ok "fd installed (apt, binary: fdfind)"
+    pkg_install fd-find && ok "fd installed (apt, binary: fdfind)" || warn "fd install failed"
 elif [ "$PKG_MGR" = "dnf" ]; then
-    pkg_install fd-find
-    ok "fd installed (dnf)"
-elif [ "$PKG_MGR" = "brew" ]; then
-    pkg_install fd
-    ok "fd installed (brew)"
+    pkg_install fd-find && ok "fd installed (dnf)" || warn "fd install failed"
 else
     FD_ARCH=$([ "$ARCH" = "amd64" ] && echo x86_64 || echo aarch64)
     FD_VERSION=$(curl -fsSL --retry 3 "$(gh_url "https://api.github.com/repos/sharkdp/fd/releases/latest")" | jq -r '.tag_name')
     curl -fsSL --retry 3 "$(gh_url "https://github.com/sharkdp/fd/releases/download/${FD_VERSION}/fd-${FD_VERSION}-${FD_ARCH}-unknown-linux-gnu.tar.gz")" \
-        | tar xz -C /tmp
-    $SUDO mv "/tmp/fd-${FD_VERSION}-${FD_ARCH}-unknown-linux-gnu/fd" /usr/local/bin/fd
-    rm -rf "/tmp/fd-${FD_VERSION}-${FD_ARCH}-unknown-linux-gnu"
-    ok "fd installed (binary)"
+        | tar xz -C /tmp \
+        && { $SUDO mv "/tmp/fd-${FD_VERSION}-${FD_ARCH}-unknown-linux-gnu/fd" /usr/local/bin/fd; rm -rf "/tmp/fd-${FD_VERSION}-${FD_ARCH}-unknown-linux-gnu"; ok "fd installed (binary)"; } \
+        || warn "fd install failed"
 fi
 
 echo ""
@@ -441,47 +383,42 @@ echo ""
 echo -e "  ${CYAN}▸${NC} GitHub CLI"
 if have gh; then
     skip "gh"
-elif [ "$PKG_MGR" = "brew" ]; then
-    pkg_install gh
-    ok "gh installed (brew)"
 elif [ "$PKG_MGR" = "dnf" ]; then
-    pkg_install gh
-    ok "gh installed (dnf)"
+    pkg_install gh && ok "gh installed (dnf)" || warn "gh install failed"
 else
     GH_VERSION=$(curl -fsSL --retry 3 "$(gh_url "https://api.github.com/repos/cli/cli/releases/latest")" | jq -r '.tag_name' | sed 's/^v//')
     curl -fsSL --retry 3 "$(gh_url "https://github.com/cli/cli/releases/download/v${GH_VERSION}/gh_${GH_VERSION}_linux_${ARCH}.tar.gz")" \
-        | tar xz -C /tmp
-    $SUDO mv "/tmp/gh_${GH_VERSION}_linux_${ARCH}/bin/gh" /usr/local/bin/gh
-    rm -rf "/tmp/gh_${GH_VERSION}_linux_${ARCH}"
-    ok "gh installed (binary)"
+        | tar xz -C /tmp \
+        && { $SUDO mv "/tmp/gh_${GH_VERSION}_linux_${ARCH}/bin/gh" /usr/local/bin/gh; rm -rf "/tmp/gh_${GH_VERSION}_linux_${ARCH}"; ok "gh installed (binary)"; } \
+        || warn "gh install failed"
 fi
 
 # ---- GitHub auth ----
 echo ""
 echo -e "  ${CYAN}▸${NC} GitHub auth"
-if gh auth status &>/dev/null; then
+if have gh && gh auth status &>/dev/null; then
     skip "Already logged in to GitHub"
-else
+elif have gh; then
     echo -e "  ${YELLOW}Login to GitHub? (needed for dotfiles sync and SSH key upload)${NC}"
     read -r -p "  Login to GitHub? (y/n): " GH_LOGIN
 
     if [[ "$GH_LOGIN" =~ ^[Yy]$ ]]; then
-        gh auth login --hostname github.com --git-protocol ssh --web
-        ok "GitHub login done"
+        gh auth login --hostname github.com --git-protocol ssh --web && ok "GitHub login done" || warn "GitHub login failed"
     else
         echo -e "  ${YELLOW}Skipped GitHub login. Run later: ${CYAN}gh auth login${NC}"
     fi
+else
+    warn "gh not installed, skipping GitHub auth"
 fi
 
 # ---- SSH key (only if authenticated) ----
-if gh auth status &>/dev/null; then
+if have gh && gh auth status &>/dev/null; then
     echo ""
     echo -e "  ${CYAN}▸${NC} SSH Key"
     if [ -f "$HOME/.ssh/id_ed25519.pub" ]; then
         skip "SSH key already exists"
     else
-        ssh-keygen -t ed25519 -f "$HOME/.ssh/id_ed25519" -N "" -C "cheparity@gmail.com"
-        ok "SSH key generated"
+        ssh-keygen -t ed25519 -f "$HOME/.ssh/id_ed25519" -N "" -C "cheparity@gmail.com" && ok "SSH key generated" || warn "SSH key generation failed"
     fi
     gh ssh-key add "$HOME/.ssh/id_ed25519.pub" --title "$(hostname)-$(date +%Y%m%d)" 2>/dev/null \
         && ok "SSH key uploaded to GitHub" \
@@ -493,13 +430,10 @@ echo ""
 echo -e "  ${CYAN}▸${NC} chezmoi (dotfiles manager)"
 if have chezmoi; then
     skip "chezmoi"
-elif [ "$PKG_MGR" = "brew" ]; then
-    pkg_install chezmoi
-    ok "chezmoi installed (brew)"
 else
-    sh -c "$(curl -fsLS get.chezmoi.io)" -- -b "$HOME/.local/bin"
-    export PATH="$HOME/.local/bin:$PATH"
-    ok "chezmoi installed"
+    sh -c "$(curl -fsLS get.chezmoi.io)" -- -b "$HOME/.local/bin" \
+        && { export PATH="$HOME/.local/bin:$PATH"; ok "chezmoi installed (official script)"; } \
+        || warn "chezmoi install failed"
 fi
 
 # ---- dotfiles sync ----
@@ -509,14 +443,16 @@ echo -e "  ${YELLOW}Requires GitHub auth. On a temporary machine, choose n.${NC}
 read -r -p "  Sync dotfiles? (y/n): " SYNC
 
 if [[ "$SYNC" =~ ^[Yy]$ ]]; then
-    if [ -d "$HOME/.local/share/chezmoi/.git" ]; then
-        skip "chezmoi repo already exists"
+    if have chezmoi; then
+        if [ -d "$HOME/.local/share/chezmoi/.git" ]; then
+            skip "chezmoi repo already exists"
+        else
+            chezmoi init git@github.com:cheparity/dotfiles.git && ok "chezmoi init done" || warn "chezmoi init failed"
+        fi
+        chezmoi apply && ok "chezmoi apply done" || warn "chezmoi apply failed"
     else
-        chezmoi init git@github.com:cheparity/dotfiles.git
-        ok "chezmoi init done"
+        warn "chezmoi not installed, skipping dotfiles sync"
     fi
-    chezmoi apply
-    ok "chezmoi apply done"
 else
     echo ""
     echo -e "  ${YELLOW}Skipped. Run later: ${CYAN}chezmoi init git@github.com:cheparity/dotfiles.git && chezmoi apply${NC}"
@@ -536,9 +472,13 @@ section "Phase 4: Agent tools"
 # ---- Agent tools (via bun) ----
 echo ""
 echo -e "  ${CYAN}▸${NC} Agent tools (omp)"
-bun install -g @oh-my-pi/pi-coding-agent
-bun pm -g trust @oh-my-pi/pi-coding-agent 2>/dev/null || true
-ok "omp installed (bun)"
+if have bun; then
+    bun install -g @oh-my-pi/pi-coding-agent \
+        && { bun pm -g trust @oh-my-pi/pi-coding-agent 2>/dev/null || true; ok "omp installed (bun)"; } \
+        || warn "omp install failed"
+else
+    warn "bun not installed, cannot install omp. Install bun first, then: bun install -g @oh-my-pi/pi-coding-agent"
+fi
 
 echo ""
 echo -e "${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
