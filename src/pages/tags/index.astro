@@ -1,0 +1,99 @@
+---
+import { getCollection } from 'astro:content';
+import BaseHead from '../../components/BaseHead.astro';
+import Footer from '../../components/Footer.astro';
+import Header from '../../components/Header.astro';
+import ThemeScript from '../../components/ThemeScript.astro';
+import Reveal from '../../components/Reveal.astro';
+import { SITE_TITLE } from '../../consts';
+
+const posts = await getCollection('blog');
+
+// Build tag → count map
+const tagCounts = new Map<string, number>();
+for (const post of posts) {
+	for (const tag of post.data.tags ?? []) {
+		tagCounts.set(tag, (tagCounts.get(tag) ?? 0) + 1);
+	}
+}
+
+// Sort by count descending, then alphabetically
+const sortedTags = [...tagCounts.entries()].sort((a, b) =>
+	b[1] !== a[1] ? b[1] - a[1] : a[0].localeCompare(b[0]),
+);
+---
+
+<html lang="en">
+	<head>
+		<BaseHead title={`${SITE_TITLE} - Tags`} description="All tags" />
+		<ThemeScript />
+	</head>
+
+	<body>
+		<Header />
+
+		<main>
+			<article>
+				<section>
+					<h1>Tags</h1>
+					<p>{sortedTags.length} tag{sortedTags.length !== 1 && 's'} across {posts.length} post{posts.length !== 1 && 's'}.</p>
+				</section>
+
+				<section class="tags-grid reveal">
+					{sortedTags.map(([tag, count]) => (
+						<a href={`/tags/${encodeURIComponent(tag)}/`} class="tag-pill">
+							<span class="tag-name">{tag}</span>
+							<span class="tag-count">{count}</span>
+						</a>
+					))}
+				</section>
+			</article>
+		</main>
+
+		<Footer />
+		<Reveal />
+	</body>
+</html>
+
+<style>
+	.tags-grid {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.6rem;
+		margin-top: 1.5rem;
+	}
+
+	.tag-pill {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.4rem;
+		padding: 0.35rem 0.85rem;
+		border-radius: 9999px;
+		background: rgba(128, 128, 128, 0.1);
+		color: #444;
+		text-decoration: none;
+		font-family: 'et-book', serif;
+		font-size: 1rem;
+		transition: background-color 0.2s ease, color 0.2s ease;
+	}
+
+	.tag-pill:hover {
+		background: rgba(128, 128, 128, 0.2);
+		color: #111;
+	}
+
+	.tag-count {
+		font-size: 0.8rem;
+		opacity: 0.6;
+		font-variant-numeric: tabular-nums;
+	}
+
+	html.dark .tag-pill {
+		background: rgba(255, 255, 255, 0.08);
+		color: #bbb;
+	}
+	html.dark .tag-pill:hover {
+		background: rgba(255, 255, 255, 0.15);
+		color: #eee;
+	}
+</style>

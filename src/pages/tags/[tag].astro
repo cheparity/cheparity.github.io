@@ -1,0 +1,61 @@
+---
+import { getCollection } from 'astro:content';
+import BaseHead from '../../components/BaseHead.astro';
+import Footer from '../../components/Footer.astro';
+import Header from '../../components/Header.astro';
+import ThemeScript from '../../components/ThemeScript.astro';
+import ArticleCard from '../../components/ArticleCard.astro';
+import Reveal from '../../components/Reveal.astro';
+import { SITE_TITLE } from '../../consts';
+
+export async function getStaticPaths() {
+	const posts = await getCollection('blog');
+	const allTags = new Set<string>();
+	for (const post of posts) {
+		for (const tag of post.data.tags ?? []) {
+			allTags.add(tag);
+		}
+	}
+	return [...allTags].map((tag) => ({ params: { tag: encodeURIComponent(tag) } }));
+}
+
+const { tag } = Astro.params;
+const decodedTag = decodeURIComponent(tag!);
+
+const posts = (await getCollection('blog'))
+	.filter((post) => (post.data.tags ?? []).includes(decodedTag))
+	.sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
+---
+
+<html lang="en">
+	<head>
+		<BaseHead title={`${SITE_TITLE} - #${decodedTag}`} description={`Posts tagged "${decodedTag}"`} />
+		<ThemeScript />
+	</head>
+
+	<body>
+		<Header />
+
+		<main>
+			<article>
+				<section>
+					<h1>#{decodedTag}</h1>
+					<p>{posts.length} post{posts.length !== 1 && 's'}</p>
+				</section>
+
+				<section class="archive">
+					{posts.map((post, i) => <ArticleCard post={post} index={i} />)}
+				</section>
+			</article>
+		</main>
+
+		<Footer />
+		<Reveal />
+	</body>
+</html>
+
+<style>
+	.archive {
+		margin-top: 1rem;
+	}
+</style>

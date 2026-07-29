@@ -1,0 +1,469 @@
+/* Tufte CSS - Fully converted to Tailwind
+ * Based on https://edwardtufte.github.io/tufte-css/
+ * All styles migrated to Tailwind CSS utilities
+ */
+
+@import './callout.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  @font-face {
+    font-family: "et-book";
+    src: url("/fonts/et-book-roman.woff") format("woff");
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+  }
+
+  @font-face {
+    font-family: "et-book";
+    src: url("/fonts/et-book-italic.woff") format("woff");
+    font-weight: normal;
+    font-style: italic;
+    font-display: swap;
+  }
+
+  @font-face {
+    font-family: "et-book";
+    src: url("/fonts/et-book-bold.woff") format("woff");
+    font-weight: bold;
+    font-style: normal;
+    font-display: swap;
+  }
+
+
+
+  @font-face {
+    font-family: "Maple Mono";
+    src: url("/fonts/maple-mono.woff") format("woff");
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+  }
+
+  html {
+    @apply text-[15px];
+  }
+
+  body {
+    @apply w-[87.5%] mx-auto pl-[12.5%] max-w-[1400px];
+    @apply font-serif;
+    @apply leading-[1.4];
+    counter-reset: sidenote-counter;
+    background-color: #fffff8;
+    background-image:
+      repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(200, 190, 170, 0.015) 2px, rgba(200, 190, 170, 0.015) 4px),
+      repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(200, 190, 170, 0.015) 2px, rgba(200, 190, 170, 0.015) 4px),
+      repeating-linear-gradient(90deg, transparent, transparent 8px, rgba(190, 180, 160, 0.012) 8px, rgba(190, 180, 160, 0.012) 16px),
+      repeating-linear-gradient(0deg, transparent, transparent 8px, rgba(190, 180, 160, 0.012) 8px, rgba(190, 180, 160, 0.012) 16px),
+      radial-gradient(ellipse at 20% 30%, rgba(210, 200, 170, 0.04) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 70%, rgba(210, 200, 170, 0.03) 0%, transparent 50%),
+      radial-gradient(ellipse at 50% 50%, rgba(200, 190, 160, 0.025) 0%, transparent 70%),
+      radial-gradient(circle at center, transparent 50%, rgba(180, 170, 150, 0.1) 100%);
+    background-blend-mode: normal;
+    color: #111;
+    background-attachment: fixed;
+  }
+
+  html.dark body {
+    background-color: #151515;
+    background-image:
+      repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(70, 65, 60, 0.04) 2px, rgba(70, 65, 60, 0.04) 4px),
+      repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(70, 65, 60, 0.04) 2px, rgba(70, 65, 60, 0.04) 4px),
+      repeating-linear-gradient(90deg, transparent, transparent 8px, rgba(60, 55, 50, 0.03) 8px, rgba(60, 55, 50, 0.03) 16px),
+      repeating-linear-gradient(0deg, transparent, transparent 8px, rgba(60, 55, 50, 0.03) 8px, rgba(60, 55, 50, 0.03) 16px),
+      radial-gradient(ellipse at 20% 30%, rgba(80, 70, 60, 0.07) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 70%, rgba(80, 70, 60, 0.05) 0%, transparent 50%),
+      radial-gradient(ellipse at 50% 50%, rgba(70, 60, 50, 0.04) 0%, transparent 70%),
+      radial-gradient(circle at center, transparent 50%, rgba(0, 0, 0, 0.25) 100%);
+    background-blend-mode: normal;
+    color: #ddd;
+    background-attachment: fixed;
+  }
+
+  h1 {
+    @apply font-normal text-[3.2rem] leading-none mt-16 mb-6;
+  }
+
+  h2 {
+    @apply font-normal italic text-[2.2rem] leading-none mt-[2.1rem] mb-[1.4rem];
+  }
+
+  h3 {
+    @apply font-normal italic text-[1.7rem] leading-none mt-8 mb-[1.4rem];
+  }
+
+  h4,
+  h5,
+  h6 {
+    @apply font-normal italic mt-6 mb-4;
+  }
+
+  hr {
+    @apply block h-px w-[55%] my-8 px-0 border-0 border-t-[#ccc];
+  }
+
+  p,
+  dl,
+  ol,
+  ul {
+    @apply text-[1.4rem] leading-[2rem];
+  }
+
+  p {
+    @apply mt-[1.4rem] mb-[1.4rem] pr-0 align-baseline;
+  }
+
+  a:link,
+  a:visited {
+    @apply text-inherit underline underline-offset-[0.1em] decoration-[0.05em];
+  }
+
+  a:hover {
+    @apply text-inherit;
+  }
+
+  blockquote {
+    @apply text-[1.4rem] ml-0 mr-10;
+  }
+
+  blockquote p {
+    @apply w-[55%] mr-10;
+  }
+
+  blockquote footer {
+    @apply w-[55%] text-[1.1rem] text-right;
+  }
+
+  section > p,
+  section > footer,
+  section > table,
+  section > .expressive-code {
+    @apply w-[55%];
+  }
+
+  section > dl,
+  section > ol,
+  section > ul {
+    @apply w-[50%];
+    -webkit-padding-start: 5%;
+  }
+
+  ul {
+    @apply list-disc;
+  }
+
+  ol {
+    @apply list-decimal;
+  }
+
+  li:not(:first-child) {
+    @apply mt-2;
+  }
+
+  footer {
+    @apply ml-0;
+  }
+
+  html.dark header {
+    @apply border-b-[rgba(221,221,221,0.3)];
+  }
+
+  html.dark footer {
+    @apply border-t-[rgba(221,221,221,0.3)];
+  }
+}
+
+@layer components {
+  article {
+    @apply py-20 px-0;
+  }
+
+  section {
+    @apply py-4 px-0;
+  }
+
+  /* Site header styling (matching tufted-blog.pages.dev) */
+  header {
+    @apply text-sm text-[#666] leading-[1.6];
+    @apply mt-[0.5em] mb-[0.5em] ml-[0.35em];
+    @apply border-b-0 p-0;
+  }
+
+  header nav {
+    @apply flex items-center justify-start gap-[1em];
+  }
+
+  header nav a,
+  header nav a:link,
+  header nav a:visited {
+    @apply text-inherit no-underline !important;
+    @apply text-[1.5rem] px-[0.2em] py-[0.4em] mt-[1em] rounded-[0.2rem];
+    @apply transition-colors duration-[120ms];
+    background-image: none !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+
+  header nav a:hover,
+  header nav a:focus-visible {
+    @apply bg-[rgba(128,128,128,0.2)];
+    outline: none;
+  }
+
+  /* Footer styling (matching tufted-blog.pages.dev) */
+  footer {
+    @apply mt-8 mb-4 text-left text-sm text-[#666] leading-[1.6];
+    @apply px-0 pt-2;
+  }
+
+  footer a {
+    @apply text-inherit no-underline !important;
+    background-image: none !important;
+    text-shadow: none !important;
+  }
+
+  .subtitle {
+    @apply block italic text-[1.8rem] leading-none mt-4 mb-4;
+  }
+
+  .epigraph {
+    @apply my-20;
+  }
+
+  .epigraph > blockquote {
+    @apply my-12;
+  }
+
+  .epigraph > blockquote,
+  .epigraph > blockquote > p {
+    @apply italic;
+  }
+
+  .epigraph > blockquote > footer {
+    @apply not-italic;
+  }
+
+  .epigraph > blockquote > footer > cite {
+    @apply italic;
+  }
+
+  .sidenote,
+  .marginnote {
+    @apply float-right clear-right -mr-[60%] w-1/2 mt-[0.3rem] mb-0;
+    @apply text-[1.1rem] leading-[1.3] align-baseline relative;
+  }
+
+  .sidenote-number {
+    counter-increment: sidenote-counter;
+  }
+
+  .sidenote-number::after,
+  .sidenote::before {
+    font-family: "et-book", serif;
+    font-variant-numeric: oldstyle-nums;
+    @apply relative align-baseline;
+  }
+
+  .sidenote-number::after {
+    content: counter(sidenote-counter);
+    @apply text-[1rem] top-[-0.5rem] left-[0.1rem];
+  }
+
+  .sidenote::before {
+    content: counter(sidenote-counter) " ";
+    @apply text-[1rem] top-[-0.5rem];
+  }
+
+  blockquote .sidenote,
+  blockquote .marginnote {
+    @apply -mr-[82%] min-w-[59%] text-left;
+  }
+
+  figure {
+    @apply p-0 border-0 text-base align-baseline max-w-[55%];
+    @apply my-0 mx-0;
+  }
+
+  figcaption {
+    @apply float-right clear-right my-0;
+    @apply text-[1.1rem] leading-[1.6] align-baseline relative max-w-[40%] text-left;
+  }
+
+  figure.fullwidth {
+    @apply max-w-full clear-both;
+  }
+
+  figure.fullwidth figcaption {
+    @apply mr-[24%];
+  }
+
+  img {
+    @apply max-w-full rounded;
+  }
+
+  table {
+    @apply w-[55%] border-collapse text-[1.4rem];
+  }
+
+  th,
+  td {
+    @apply px-2 py-2 text-left border-b-[#ccc];
+  }
+
+  /* Expressive Code - Override defaults for Tufte design */
+  .expressive-code pre,
+  .expressive-code pre > code {
+    font-family: 'Maple Mono', monospace !important;
+  }
+
+  h1 > code,
+  h2 > code,
+  h3 > code {
+    @apply text-[0.8em];
+  }
+
+  .sans > code {
+    @apply text-[1.2rem];
+  }
+
+  .marginnote > code,
+  .sidenote > code {
+    @apply text-[1rem];
+  }
+
+
+
+  @media (max-width: 760px) {
+    body {
+      @apply w-[84%] pl-[8%] pr-[8%];
+    }
+
+    hr,
+    section > p,
+    section > footer,
+    section > table,
+    section > .expressive-code {
+      @apply w-full;
+    }
+
+
+    section > dl,
+    section > ol,
+    section > ul {
+      @apply w-[90%];
+    }
+
+    figure {
+      @apply max-w-[90%];
+    }
+
+    figcaption,
+    figure.fullwidth figcaption {
+      @apply mr-0 max-w-none;
+    }
+
+    blockquote {
+      @apply ml-6 mr-0;
+    }
+
+    blockquote p,
+    blockquote footer {
+      @apply w-full;
+    }
+
+    img {
+      @apply w-full;
+    }
+
+    h1 {
+      @apply text-[2.5rem];
+    }
+
+    h2 {
+      @apply text-[2rem];
+    }
+
+    h3 {
+      @apply text-[1.5rem];
+    }
+
+    label.margin-toggle:not(.sidenote-number) {
+      @apply inline;
+    }
+
+    .sidenote,
+    .marginnote {
+      @apply hidden;
+    }
+
+    .margin-toggle:checked + .sidenote,
+    .margin-toggle:checked + .marginnote {
+      @apply block float-left left-4 clear-both w-[95%] my-4 mx-[2.5%] align-baseline relative;
+    }
+
+    label {
+      @apply cursor-pointer;
+    }
+
+    .table-wrapper,
+    table {
+      @apply w-[85%];
+    }
+  }
+
+
+}
+
+@layer utilities {
+  .fullwidth {
+    @apply max-w-[90%] clear-both;
+  }
+
+  .sans {
+    @apply font-sans tracking-[0.03em];
+    font-family: "Gill Sans", "Gill Sans MT", Calibri, sans-serif;
+  }
+
+  .numeral {
+    font-family: "et-book", serif;
+    font-variant-numeric: oldstyle-nums;
+  }
+
+  .danger {
+    @apply text-red-600;
+  }
+
+  .newthought {
+    @apply font-variant-small-caps text-[1.2em];
+  }
+
+  .table-wrapper {
+    @apply overflow-x-auto;
+    font-family: "Trebuchet MS", "Gill Sans", "Gill Sans MT", sans-serif;
+  }
+
+  input.margin-toggle {
+    @apply hidden;
+  }
+
+  label.sidenote-number {
+    @apply inline-block max-h-8;
+  }
+
+  label.margin-toggle:not(.sidenote-number) {
+    @apply hidden;
+  }
+
+  .iframe-wrapper {
+    @apply relative pt-10 pb-[56.25%] h-0;
+  }
+
+  .iframe-wrapper iframe {
+    @apply absolute top-0 left-0 w-full h-full;
+  }
+}
+

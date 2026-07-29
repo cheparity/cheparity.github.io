@@ -1,0 +1,143 @@
+---
+import { SITE_DESCRIPTION, SITE_TITLE } from "../consts";
+import { getCollection } from "astro:content";
+import BaseHead from "../components/BaseHead.astro";
+import Footer from "../components/Footer.astro";
+import Header from "../components/Header.astro";
+import ThemeScript from "../components/ThemeScript.astro";
+import Hero from "../components/Hero.astro";
+import ArticleCard from "../components/ArticleCard.astro";
+import Reveal from "../components/Reveal.astro";
+import { SITE_CONFIG } from "../config";
+
+const allPosts = await getCollection("blog");
+const sortedPosts = allPosts.sort((a, b) => {
+	return b.data.pubDate.valueOf() - a.data.pubDate.valueOf();
+});
+
+const postsToShow = sortedPosts.slice(0, SITE_CONFIG.postsPerPage);
+const hasMorePosts = sortedPosts.length > SITE_CONFIG.postsPerPage;
+---
+
+<html lang="en">
+	<head>
+		<BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} />
+		<ThemeScript />
+	</head>
+
+	<body>
+		<Header />
+
+		<main>
+			<Hero />
+
+			<section class="recent-posts">
+				<h2 class="section-title reveal">Recent Posts</h2>
+
+				<div class="articles-list">
+					{postsToShow.map((post, i) => <ArticleCard post={post} index={i} />)}
+				</div>
+
+				{
+					hasMorePosts && (
+						<div class="show-more-wrapper">
+							<a href="/blog" class="show-more-button">
+								Show More <span class="show-more-arrow" aria-hidden="true">→</span>
+							</a>
+						</div>
+					)
+				}
+			</section>
+		</main>
+
+		<Footer />
+		<Reveal />
+	</body>
+</html>
+
+<style>
+	.recent-posts {
+		margin-top: 2.1rem;
+	}
+
+	.section-title {
+		position: relative;
+		padding-left: 1.6rem;
+		font-family: "et-book", serif;
+		font-size: 1.8rem;
+		font-weight: normal;
+		font-style: normal;
+		font-variant: small-caps;
+		letter-spacing: 0.05em;
+		color: #666;
+		line-height: 1;
+		margin-top: 2.1rem;
+		margin-bottom: 1.4rem;
+	}
+
+	/* A hairline that grows out of the left edge as the heading reveals. */
+	.section-title::before {
+		content: "";
+		position: absolute;
+		left: 0;
+		top: 0.12em;
+		bottom: 0.12em;
+		width: 2px;
+		background: currentColor;
+		opacity: 0.5;
+		transform: scaleY(0);
+		transform-origin: top;
+		transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.18s;
+	}
+	.section-title.reveal.in::before {
+		transform: scaleY(1);
+	}
+
+	.articles-list {
+		margin-top: 1.4rem;
+	}
+
+	.show-more-wrapper {
+		margin-top: 2rem;
+		text-align: left;
+	}
+
+	.show-more-button {
+		font-family: "et-book", serif;
+		font-size: 1.4rem;
+		line-height: 2rem;
+		text-decoration: underline;
+		text-decoration-thickness: 0.05em;
+		text-underline-offset: 0.1em;
+		color: inherit;
+		transition: text-decoration-thickness 0.12s ease;
+	}
+
+	.show-more-button:hover {
+		text-decoration-thickness: 0.15em;
+	}
+
+	.show-more-arrow {
+		display: inline-block;
+		transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+	}
+	.show-more-button:hover .show-more-arrow {
+		transform: translateX(5px);
+	}
+
+	.show-more-button:focus-visible {
+		outline: 2px solid rgba(128, 128, 128, 0.4);
+		outline-offset: 4px;
+	}
+
+	@media (max-width: 768px) {
+		.section-title {
+			font-size: 2rem;
+		}
+
+		.show-more-button {
+			font-size: 1.2rem;
+			line-height: 1.8rem;
+		}
+	}
+</style>

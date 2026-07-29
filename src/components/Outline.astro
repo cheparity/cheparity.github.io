@@ -1,0 +1,551 @@
+---
+---
+
+<!--
+  Notion-style outline / table-of-contents sidebar — the "ladder" variant.
+
+  At rest it is a thin vertical strip of horizontal bars with NO text: each
+  bar's *length* encodes the heading level (long = top-level, short = deep),
+  and the current section's bar darkens as you scroll.  On hover (or keyboard
+  focus) the strip blooms open into the full textual outline — the bars stay
+  as a level glyph to the left of each title.  Fixed to the right edge;
+  hidden on narrow viewports where the Tufte margin notes collapse.
+-->
+<aside id="outline" class="outline" aria-label="Table of contents">
+	<div class="outline-rail" aria-hidden="true">
+		<div class="outline-rail-fill" id="outline-rail-fill"></div>
+	</div>
+	<div class="outline-dot" id="outline-dot" aria-hidden="true"></div>
+	<span class="outline-title">Contents</span>
+	<nav class="outline-nav" id="outline-nav">
+		<!-- populated by script -->
+	</nav>
+</aside>
+
+<script>
+	const outline = document.getElementById('outline');
+	const article = document.querySelector('article');
+	if (!outline || !article) throw new Error('Outline: missing outline or article');
+
+	const headings = article.querySelectorAll('h2, h3, h4');
+	if (headings.length === 0) {
+		outline.remove();
+		throw new Error('Outline: no headings found');
+	}
+
+	// Ensure every heading has an id for anchor linking.
+	headings.forEach((h, i) => {
+		if (!h.id) {
+			h.id = (h.textContent || '')
+				.trim()
+				.toLowerCase()
+				.replace(/[^\w\s-]/g, '')
+				.replace(/\s+/g, '-')
+				.replace(/-+/g, '-')
+				+ `-${i}`;
+		}
+	});
+
+	const nav = document.getElementById('outline-nav');
+	const railFill = document.getElementById('outline-rail-fill');
+	const dot = document.getElementById('outline-dot');
+	if (!nav) throw new Error('Outline: no nav element');
+	const items: { el: HTMLAnchorElement; heading: Element }[] = [];
+
+	headings.forEach((h, i) => {
+		const text = h.textContent || '';
+		const a = document.createElement('a');
+		a.href = `#${h.id}`;
+		a.title = text;
+		a.className = 'outline-link';
+		a.dataset.level = h.tagName[1];
+		a.style.setProperty('--i', String(i));
+
+		const bar = document.createElement('span');
+		bar.className = 'outline-bar';
+		const label = document.createElement('span');
+		label.className = 'outline-label';
+		label.textContent = text;
+
+		a.append(bar, label);
+		a.addEventListener('click', (e) => {
+			e.preventDefault();
+			h.scrollIntoView({ behavior: 'smooth', block: 'start' });
+			history.replaceState(null, '', `#${h.id}`);
+		});
+
+		nav.appendChild(a);
+		items.push({ el: a, heading: h });
+	});
+
+	// Inject a hover permalink anchor into each heading so readers can copy a
+	// deep link to any section. The id was guaranteed above, so the anchor and
+	// the matching TOC entry always agree. Done after the nav loop so the '#'
+	// glyph never leaks into the TOC labels.
+	headings.forEach((h) => {
+		const anchor = document.createElement('a');
+		anchor.className = 'heading-anchor';
+		anchor.href = `#${h.id}`;
+		anchor.setAttribute('aria-label', `Link to section: ${h.textContent || ''}`);
+		anchor.textContent = '#';
+		anchor.addEventListener('click', (e) => {
+			e.preventDefault();
+			h.scrollIntoView({ behavior: 'smooth', block: 'start' });
+			history.replaceState(null, '', `#${h.id}`);
+		});
+		h.appendChild(anchor);
+	});
+
+	// Scroll spy + progress rail + sliding dot.
+	let activeId: string | null = null;
+
+	function setActive(id: string) {
+		if (activeId === id) return;
+		activeId = id;
+		items.forEach(({ el, heading }) => {
+			const isActive = heading.id === id;
+			el.classList.toggle('is-active', isActive);
+			if (isActive) {
+				el.setAttribute('aria-current', 'location');
+				reveal(el);
+				positionDot(el);
+			} else {
+				el.removeAttribute('aria-current');
+			}
+		});
+	}
+
+	function positionDot(el: HTMLElement) {
+		if (!dot) return;
+		const oRect = outline!.getBoundingClientRect();
+		const eRect = el.getBoundingClientRect();
+		dot.style.top = `${eRect.top - oRect.top + eRect.height / 2}px`;
+	}
+
+	function updateProgress() {
+		if (!railFill) return;
+		const scrollTop = window.scrollY;
+		const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+		const pct = docHeight > 0 ? Math.min(scrollTop / docHeight, 1) : 0;
+		railFill.style.transform = `scaleY(${pct})`;
+	}
+
+	// Keep the active row in view inside the outline without scrolling the page.
+	function reveal(el: HTMLElement) {
+		const o = outline!.getBoundingClientRect();
+		const r = el.getBoundingClientRect();
+		if (r.top < o.top + 4) outline!.scrollTop -= o.top + 4 - r.top;
+		else if (r.bottom > o.bottom - 4) outline!.scrollTop += r.bottom - (o.bottom - 4);
+	}
+
+	function computeActive() {
+		if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 5) {
+			setActive(items[items.length - 1].heading.id);
+			return;
+		}
+		const offset = 100;
+		let currentId = items[0]?.heading.id || '';
+		for (const { heading } of items) {
+			if (heading.getBoundingClientRect().top <= offset) {
+				currentId = heading.id;
+			} else {
+				break;
+			}
+		}
+		setActive(currentId);
+	}
+
+	let ticking = false;
+	function onScroll() {
+		if (!ticking) {
+			ticking = true;
+			requestAnimationFrame(() => {
+				computeActive();
+				updateProgress();
+				ticking = false;
+			});
+		}
+	}
+
+	window.addEventListener('scroll', onScroll, { passive: true });
+	computeActive();
+	updateProgress();
+
+	// Overflow detection: add fade masks when content exceeds the container.
+	function updateOverflow() {
+		const overflowing = outline!.scrollHeight > outline!.clientHeight + 2;
+		outline!.classList.toggle('is-overflowing', overflowing);
+		outline!.classList.toggle('can-scroll-up', outline!.scrollTop > 4);
+		outline!.classList.toggle('can-scroll-down',
+			outline!.scrollTop < outline!.scrollHeight - outline!.clientHeight - 4);
+	}
+
+	outline!.addEventListener('scroll', () => {
+		requestAnimationFrame(updateOverflow);
+	}, { passive: true });
+
+	// Re-check on resize (viewport height changes affect overflow).
+	window.addEventListener('resize', () => requestAnimationFrame(updateOverflow));
+
+	updateOverflow();
+</script>
+
+<style is:global>
+	.outline {
+		--bar: rgba(55, 53, 47, 0.38);
+		--bar-active: #37352f;
+		--label: #9b9a97;
+		--label-active: #37352f;
+		--panel: rgba(255, 255, 248, 0.95);
+		--thumb: rgba(0, 0, 0, 0.22);
+		--shadow: rgba(40, 35, 25, 0.12);
+		--rail: rgba(55, 53, 47, 0.08);
+		--rail-fill: rgba(55, 53, 47, 0.35);
+		--dot: #37352f;
+		--accent: rgba(55, 53, 47, 0.04);
+
+		position: fixed;
+		top: 6rem;
+		right: 2rem;
+		box-sizing: border-box;
+		width: 44px;
+		max-height: calc(100vh - 8rem);
+		padding: 12px 6px 12px 12px;
+		overflow-x: hidden;
+		overflow-y: auto;
+		z-index: 40;
+		font-family: 'et-book', 'Palatino Linotype', 'Book Antiqua', Palatino,
+			Georgia, serif;
+		font-size: 13px;
+		line-height: 1.5;
+		border-radius: 12px;
+		background: transparent;
+		outline: none;
+		scrollbar-width: none;
+		transition:
+			width 0.38s cubic-bezier(0.22, 1, 0.36, 1),
+			background-color 0.32s ease,
+			box-shadow 0.32s ease,
+			padding 0.38s cubic-bezier(0.22, 1, 0.36, 1);
+		animation: outline-in 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.25s both;
+	}
+
+	@keyframes outline-in {
+		from { opacity: 0; transform: translateX(12px); }
+		to   { opacity: 1; transform: none; }
+	}
+
+	/* Overflow fade masks — hint that content extends beyond the visible area.
+	   Collapsed: always fade the bottom when overflowing (bars dissolve).
+	   Expanded: fade top/bottom based on scroll position. */
+	.outline.is-overflowing {
+		-webkit-mask-image: linear-gradient(to bottom,
+			black 0%, black calc(100% - 28px), transparent 100%);
+		mask-image: linear-gradient(to bottom,
+			black 0%, black calc(100% - 28px), transparent 100%);
+	}
+	.outline.is-overflowing.can-scroll-up:not(:hover):not(:focus-within) {
+		-webkit-mask-image: linear-gradient(to bottom,
+			transparent 0%, black 20px, black calc(100% - 28px), transparent 100%);
+		mask-image: linear-gradient(to bottom,
+			transparent 0%, black 20px, black calc(100% - 28px), transparent 100%);
+	}
+	/* Expanded: directional fades */
+	.outline:hover.is-overflowing,
+	.outline:focus-within.is-overflowing {
+		-webkit-mask-image: linear-gradient(to bottom,
+			transparent 0%, black 16px, black calc(100% - 16px), transparent 100%);
+		mask-image: linear-gradient(to bottom,
+			transparent 0%, black 16px, black calc(100% - 16px), transparent 100%);
+	}
+	.outline:hover.is-overflowing:not(.can-scroll-up),
+	.outline:focus-within.is-overflowing:not(.can-scroll-up) {
+		-webkit-mask-image: linear-gradient(to bottom,
+			black 0%, black calc(100% - 16px), transparent 100%);
+		mask-image: linear-gradient(to bottom,
+			black 0%, black calc(100% - 16px), transparent 100%);
+	}
+	.outline:hover.is-overflowing:not(.can-scroll-down),
+	.outline:focus-within.is-overflowing:not(.can-scroll-down) {
+		-webkit-mask-image: linear-gradient(to bottom,
+			transparent 0%, black 16px, black 100%);
+		mask-image: linear-gradient(to bottom,
+			transparent 0%, black 16px, black 100%);
+	}
+	.outline:hover.is-overflowing:not(.can-scroll-up):not(.can-scroll-down),
+	.outline:focus-within.is-overflowing:not(.can-scroll-up):not(.can-scroll-down) {
+		-webkit-mask-image: none;
+		mask-image: none;
+	}
+
+	/* Bloom open on hover or keyboard focus. */
+	.outline:hover,
+	.outline:focus-within {
+		width: 240px;
+		padding: 14px 12px 14px 18px;
+		background: var(--panel);
+		box-shadow: 0 8px 32px var(--shadow), 0 1px 3px rgba(0,0,0,0.04);
+		backdrop-filter: blur(8px);
+		-webkit-backdrop-filter: blur(8px);
+		scrollbar-width: thin;
+		scrollbar-color: var(--thumb) transparent;
+	}
+
+	/* Bars are bolder when collapsed so the ladder reads at a glance;
+	   they soften on expand since the text labels carry the hierarchy. */
+	.outline .outline-bar::before {
+		background: var(--bar);
+	}
+	.outline:hover .outline-bar::before,
+	.outline:focus-within .outline-bar::before {
+		background: rgba(55, 53, 47, 0.18);
+	}
+	.outline:hover .outline-link.is-active .outline-bar::before,
+	.outline:focus-within .outline-link.is-active .outline-bar::before {
+		background: var(--bar-active);
+	}
+
+	.outline::-webkit-scrollbar { width: 5px; }
+	.outline::-webkit-scrollbar-track { background: transparent; }
+	.outline::-webkit-scrollbar-thumb {
+		background: transparent;
+		border-radius: 3px;
+	}
+	.outline:hover::-webkit-scrollbar-thumb,
+	.outline:focus-within::-webkit-scrollbar-thumb {
+		background: var(--thumb);
+	}
+
+	/* Vertical rail — runs the full height, fill scales with reading progress. */
+	.outline-rail {
+		position: absolute;
+		left: 6px;
+		top: 12px;
+		bottom: 12px;
+		width: 2px;
+		border-radius: 1px;
+		background: var(--rail);
+		overflow: hidden;
+		opacity: 0.7;
+		transition: opacity 0.3s ease;
+	}
+	.outline:hover .outline-rail,
+	.outline:focus-within .outline-rail {
+		opacity: 1;
+	}
+	.outline-rail-fill {
+		position: absolute;
+		inset: 0;
+		background: var(--rail-fill);
+		border-radius: 1px;
+		transform-origin: top;
+		transform: scaleY(0);
+		transition: transform 0.15s linear;
+	}
+
+	/* Sliding active dot on the rail. */
+	.outline-dot {
+		position: absolute;
+		left: 3px;
+		width: 8px;
+		height: 8px;
+		border-radius: 50%;
+		background: var(--dot);
+		box-shadow: 0 0 0 3px var(--accent), 0 1px 4px rgba(0,0,0,0.15);
+		transform: translateY(-50%);
+		transition: top 0.35s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.3s ease;
+		opacity: 0;
+		z-index: 2;
+	}
+	.outline:hover .outline-dot,
+	.outline:focus-within .outline-dot {
+		opacity: 1;
+	}
+
+	/* "Contents" title — hidden collapsed, revealed on hover. */
+	.outline-title {
+		display: block;
+		font-family: 'Gill Sans', 'Gill Sans MT', Calibri, sans-serif;
+		font-size: 10.5px;
+		font-weight: 400;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color: var(--label);
+		margin: 0 0 10px 20px;
+		opacity: 0;
+		transform: translateY(4px);
+		transition: opacity 0.25s ease 0.08s, transform 0.25s ease 0.08s;
+		white-space: nowrap;
+		pointer-events: none;
+	}
+	.outline:hover .outline-title,
+	.outline:focus-within .outline-title {
+		opacity: 1;
+		transform: none;
+	}
+
+	.outline-nav {
+		display: flex;
+		flex-direction: column;
+		gap: 1px;
+	}
+
+	.outline-link {
+		display: flex;
+		align-items: center;
+		min-height: 22px;
+		padding: 2px 4px;
+		text-decoration: none;
+		color: var(--label);
+		border-radius: 6px;
+		transition: background-color 0.18s ease;
+	}
+	.outline-link:hover {
+		background: var(--accent);
+	}
+
+	/* Fixed-width slot; the visible line inside is left-aligned and its width
+	   encodes the level, so the right edges step in like a ladder. */
+	.outline-bar {
+		position: relative;
+		flex: 0 0 22px;
+		align-self: stretch;
+		margin-left: 0;
+		transition: margin-left 0.38s cubic-bezier(0.22, 1, 0.36, 1);
+	}
+	.outline-bar::before {
+		content: '';
+		position: absolute;
+		left: 0;
+		top: 50%;
+		transform: translateY(-50%);
+		height: 2.5px;
+		border-radius: 2px;
+		width: var(--w, 20px);
+		background: var(--bar);
+		transition: background-color 0.2s ease, width 0.25s ease;
+	}
+	.outline:hover .outline-bar,
+	.outline:focus-within .outline-bar {
+		margin-left: 14px;
+	}
+
+	.outline-label {
+		flex: 1 1 auto;
+		min-width: 0;
+		margin-left: 10px;
+		padding-left: var(--indent, 0px);
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		font-size: 16px;
+		letter-spacing: 0.01em;
+		opacity: 0;
+		transform: translateX(6px);
+		transition: opacity 0.28s ease, transform 0.28s ease;
+		/* Stagger: each item delays slightly more */
+		transition-delay: calc(var(--i, 0) * 22ms);
+	}
+
+	.outline:hover .outline-label,
+	.outline:focus-within .outline-label {
+		opacity: 1;
+		transform: none;
+	}
+
+	/* Level → bar length + text indent. */
+	.outline-link[data-level='2'] { --w: 20px; --indent: 0px; }
+	.outline-link[data-level='3'] { --w: 13px; --indent: 10px; }
+	.outline-link[data-level='4'] { --w: 7px;  --indent: 20px; }
+
+	.outline-link:hover .outline-label { color: var(--label-active); }
+
+	/* Active: the dark bar travels the ladder; the title goes dark + semibold. */
+	.outline-link.is-active .outline-bar::before {
+		background: var(--bar-active);
+		width: calc(var(--w, 20px) + 3px);
+	}
+	.outline-link.is-active .outline-label {
+		color: var(--label-active);
+		font-weight: bold;
+	}
+	.outline-link.is-active {
+		background: var(--accent);
+	}
+
+	/* Heading permalink anchors — a quiet '#' that surfaces on hover/focus so
+	   any section can be linked to directly. Lives in the left gutter. */
+	article h2,
+	article h3,
+	article h4 {
+		position: relative;
+	}
+	.heading-anchor {
+		position: absolute;
+		left: -1.4em;
+		top: 50%;
+		transform: translateY(-50%);
+		font-family: 'Gill Sans', 'Gill Sans MT', Calibri, sans-serif;
+		font-size: 0.62em;
+		font-style: normal;
+		font-weight: 400;
+		line-height: 1;
+		color: #c4c2bb;
+		text-decoration: none;
+		opacity: 0;
+		transition: opacity 0.18s ease, color 0.18s ease;
+	}
+	article h2:hover .heading-anchor,
+	article h3:hover .heading-anchor,
+	article h4:hover .heading-anchor,
+	.heading-anchor:focus-visible {
+		opacity: 1;
+	}
+	.heading-anchor:hover { color: #37352f; }
+	html.dark .heading-anchor { color: #4a4a4a; }
+	html.dark .heading-anchor:hover { color: rgba(255, 255, 255, 0.75); }
+	@media (max-width: 760px) {
+		.heading-anchor { left: -1.05em; }
+	}
+
+	/* Dark mode */
+	html.dark .outline {
+		--bar: rgba(255, 255, 255, 0.32);
+		--bar-active: rgba(255, 255, 255, 0.92);
+		--label: #8a8a8a;
+		--label-active: rgba(255, 255, 255, 0.92);
+		--panel: rgba(24, 24, 24, 0.94);
+		--thumb: rgba(255, 255, 255, 0.22);
+		--shadow: rgba(0, 0, 0, 0.5);
+		--rail: rgba(255, 255, 255, 0.07);
+		--rail-fill: rgba(255, 255, 255, 0.3);
+		--dot: rgba(255, 255, 255, 0.9);
+		--accent: rgba(255, 255, 255, 0.05);
+	}
+	html.dark .outline:hover .outline-bar::before,
+	html.dark .outline:focus-within .outline-bar::before {
+		background: rgba(255, 255, 255, 0.16);
+	}
+	html.dark .outline:hover .outline-link.is-active .outline-bar::before,
+	html.dark .outline:focus-within .outline-link.is-active .outline-bar::before {
+		background: var(--bar-active);
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.outline,
+		.outline-bar::before,
+		.outline-label,
+		.outline-dot,
+		.outline-title {
+			transition: none !important;
+			animation: none !important;
+		}
+		.outline { opacity: 1; transform: none; }
+		.outline-label { transform: none; }
+	}
+
+	/* Responsive: hide on narrow screens */
+	@media (max-width: 1100px) {
+		.outline { display: none; }
+	}
+</style>

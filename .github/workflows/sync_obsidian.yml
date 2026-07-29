@@ -1,69 +1,68 @@
-name: Sync Obsidian to Hugo
+name: Build and Deploy Astro Blog
 
 on:
-  schedule:
-    - cron: '0 20 * * *'  # UTC 20:00 (北京时间次日4:00)
   push:
     branches:
       - master
-  pull_request:
-    branches:
-      - master
+      - astro
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  group: "pages"
+  cancel-in-progress: false
 
 jobs:
-  sync:
+  build:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
     steps:
-      - name: Checkout Hugo
+      - name: Checkout blog repo
         uses: actions/checkout@v4
-        with:
-          repository: cheparity/cheparity.github.io
-          token: ${{ secrets.GITHUB_TOKEN }}
-          path: hugo-blog
 
-      - name: Checkout Obsidian Vault
+      - name: Checkout Obsidian vault
         uses: actions/checkout@v4
         with:
           repository: cheparity/Basalt
-          token: ${{ secrets.PERSONAL_TOKEN }}  # 需要创建有 repo 权限的 PAT
-          path: obsidian-vault
+          token: ${{ secrets.BASALT_PAT }}
+          path: vault
 
-      - name: Install uv
-        uses: astral-sh/setup-uv@v6
-
-      - name: Install Hugo
-        uses: peaceiris/actions-hugo@v2
+      - name: Setup Python
+        uses: actions/setup-python@v5
         with:
-          extended: true
+          python-version: "3.12"
 
-      - name: Run publish script
-        run: |
-          cd hugo-blog
-          uv run --no-project --with python-frontmatter ./scripts/publish.py \
-            --vault ../obsidian-vault/MindHub
+      - name: Install Python dependencies
+        run: pip install -r scripts/requirements.txt
 
-      - name: Build Hugo Site
-        run: |
-          cd hugo-blog
-          hugo --minify --gc --cleanDestinationDir
-          echo "niyuta.eu.org" > public/CNAME
+      - name: Run publish.py
+        run: python scripts/publish.py --vault vault/MindHub
 
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v4
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Install Node dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Build Astro site
+        run: bun run build
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
         with:
-          name: hugo-public
-          path: hugo-blog/public
-          retention-days: 1  # 临时保留1天
+          path: ./dist
 
-      - name: Deploy Hugo Site
-        uses: peaceiris/actions-gh-pages@v3
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: hugo-blog/public
-          force_orphan: true     # 始终清空历史记录
+  deploy:
+    needs: build
+    if: github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

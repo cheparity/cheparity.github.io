@@ -1,0 +1,40 @@
+<!-- Inline script to prevent FOUC and set initial theme -->
+<script is:inline define:vars={{ defaultTheme: 'system' as const }}>
+	(function() {
+		const STORAGE_KEY = 'theme-preference';
+
+		// Get stored theme or use default
+		function getStoredTheme() {
+			if (typeof localStorage === 'undefined') return null;
+			try {
+				return localStorage.getItem(STORAGE_KEY);
+			} catch (e) {
+				return null;
+			}
+		}
+
+		// Get system theme preference
+		function getSystemTheme() {
+			return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+		}
+
+		// Apply theme to html element only (button is managed by ThemeToggle)
+		function applyTheme(theme) {
+			const html = document.documentElement;
+			if (theme === 'dark') {
+				html.classList.add('dark');
+			} else {
+				html.classList.remove('dark');
+			}
+		}
+
+		// Initialize immediately
+		const storedTheme = getStoredTheme();
+		if (storedTheme === 'light' || storedTheme === 'dark') {
+			applyTheme(storedTheme);
+		} else {
+			// Fallback to system preference
+			applyTheme(getSystemTheme());
+		}
+	})();
+</script>

@@ -1,0 +1,60 @@
+<!-- Search Toggle Button -->
+<button
+	id="search-toggle"
+	class="search-toggle-btn"
+	type="button"
+	aria-label="Open search"
+	title="Search (Cmd+K)"
+>
+	<svg class="search-icon" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 256 256">
+		<path d="M229.66,218.34l-50.07-50.06a88.11,88.11,0,1,0-11.31,11.31l50.06,50.07a8,8,0,0,0,11.32-11.32ZM40,112a72,72,0,1,1,72,72A72.08,72.08,0,0,1,40,112Z"></path>
+	</svg>
+</button>
+
+<style>
+	.search-toggle-btn {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 2.4rem;
+		height: 2.4rem;
+		padding: 0;
+		background: transparent;
+		border: none;
+		border-radius: 0.375rem;
+		cursor: pointer;
+		transition: background-color 0.15s ease;
+		color: #374151;
+		position: fixed;
+		top: 1.5rem;
+		right: 4.5rem;
+		z-index: 100;
+	}
+
+	.search-toggle-btn:hover {
+		background: rgba(128, 128, 128, 0.2);
+	}
+
+	.search-toggle-btn:focus-visible {
+		outline: 2px solid rgba(128, 128, 128, 0.4);
+		outline-offset: 2px;
+	}
+
+	.search-toggle-btn svg {
+		width: 1.8rem;
+		height: 1.8rem;
+	}
+
+	/* Dark mode styling */
+	html.dark .search-toggle-btn {
+		color: #d1d5db;
+	}
+
+	/* Mobile adjustments */
+	@media (max-width: 760px) {
+		.search-toggle-btn {
+			top: 1rem;
+			right: 3.5rem;
+		}
+	}
+</style>

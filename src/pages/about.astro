@@ -1,0 +1,419 @@
+---
+import { Image } from 'astro:assets';
+import AboutHeroImage from '../assets/blog-placeholder-about.jpg';
+import BaseHead from '../components/BaseHead.astro';
+import Footer from '../components/Footer.astro';
+import Header from '../components/Header.astro';
+import ThemeScript from '../components/ThemeScript.astro';
+import Reveal from '../components/Reveal.astro';
+import { SITE_CONFIG } from '../config';
+import { SITE_TITLE } from '../consts';
+
+const { name, social } = SITE_CONFIG;
+
+// Editorial "currently" list — old-style numerals, not a card grid.
+const threads = [
+	{
+		title: 'Code',
+		body: 'Computer science by day. I care about systems that stay simple as they grow — the kind you can hold in your head.',
+	},
+	{
+		title: 'Music',
+		body: 'Guitar, mostly. Learning a piece and writing a program feel the same: small moves, patiently stacked until they sing.',
+	},
+	{
+		title: 'The lens',
+		body: 'Cosplay and photography. Building a character is just design with a face on it — silhouette, colour, restraint.',
+	},
+];
+---
+
+<html lang="en">
+	<head>
+		<BaseHead title={`About — ${SITE_TITLE}`} description={`About ${name} and this blog.`} />
+		<ThemeScript />
+	</head>
+
+	<body>
+		<Header />
+
+		<main>
+			<article class="about">
+				<div class="about-header" data-reveal>
+					<span class="about-mark" aria-hidden="true">{name.charAt(0)}</span>
+					<p class="about-kicker">About</p>
+					<h1 class="about-name">{name}</h1>
+					<p class="about-lead">
+						A computer-science student who writes to think, plays guitar to
+						listen, and builds costumes to see ideas in three dimensions. This
+						corner of the web is where those threads tangle together on purpose.
+					</p>
+				</div>
+
+				<div class="about-body" data-reveal style="--d: 80ms">
+					<p>
+						I keep this blog the way I keep a practice notebook: messy in
+						private, legible in public. Writing here is less about having
+						answers than about catching the questions while they're still warm.
+						When I can explain something plainly, I finally understand it — so
+						most of what you'll find is me working that out, one post at a time.
+					</p>
+					<p>
+						The shape of the site is deliberate. It borrows from Edward Tufte's
+						quiet, wide-margin typography: long lines of thought in the centre,
+						room to breathe at the edges, nothing shouting for attention. The
+						aim is that the writing feels like the only thing on the page.
+					</p>
+				</div>
+
+				<figure class="about-figure fullwidth" data-reveal style="--d: 120ms">
+					<Image
+						src={AboutHeroImage}
+						alt=""
+						width={1020}
+						height={510}
+						class="about-photo"
+					/>
+					<figcaption>Somewhere between a terminal and a stage.</figcaption>
+				</figure>
+
+				<div class="about-body" data-reveal style="--d: 160ms">
+					<p>
+						Everything here is hand-set and slowly tended — the table of
+						contents that traces your reading, the type chosen to be read, not
+						merely seen. If a detail feels considered, it was. I'd rather make
+						one calm page well than ten loud ones fast.
+					</p>
+				</div>
+
+				<div class="threads" data-reveal style="--d: 200ms">
+					<p class="threads-kicker">What I keep coming back to</p>
+					<ol class="thread-list">
+						{
+							threads.map((t, i) => (
+								<li class="thread">
+									<span class="thread-num numeral" aria-hidden="true">
+										{String(i + 1).padStart(2, '0')}
+									</span>
+									<div class="thread-text">
+										<h2 class="thread-title">{t.title}</h2>
+										<p class="thread-body">{t.body}</p>
+									</div>
+								</li>
+							))
+						}
+					</ol>
+				</div>
+
+				<div class="connect" data-reveal style="--d: 240ms">
+					<p class="connect-kicker">Say hello</p>
+					<div class="connect-links">
+						{
+							social.github && (
+								<a
+									href={social.github}
+									class="connect-link"
+									target="_blank"
+									rel="noopener noreferrer"
+								>
+									<svg
+										viewBox="0 0 24 24"
+										width="20"
+										height="20"
+										fill="none"
+										stroke="currentColor"
+										stroke-width="2"
+										stroke-linecap="round"
+										stroke-linejoin="round"
+										aria-hidden="true"
+									>
+										<path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22" />
+									</svg>
+									<span>GitHub</span>
+								</a>
+							)
+						}
+						{
+							social.email && (
+								<a href={`mailto:${social.email}`} class="connect-link">
+									<svg
+										viewBox="0 0 24 24"
+										width="20"
+										height="20"
+										fill="none"
+										stroke="currentColor"
+										stroke-width="2"
+										stroke-linecap="round"
+										stroke-linejoin="round"
+										aria-hidden="true"
+									>
+										<rect width="20" height="16" x="2" y="4" rx="2" />
+										<path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+									</svg>
+									<span>Email</span>
+								</a>
+							)
+						}
+					</div>
+				</div>
+			</article>
+		</main>
+
+		<Footer />
+		<Reveal />
+	</body>
+</html>
+
+
+<style>
+	.about {
+		position: relative;
+	}
+
+	/* --- Header / characteristic opener --- */
+	.about-header {
+		position: relative;
+		padding: 3rem 0 2rem;
+		overflow: hidden;
+	}
+
+	.about-mark {
+		position: absolute;
+		top: -2.5rem;
+		right: 0;
+		font-family: 'et-book', serif;
+		font-size: 22rem;
+		line-height: 1;
+		font-style: italic;
+		color: rgba(55, 53, 47, 0.05);
+		pointer-events: none;
+		user-select: none;
+		z-index: 0;
+	}
+	html.dark .about-mark {
+		color: rgba(255, 255, 255, 0.04);
+	}
+
+	.about-kicker {
+		position: relative;
+		z-index: 1;
+		font-family: 'Gill Sans', 'Gill Sans MT', Calibri, sans-serif;
+		font-size: 0.8rem;
+		letter-spacing: 0.22em;
+		text-transform: uppercase;
+		color: #999;
+		margin: 0 0 1rem;
+	}
+
+	.about-name {
+		position: relative;
+		z-index: 1;
+		font-family: 'et-book', serif;
+		font-size: 5rem;
+		font-weight: normal;
+		font-style: italic;
+		line-height: 0.95;
+		margin: 0 0 1.6rem;
+		letter-spacing: -0.01em;
+	}
+
+	.about-lead {
+		position: relative;
+		z-index: 1;
+		width: 60%;
+		font-family: 'et-book', serif;
+		font-size: 1.7rem;
+		line-height: 1.5;
+		font-style: italic;
+		color: #444;
+		margin: 0;
+	}
+	html.dark .about-lead {
+		color: #bbb;
+	}
+
+	/* --- Prose blocks (scoped measure, independent of global rules) --- */
+	.about-body {
+		margin: 2.4rem 0;
+	}
+	.about-body p {
+		width: 55%;
+		font-family: 'et-book', serif;
+		font-size: 1.4rem;
+		line-height: 2rem;
+		margin: 0 0 1.4rem;
+	}
+	.about-body p:last-child {
+		margin-bottom: 0;
+	}
+
+	/* --- Full-width figure break --- */
+	.about-figure {
+		margin: 3.5rem 0;
+	}
+	.about-photo {
+		width: 100%;
+		height: auto;
+		display: block;
+		border-radius: 6px;
+		filter: saturate(0.92) contrast(1.02);
+	}
+	.about-figure figcaption {
+		float: none;
+		max-width: none;
+		width: auto;
+		text-align: right;
+		font-family: 'Gill Sans', 'Gill Sans MT', Calibri, sans-serif;
+		font-size: 0.85rem;
+		letter-spacing: 0.04em;
+		font-style: italic;
+		color: #999;
+		margin-top: 0.75rem;
+	}
+
+	/* --- Threads: editorial numeral list, not a card grid --- */
+	.threads {
+		margin: 4rem 0;
+	}
+	.threads-kicker,
+	.connect-kicker {
+		font-family: 'Gill Sans', 'Gill Sans MT', Calibri, sans-serif;
+		font-size: 0.8rem;
+		letter-spacing: 0.22em;
+		text-transform: uppercase;
+		color: #999;
+		margin: 0 0 1.5rem;
+	}
+
+	.thread-list {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		width: 62%;
+	}
+
+	.thread {
+		display: flex;
+		align-items: baseline;
+		gap: 1.6rem;
+		padding: 1.6rem 0;
+		border-top: 1px solid rgba(128, 128, 128, 0.2);
+		transition:
+			transform 0.3s cubic-bezier(0.22, 1, 0.36, 1),
+			padding-left 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+	}
+	.thread:last-child {
+		border-bottom: 1px solid rgba(128, 128, 128, 0.2);
+	}
+	.thread:hover {
+		transform: translateX(6px);
+	}
+
+	.thread-num {
+		flex: 0 0 auto;
+		font-size: 2.6rem;
+		line-height: 1;
+		color: #c4c2bb;
+		transition: color 0.3s ease;
+	}
+	.thread:hover .thread-num {
+		color: #37352f;
+	}
+	html.dark .thread-num {
+		color: #3a3a3a;
+	}
+	html.dark .thread:hover .thread-num {
+		color: rgba(255, 255, 255, 0.7);
+	}
+
+	.thread-title {
+		font-family: 'et-book', serif;
+		font-size: 1.7rem;
+		font-style: italic;
+		font-weight: normal;
+		line-height: 1.1;
+		margin: 0 0 0.5rem;
+	}
+	.thread-body {
+		font-family: 'et-book', serif;
+		font-size: 1.25rem;
+		line-height: 1.7;
+		color: #555;
+		margin: 0;
+	}
+	html.dark .thread-body {
+		color: #aaa;
+	}
+
+	/* --- Connect --- */
+	.connect {
+		margin: 4rem 0 2rem;
+	}
+	.connect-links {
+		display: flex;
+		gap: 0.9rem;
+		flex-wrap: wrap;
+	}
+	.connect-link {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.6rem;
+		padding: 0.7rem 1.3rem;
+		font-family: 'Gill Sans', 'Gill Sans MT', Calibri, sans-serif;
+		font-size: 1rem;
+		letter-spacing: 0.03em;
+		color: inherit;
+		text-decoration: none;
+		border: 1px solid rgba(128, 128, 128, 0.3);
+		border-radius: 999px;
+		transition:
+			transform 0.2s ease,
+			background-color 0.2s ease,
+			border-color 0.2s ease;
+	}
+	.connect-link:hover {
+		transform: translateY(-2px);
+		background: rgba(128, 128, 128, 0.12);
+		border-color: rgba(128, 128, 128, 0.5);
+	}
+	.connect-link:focus-visible {
+		outline: 2px solid rgba(128, 128, 128, 0.5);
+		outline-offset: 3px;
+	}
+
+
+	@media (prefers-reduced-motion: reduce) {
+		[data-reveal] {
+			opacity: 1;
+			transform: none;
+			transition: none;
+		}
+		.thread {
+			transition: none;
+		}
+	}
+
+	@media (max-width: 760px) {
+		.about-mark {
+			font-size: 12rem;
+			top: -1rem;
+		}
+		.about-name {
+			font-size: 3.2rem;
+		}
+		.about-lead,
+		.about-body p,
+		.thread-list {
+			width: 100%;
+		}
+		.about-lead {
+			font-size: 1.4rem;
+		}
+		.thread {
+			gap: 1rem;
+		}
+		.thread-num {
+			font-size: 2rem;
+		}
+	}
+</style>

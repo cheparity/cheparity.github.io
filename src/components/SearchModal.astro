@@ -1,0 +1,433 @@
+---
+---
+
+<!-- Search Modal Overlay -->
+<div id="search-modal" class="search-modal" aria-hidden="true">
+	<!-- Modal Backdrop -->
+	<div class="search-modal-backdrop" id="search-modal-backdrop"></div>
+
+	<!-- Modal Content -->
+	<div class="search-modal-content" role="dialog" aria-modal="true" aria-label="Search">
+		<!-- Search Header -->
+		<div class="search-modal-header">
+			<div class="search-input-wrapper">
+				<svg class="search-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 256 256">
+					<path d="M229.66,218.34l-50.07-50.06a88.11,88.11,0,1,0-11.31,11.31l50.06,50.07a8,8,0,0,0,11.32-11.32ZM40,112a72,72,0,1,1,72,72A72.08,72.08,0,0,1,40,112Z"></path>
+				</svg>
+				<input
+					id="search-input"
+					type="text"
+					placeholder="Search..."
+					autocomplete="off"
+					aria-label="Search"
+				/>
+				<div class="search-shortcut">Cmd+K</div>
+			</div>
+			<button id="search-close" class="search-close-btn" aria-label="Close search">
+				<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 256 256">
+					<path d="M205.66,194.34a8,8,0,0,1-11.32,11.32L128,139.31,61.66,205.66a8,8,0,0,1-11.32-11.32L116.69,128,50.34,61.66A8,8,0,0,1,61.66,50.34L128,116.69l66.34-66.35a8,8,0,0,1,11.32,11.32L139.31,128Z"></path>
+				</svg>
+			</button>
+		</div>
+
+		<!-- Search Results -->
+		<div id="search-results" class="search-results">
+			<div class="search-loading" id="search-loading" style="display: none;">Loading search index...</div>
+			<div class="search-empty" id="search-empty" style="display: none;">No results found</div>
+			<ul id="search-results-list" class="search-results-list"></ul>
+		</div>
+	</div>
+</div>
+
+<script>
+	// Initialize PageFind search
+	let pagefind = null;
+
+	async function initPageFind() {
+		try {
+			// Load PageFind using ES module import
+			// Put path in variable to avoid Vite static analysis
+			const pagefindPath = '/pagefind/pagefind.js';
+			pagefind = await import(/* @vite-ignore */ pagefindPath);
+			return true;
+		} catch (e) {
+			console.error('Failed to load PageFind:', e);
+			return false;
+		}
+	}
+
+	// Modal state management
+	let isOpen = false;
+	let searchTimeout = null;
+
+	const modal = document.getElementById('search-modal');
+	const input = document.getElementById('search-input');
+	const resultsList = document.getElementById('search-results-list');
+	const loading = document.getElementById('search-loading');
+	const empty = document.getElementById('search-empty');
+	const backdrop = document.getElementById('search-modal-backdrop');
+	const closeBtn = document.getElementById('search-close');
+
+	// Open modal
+	function openModal() {
+		isOpen = true;
+		modal.setAttribute('aria-hidden', 'false');
+		modal.style.display = 'flex';
+		document.body.style.overflow = 'hidden';
+		input.focus();
+
+		// Initialize PageFind if not already loaded
+		if (!pagefind) {
+			loading.style.display = 'block';
+			initPageFind().then((success) => {
+				loading.style.display = 'none';
+				if (!success) {
+					empty.textContent = 'Search failed to load. Please refresh the page.';
+					empty.style.display = 'block';
+				}
+			});
+		}
+	}
+
+	// Close modal
+	function closeModal() {
+		isOpen = false;
+		modal.setAttribute('aria-hidden', 'true');
+		modal.style.display = 'none';
+		document.body.style.overflow = '';
+		input.value = '';
+		resultsList.innerHTML = '';
+		empty.style.display = 'none';
+	}
+
+	// Perform search
+	async function performSearch(query) {
+		if (!pagefind) return;
+
+		if (!query.trim()) {
+			resultsList.innerHTML = '';
+			empty.style.display = 'none';
+			return;
+		}
+
+		// Clear previous timeout
+		if (searchTimeout) {
+			clearTimeout(searchTimeout);
+		}
+
+		// Debounce search
+		searchTimeout = setTimeout(async () => {
+			try {
+				const results = await pagefind.search(query);
+				displayResults(results);
+			} catch (e) {
+				console.error('Search error:', e);
+			}
+		}, 300);
+	}
+
+	// Display search results
+	function displayResults(results) {
+		resultsList.innerHTML = '';
+
+		if (results.results.length === 0) {
+			empty.style.display = 'block';
+			return;
+		}
+
+		empty.style.display = 'none';
+
+		// Limit results to 10
+		const limitedResults = results.results.slice(0, 10);
+
+		Promise.all(
+			limitedResults.map((result) => result.data())
+		).then((dataArray) => {
+			dataArray.forEach((data, index) => {
+				const li = document.createElement('li');
+				li.className = 'search-result-item';
+
+				const a = document.createElement('a');
+				a.href = data.url;
+				a.textContent = data.meta.title || data.url;
+				a.className = 'search-result-link';
+
+				const excerpt = document.createElement('div');
+				excerpt.className = 'search-result-excerpt';
+				// Use innerHTML to render <mark> tags for highlighting
+				excerpt.innerHTML = data.excerpt || '';
+
+				li.appendChild(a);
+				li.appendChild(excerpt);
+				resultsList.appendChild(li);
+			});
+		});
+	}
+
+	// Event listeners
+	document.getElementById('search-toggle')?.addEventListener('click', openModal);
+	closeBtn?.addEventListener('click', closeModal);
+	backdrop?.addEventListener('click', closeModal);
+
+	input?.addEventListener('input', (e) => {
+		performSearch(e.target.value);
+	});
+
+	// Keyboard shortcuts
+	document.addEventListener('keydown', (e) => {
+		// Cmd+K or Ctrl+K to open search
+		if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+			e.preventDefault();
+			if (isOpen) {
+				closeModal();
+			} else {
+				openModal();
+			}
+		}
+
+		// Escape to close modal
+		if (e.key === 'Escape' && isOpen) {
+			closeModal();
+		}
+	});
+
+	// Close modal on route change (for SPA navigation)
+	window.addEventListener('popstate', () => {
+		if (isOpen) {
+			closeModal();
+		}
+	});
+</script>
+
+<style>
+	.search-modal {
+		display: none;
+		position: fixed;
+		top: 0;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		z-index: 1000;
+		align-items: flex-start;
+		justify-content: center;
+		padding-top: 15vh;
+	}
+
+	.search-modal-backdrop {
+		position: absolute;
+		top: 0;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		background: rgba(0, 0, 0, 0.5);
+		backdrop-filter: blur(4px);
+	}
+
+	.search-modal-content {
+		position: relative;
+		width: 90%;
+		max-width: 640px;
+		max-height: 70vh;
+		background: #ffffff;
+		border-radius: 12px;
+		box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+		overflow: hidden;
+		display: flex;
+		flex-direction: column;
+	}
+
+	/* Dark mode */
+	:global(html.dark) .search-modal-content {
+		background: #1f2937;
+		box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.3);
+	}
+
+	.search-modal-header {
+		display: flex;
+		align-items: center;
+		padding: 1rem;
+		border-bottom: 1px solid #e5e7eb;
+		gap: 0.75rem;
+	}
+
+	:global(html.dark) .search-modal-header {
+		border-bottom-color: #374151;
+	}
+
+	.search-input-wrapper {
+		flex: 1;
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+		position: relative;
+	}
+
+	.search-input-wrapper .search-icon {
+		color: #9ca3af;
+		flex-shrink: 0;
+	}
+
+	.search-input-wrapper input {
+		flex: 1;
+		border: none;
+		background: transparent;
+		font-size: 1rem;
+		outline: none;
+		color: #111827;
+	}
+
+	:global(html.dark) .search-input-wrapper input {
+		color: #f9fafb;
+	}
+
+	.search-input-wrapper input::placeholder {
+		color: #9ca3af;
+	}
+
+	.search-shortcut {
+		font-size: 0.75rem;
+		padding: 0.25rem 0.5rem;
+		background: #f3f4f6;
+		border-radius: 4px;
+		color: #6b7280;
+		font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+	}
+
+	:global(html.dark) .search-shortcut {
+		background: #374151;
+		color: #9ca3af;
+	}
+
+	.search-close-btn {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 2rem;
+		height: 2rem;
+		padding: 0;
+		background: transparent;
+		border: none;
+		border-radius: 0.375rem;
+		cursor: pointer;
+		color: #6b7280;
+		transition: background-color 0.15s ease, color 0.15s ease;
+		flex-shrink: 0;
+	}
+
+	.search-close-btn:hover {
+		background: rgba(128, 128, 128, 0.2);
+		color: #111827;
+	}
+
+	:global(html.dark) .search-close-btn:hover {
+		color: #f9fafb;
+	}
+
+	.search-results {
+		flex: 1;
+		overflow-y: auto;
+		padding: 0.5rem;
+	}
+
+	.search-loading,
+	.search-empty {
+		padding: 2rem;
+		text-align: center;
+		color: #9ca3af;
+	}
+
+	.search-results-list {
+		list-style: none;
+		padding: 0;
+		margin: 0;
+	}
+
+	.search-result-item {
+		margin: 0.25rem 0;
+	}
+
+	.search-result-link {
+		display: block;
+		padding: 0.75rem 1rem;
+		text-decoration: none;
+		color: #111827;
+		border-radius: 0.5rem;
+		transition: background-color 0.15s ease;
+		font-weight: 500;
+	}
+
+	:global(html.dark) .search-result-link {
+		color: #f9fafb;
+	}
+
+	.search-result-link:hover {
+		background: rgba(128, 128, 128, 0.1);
+	}
+
+	.search-result-excerpt {
+		padding: 0 1rem 0.75rem;
+		font-size: 0.875rem;
+		color: #6b7280;
+		line-height: 1.5;
+	}
+
+	:global(html.dark) .search-result-excerpt {
+		color: #9ca3af;
+	}
+
+	/* Mobile adjustments */
+	@media (max-width: 760px) {
+		.search-modal {
+			padding-top: 10vh;
+		}
+
+		.search-modal-content {
+			width: 95%;
+			max-height: 80vh;
+		}
+
+		.search-shortcut {
+			display: none;
+		}
+	}
+
+	/* Custom scrollbar for search results */
+	.search-results::-webkit-scrollbar {
+		width: 8px;
+	}
+
+	.search-results::-webkit-scrollbar-track {
+		background: transparent;
+	}
+
+	.search-results::-webkit-scrollbar-thumb {
+		background: #d1d5db;
+		border-radius: 4px;
+	}
+
+	:global(html.dark) .search-results::-webkit-scrollbar-thumb {
+		background: #4b5563;
+	}
+
+	.search-results::-webkit-scrollbar-thumb:hover {
+		background: #9ca3af;
+	}
+
+	:global(html.dark) .search-results::-webkit-scrollbar-thumb:hover {
+		background: #6b7280;
+	}
+
+	/* Search result highlighting */
+	.search-result-excerpt :global(mark) {
+		background-color: #fde047;
+		color: #111827;
+		padding: 0.1em 0.2em;
+		border-radius: 0.2em;
+		font-weight: 500;
+	}
+
+	:global(html.dark) .search-result-excerpt :global(mark) {
+		background-color: #854d0e;
+		color: #fef9c3;
+	}
+</style>

@@ -1,3 +1,12 @@
+"""
+publish.py — Obsidian vault → Astro blog content pipeline.
+
+Reads notes from an Obsidian vault, filters by `post: true` frontmatter,
+transforms frontmatter to match Astro's content schema, extracts the title
+from the H1 heading, synthesizes a teaser when description is empty,
+rewrites image paths, and copies attachments to public/assets/.
+"""
+
 import argparse
 import re
 import shutil
@@ -5,41 +14,43 @@ from pathlib import Path
 
 import frontmatter
 
-image_paths = set()
+# Collected image paths referenced in post bodies (for unused-asset cleanup).
+image_paths: set[str] = set()
 
 
-def fix_paths(content: str):
-    # Helper to process attachment paths
-    def process_attachment_path(match, group_num=1):
-        # Remove 'attachments/' prefix and any leading/trailing whitespace
+# ---------------------------------------------------------------------------
+# Image path rewriting
+# ---------------------------------------------------------------------------
+
+def fix_paths(content: str) -> str:
+    """Rewrite Obsidian attachment references to /assets/ public paths."""
+
+    def process_attachment_path(match: re.Match, group_num: int = 1) -> str:
         path_str = match.group(group_num).strip()
-        # Remove 'attachments/' prefix
-        if path_str.startswith('attachments/'):
-            rel_path = path_str[len('attachments/'):]
+        if path_str.startswith("attachments/"):
+            rel_path = path_str[len("attachments/"):]
         else:
             rel_path = path_str
-        # Add to image_paths with 'assets/' prefix
         image_paths.add(f"assets/{rel_path}")
-        # Return with '/assets/' prefix
         return f"/assets/{rel_path}"
-    
-    # rule: ![](attachments/xxx.jpg) -> ![](/assets/xxx.jpg)
+
+    # ![](attachments/xxx.jpg) → ![](/assets/xxx.jpg)
     content = re.sub(
         r"!\[.*?\]\((\s*attachments/[^)]+)\)",
         lambda m: f"![]({process_attachment_path(m)})",
         content,
     )
 
-    # rule: <img src="attachments/xxx.jpg"> -> <img src="/assets/xxx.jpg">
+    # <img src="attachments/xxx.jpg"> → <img src="/assets/xxx.jpg">
     content = re.sub(
-        r'<img([^>]+?)src="\s*(attachments/[^"]+)"',
-        lambda m: f'<img{m.group(1)}src="{process_attachment_path(m, 2)}"',
+        r'(<img[^>]+src=["\'])(attachments/[^"\']+)(["\'])',
+        lambda m: f'{m.group(1)}{process_attachment_path(m, 2)}{m.group(3)}',
         content,
     )
 
-    # rule: ![[attachments/xxx.jpg]] -> ![](/assets/xxx.jpg)
+    # ![[attachments/xxx.jpg]] → ![](/assets/xxx.jpg)
     content = re.sub(
-        r"!\[\[\s*attachments/([^\]]+?)\s*\]\]",
+        r"!\[\[(attachments/[^\]]+)\]\]",
         lambda m: f"![]({process_attachment_path(m)})",
         content,
     )
@@ -47,31 +58,197 @@ def fix_paths(content: str):
     return content
 
 
+# ---------------------------------------------------------------------------
+# Title extraction from H1
+# ---------------------------------------------------------------------------
+
+_H1_RE = re.compile(r"^#\s+(.+)$", re.MULTILINE)
+
+
+def extract_title_and_strip_h1(body: str) -> tuple[str, str]:
+    """Return (title, body_without_h1). Falls back to empty string if no H1."""
+    m = _H1_RE.search(body)
+    if m:
+        title = m.group(1).strip()
+        # Remove the H1 line from the body
+        body = body[:m.start()] + body[m.end():]
+        # Clean up leading blank lines left behind
+        body = body.lstrip("\n")
+        return title, body
+    return "", body
+
+
+# ---------------------------------------------------------------------------
+# Teaser synthesis
+# ---------------------------------------------------------------------------
+
+# Lines that are NOT prose paragraphs
+_SKIP_PREFIXES = ("#", "|", ">", "!", "[[", "-", "*", "```", "<", "$$")
+_SKIP_EXACT = ("---", "***", "___")
+_LEADIN_SUFFIXES = (":", "：")
+_MIN_TEASER_LEN = 20
+_MAX_TEASER_LEN = 160
+_SENTENCE_ENDS = ("。", "！", "？", ".", "!", "?")
+_MAX_SCAN_BLOCKS = 6
+
+
+def _is_prose_line(line: str) -> bool:
+    """Check if a line looks like a prose paragraph (not structural)."""
+    stripped = line.strip()
+    if not stripped:
+        return False
+    if stripped in _SKIP_EXACT:
+        return False
+    for prefix in _SKIP_PREFIXES:
+        if stripped.startswith(prefix):
+            return False
+    # Numbered list items: "1. ", "2) ", etc.
+    if re.match(r"^\d+[.)]\s", stripped):
+        return False
+    return True
+
+
+def synthesize_teaser(body: str) -> str:
+    """Extract a teaser from the first qualifying prose paragraph in body."""
+    lines = body.split("\n")
+    blocks_scanned = 0
+    current_para: list[str] = []
+    in_math_block = False
+    in_code_fence = False
+
+    for line in lines:
+        stripped = line.strip()
+
+        # Track multi-line block boundaries
+        if stripped.startswith("$$"):
+            if in_math_block:
+                in_math_block = False  # closing $$
+            else:
+                in_math_block = True   # opening $$
+                # Flush current para if any
+                if current_para:
+                    blocks_scanned += 1
+                    para_text = " ".join(current_para).strip()
+                    current_para = []
+                    if (
+                        len(para_text) >= _MIN_TEASER_LEN
+                        and not para_text.endswith(_LEADIN_SUFFIXES)
+                    ):
+                        return _truncate_teaser(para_text)
+                    if blocks_scanned >= _MAX_SCAN_BLOCKS:
+                        return ""
+            continue
+
+        if stripped.startswith("```"):
+            in_code_fence = not in_code_fence
+            if current_para:
+                blocks_scanned += 1
+                para_text = " ".join(current_para).strip()
+                current_para = []
+                if (
+                    len(para_text) >= _MIN_TEASER_LEN
+                    and not para_text.endswith(_LEADIN_SUFFIXES)
+                ):
+                    return _truncate_teaser(para_text)
+                if blocks_scanned >= _MAX_SCAN_BLOCKS:
+                    return ""
+            continue
+
+        # Skip lines inside multi-line blocks
+        if in_math_block or in_code_fence:
+            continue
+
+        # Blank line = paragraph boundary
+        if not stripped:
+            if current_para:
+                blocks_scanned += 1
+                para_text = " ".join(current_para).strip()
+                current_para = []
+                if (
+                    len(para_text) >= _MIN_TEASER_LEN
+                    and not para_text.endswith(_LEADIN_SUFFIXES)
+                ):
+                    return _truncate_teaser(para_text)
+                if blocks_scanned >= _MAX_SCAN_BLOCKS:
+                    return ""
+            continue
+
+        if _is_prose_line(line):
+            current_para.append(stripped)
+        else:
+            # Non-prose line breaks current paragraph accumulation
+            if current_para:
+                blocks_scanned += 1
+                para_text = " ".join(current_para).strip()
+                current_para = []
+                if (
+                    len(para_text) >= _MIN_TEASER_LEN
+                    and not para_text.endswith(_LEADIN_SUFFIXES)
+                ):
+                    return _truncate_teaser(para_text)
+                if blocks_scanned >= _MAX_SCAN_BLOCKS:
+                    return ""
+
+    # Handle last paragraph if file doesn't end with blank line
+    if current_para:
+        para_text = " ".join(current_para).strip()
+        if (
+            len(para_text) >= _MIN_TEASER_LEN
+            and not para_text.endswith(_LEADIN_SUFFIXES)
+        ):
+            return _truncate_teaser(para_text)
+
+    return ""
+
+
+def _truncate_teaser(text: str) -> str:
+    """Truncate to ~160 chars at nearest sentence terminator in the tail."""
+    if len(text) <= _MAX_TEASER_LEN:
+        return text
+    # Look for a sentence end within the last 40 chars of the window
+    window = text[:_MAX_TEASER_LEN]
+    best = -1
+    for i in range(len(window) - 1, max(len(window) - 40, 0), -1):
+        if window[i] in _SENTENCE_ENDS:
+            best = i
+            break
+    if best > 0:
+        return window[: best + 1]
+    return window + "…"
+
+
+# ---------------------------------------------------------------------------
+# CLI
+# ---------------------------------------------------------------------------
+
 def get_args():
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(
+        description="Publish Obsidian notes to Astro blog content."
+    )
     parser.add_argument(
         "--vault",
         type=str,
         help="Vault path (source) of Obsidian articles.",
         required=True,
     )
-
     parser.add_argument(
         "--page",
         type=str,
         default="pages",
-        help="Page folder name (source) to determine which folder in Obsidian Vault should be compied as content/page.",
+        help="Page folder name in vault to skip (not copied to Astro).",
     )
-
     parser.add_argument(
         "--assets",
         type=str,
         default="attachments",
-        help="Assets folder name (source) to store images, audio, etc. Will be directly moved to hugo's `static/assets`",
+        help="Assets folder name in vault. Copied to public/assets/.",
     )
-
     return parser.parse_args()
 
+
+# ---------------------------------------------------------------------------
+# Main
+# ---------------------------------------------------------------------------
 
 def main():
     args = get_args()
@@ -81,51 +258,124 @@ def main():
     vault_page = Path(args.page)
     vault_assets = Path(args.assets)
 
-    #! [DANGEROUS] Remove everything in original hugo/content folder
-    shutil.rmtree("content/posts", ignore_errors=True)
+    # Astro output paths
+    blog_dir = Path("src/content/blog")
+    assets_dir = Path("public/assets")
 
-    #! Copy files from Obsidian vaults to content folder
-    # copy profile pages
-    # `content/page` will be overide
-    if (vault / vault_page).exists():
-        print(f"Copy page dir {(vault / vault_page).absolute()}")
-        shutil.copytree(vault / vault_page, "content/page", dirs_exist_ok=True)
+    # Clean previous generated content
+    shutil.rmtree(blog_dir, ignore_errors=True)
+    blog_dir.mkdir(parents=True, exist_ok=True)
 
-    # copy images in Obsidian's attachments/ to /static/assets
+    # Copy attachments → public/assets/
     if (vault / vault_assets).exists():
         print(f"Copy assets dir {(vault / vault_assets).absolute()}")
-        shutil.copytree(vault / vault_assets, "static/assets", dirs_exist_ok=True)
+        shutil.rmtree(assets_dir, ignore_errors=True)
+        shutil.copytree(vault / vault_assets, assets_dir, dirs_exist_ok=True)
 
-    # copy notes to `content/posts`
+    # Process notes → src/content/blog/
     for item in vault.rglob("*.md"):
+        # Skip .obsidian config and pages directory
         if ".obsidian" in item.parts or vault_page in item.parts:
             continue
+
         article_fm = frontmatter.load(str(item))
         if "post" not in article_fm or not article_fm["post"]:
             continue
 
-        print(f"Copy notes {item.name}")
-        dst = Path("content/posts") / item.relative_to(vault)
-        dst.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(item, dst)
-        article_fm = frontmatter.load(dst)
-        article_fm.content = fix_paths(article_fm.content)
-        # trim the front matters: del `post`, change `title` to filename and `draft: false`
-        del article_fm["post"]
-        #! hugo does not support chinese path
-        article_fm["title"] = dst.stem
-        print(f"Note stem: {dst.stem}")
-        article_fm["draft"] = False
-        frontmatter.dump(article_fm, dst)
+        print(f"Processing note: {item.name}")
 
-    # print(image_paths)
-    # delete unused assets
+        # --- Body transformations ---
+        body = article_fm.content
+
+        # Extract title from H1
+        title, body = extract_title_and_strip_h1(body)
+        if not title:
+            # Fallback: filename stem (without .md)
+            title = item.stem
+            print(f"  No H1 found, using filename stem: {title}")
+
+        # Fix image paths
+        body = fix_paths(body)
+
+        # --- Frontmatter mapping ---
+        new_meta: dict = {}
+
+        # title
+        new_meta["title"] = title
+
+        # description: use vault value if present, else synthesize
+        vault_desc = article_fm.get("description", "")
+        if vault_desc and str(vault_desc).strip():
+            new_meta["description"] = str(vault_desc).strip()
+        else:
+            teaser = synthesize_teaser(body)
+            if teaser:
+                new_meta["description"] = teaser
+                print(f"  Synthesized teaser: {teaser[:60]}…")
+            # If no teaser either, omit description entirely (optional in schema)
+
+        # pubDate from vault `date`
+        if "date" in article_fm and article_fm["date"]:
+            new_meta["pubDate"] = article_fm["date"]
+        else:
+            # Fallback: file modification time
+            import datetime
+            new_meta["pubDate"] = datetime.datetime.fromtimestamp(
+                item.stat().st_mtime
+            ).isoformat()
+            print(f"  No date in frontmatter, using mtime")
+
+        # updatedDate from vault `modified`
+        if "modified" in article_fm and article_fm["modified"]:
+            new_meta["updatedDate"] = article_fm["modified"]
+
+        # tags: pass through
+        if "tags" in article_fm and article_fm["tags"]:
+            tags = article_fm["tags"]
+            if isinstance(tags, str):
+                tags = [t.strip() for t in tags.split(",") if t.strip()]
+            new_meta["tags"] = tags
+
+        # --- Write output file ---
+        # Use a slug-friendly filename: the vault relative path, but flatten
+        # directory structure into the filename to avoid deep nesting issues.
+        # e.g. notes/Career/ICML 2026 论文筛选.md → ICML-2026-论文筛选.md
+        slug = item.stem
+        # Replace spaces with hyphens for URL-friendliness
+        slug = re.sub(r"\s+", "-", slug)
+        # Remove characters that are problematic in URLs
+        slug = re.sub(r"[^\w\-.一-鿿]", "", slug)
+        dst = blog_dir / f"{slug}.md"
+
+        # Handle duplicate slugs
+        counter = 1
+        while dst.exists():
+            dst = blog_dir / f"{slug}-{counter}.md"
+            counter += 1
+
+        # Build the final frontmatter + body
+        post = frontmatter.Post(body, **new_meta)
+        with open(dst, "w", encoding="utf-8") as f:
+            frontmatter.dump(post, f)
+
+        print(f"  → {dst}")
+
+    # --- Clean unused assets ---
     global image_paths
     image_paths = {Path(p) for p in image_paths}
 
-    for item in Path("static/assets").iterdir():
-        if item.relative_to(Path("static")) not in image_paths:
-            item.unlink()  # delete item
+    if assets_dir.exists():
+        removed = 0
+        for item in assets_dir.rglob("*"):
+            if item.is_file():
+                rel = item.relative_to(assets_dir.parent)  # relative to public/
+                if rel not in image_paths:
+                    item.unlink()
+                    removed += 1
+        if removed:
+            print(f"Removed {removed} unused asset(s)")
+
+    print("Done.")
 
 
 if __name__ == "__main__":

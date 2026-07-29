@@ -1,0 +1,154 @@
+---
+import { Image } from 'astro:assets';
+import type { CollectionEntry } from 'astro:content';
+import BaseHead from '../components/BaseHead.astro';
+import Footer from '../components/Footer.astro';
+import FormattedDate from '../components/FormattedDate.astro';
+import Header from '../components/Header.astro';
+import ThemeScript from '../components/ThemeScript.astro';
+import Outline from '../components/Outline.astro';
+import { readingMinutes } from '../utils/readingTime';
+import { SITE_TITLE } from '../consts';
+
+type PostLink = { title: string; id: string };
+type Props = CollectionEntry<'blog'>['data'] & {
+	slug: string;
+	prevPost?: PostLink;
+	nextPost?: PostLink;
+};
+
+const { title, description, pubDate, updatedDate, heroImage, slug, prevPost, nextPost } = Astro.props;
+const readMins = readingMinutes(slug);
+---
+
+<html lang="en">
+	<head>
+		<BaseHead title={title} description={description} />
+		<ThemeScript />
+	</head>
+
+	<body>
+		<Header />
+
+		<main>
+			<article>
+				{heroImage && (
+					<figure class="fullwidth">
+						<Image width={1020} height={510} src={heroImage} alt="" />
+					</figure>
+				)}
+				<section>
+					<div class="date">
+						<FormattedDate date={pubDate} />
+						{updatedDate && (
+							<span class="last-updated-on">
+								Updated <FormattedDate date={updatedDate} />
+							</span>
+						)}
+						<span class="read-time"> · {readMins} min read</span>
+					</div>
+					<h1>{title}</h1>
+					<hr />
+				</section>
+				<section>
+					<slot />
+				</section>
+				{(prevPost || nextPost) && (
+					<nav class="post-nav" aria-label="Post navigation">
+						{prevPost ? (
+							<a href={`/blog/${prevPost.id}/`} class="post-nav-link post-nav-prev">
+								<span class="post-nav-dir">← Previous</span>
+								<span class="post-nav-title">{prevPost.title}</span>
+							</a>
+						) : (
+							<span />
+						)}
+						{nextPost ? (
+							<a href={`/blog/${nextPost.id}/`} class="post-nav-link post-nav-next">
+								<span class="post-nav-dir">Next →</span>
+								<span class="post-nav-title">{nextPost.title}</span>
+							</a>
+						) : (
+							<span />
+						)}
+					</nav>
+				)}
+			</article>
+		</main>
+		<Outline />
+		<Footer />
+	</body>
+</html>
+
+<style>
+	.read-time {
+		color: #666;
+		font-style: italic;
+	}
+	html.dark .read-time {
+		color: #999;
+	}
+
+	.post-nav {
+		width: 55%;
+		margin-top: 3rem;
+		padding-top: 1.5rem;
+		border-top: 1px solid #ccc;
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: 2rem;
+		font-family: 'et-book', serif;
+	}
+	html.dark .post-nav {
+		border-top-color: rgba(221, 221, 221, 0.3);
+	}
+
+	.post-nav-link {
+		display: flex;
+		flex-direction: column;
+		gap: 0.3rem;
+		text-decoration: none;
+		color: inherit;
+		transition: transform 0.2s ease;
+	}
+	.post-nav-next {
+		text-align: right;
+		align-items: flex-end;
+	}
+	.post-nav-link:hover {
+		transform: translateY(-2px);
+	}
+
+	.post-nav-dir {
+		font-family: 'Gill Sans', 'Gill Sans MT', Calibri, sans-serif;
+		font-size: 0.75rem;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color: #999;
+	}
+
+	.post-nav-title {
+		font-size: 1.3rem;
+		font-style: italic;
+		line-height: 1.3;
+		text-decoration: underline;
+		text-decoration-color: transparent;
+		text-underline-offset: 0.15em;
+		transition: text-decoration-color 0.2s ease;
+	}
+	.post-nav-link:hover .post-nav-title {
+		text-decoration-color: currentColor;
+	}
+
+	@media (max-width: 760px) {
+		.post-nav {
+			width: 100%;
+			grid-template-columns: 1fr;
+			gap: 1.25rem;
+		}
+		.post-nav-next {
+			text-align: left;
+			align-items: flex-start;
+		}
+	}
+</style>

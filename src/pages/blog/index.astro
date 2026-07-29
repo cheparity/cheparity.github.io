@@ -1,0 +1,49 @@
+---
+import { getCollection } from 'astro:content';
+import BaseHead from '../../components/BaseHead.astro';
+import Footer from '../../components/Footer.astro';
+import Header from '../../components/Header.astro';
+import ThemeScript from '../../components/ThemeScript.astro';
+import ArticleCard from '../../components/ArticleCard.astro';
+import Reveal from '../../components/Reveal.astro';
+import { SITE_DESCRIPTION, SITE_TITLE } from '../../consts';
+
+const posts = (await getCollection('blog')).sort(
+	(a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf(),
+);
+---
+
+<html lang="en">
+	<head>
+		<BaseHead title={`${SITE_TITLE} - Blog`} description={SITE_DESCRIPTION} />
+		<ThemeScript />
+	</head>
+
+	<body>
+		<Header />
+
+		<main>
+			<article>
+				<section>
+					<h1>Blog</h1>
+					<p>
+						Writing on topics that matter. Thoughts, ideas, and explorations.
+					</p>
+				</section>
+
+				<section class="archive">
+					{posts.map((post, i) => <ArticleCard post={post} index={i} />)}
+				</section>
+			</article>
+		</main>
+
+		<Footer />
+		<Reveal />
+	</body>
+</html>
+
+<style>
+	.archive {
+		margin-top: 1rem;
+	}
+</style>

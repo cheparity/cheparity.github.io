@@ -1,0 +1,181 @@
+---
+// Server-side: skip theme detection for static builds
+// Theme is fully handled by client-side JavaScript to avoid prerender warnings
+const STORAGE_KEY = 'theme-preference';
+const isDark = false; // Default state, client-side will update immediately
+---
+
+<!-- Theme Toggle Button -->
+<button
+	id="theme-toggle"
+	class:list={["theme-toggle-btn", { "is-dark": isDark }]}
+	type="button"
+	aria-label="Toggle theme"
+	title="Toggle theme"
+>
+	<!-- Sun icon (shown in dark mode) -->
+	<svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 256 256">
+		<path d="M120,40V16a8,8,0,0,1,16,0V40a8,8,0,0,1-16,0Zm8,24a64,64,0,1,0,64,64A64.07,64.07,0,0,0,128,64ZM58.34,69.66A8,8,0,0,0,69.66,58.34l-16-16A8,8,0,0,0,42.34,53.66Zm0,116.68-16,16a8,8,0,0,0,11.32,11.32l16-16a8,8,0,0,0-11.32-11.32ZM192,72a8,8,0,0,0,5.66-2.34l16-16a8,8,0,0,0-11.32-11.32l-16,16A8,8,0,0,0,192,72Zm5.66,114.34a8,8,0,0,0-11.32,11.32l16,16a8,8,0,0,0,11.32-11.32ZM48,128a8,8,0,0,0-8-8H16a8,8,0,0,0,0,16H40A8,8,0,0,0,48,128Zm80,80a8,8,0,0,0-8,8v24a8,8,0,0,0,16,0V216A8,8,0,0,0,128,208Zm112-88H216a8,8,0,0,0,0,16h24a8,8,0,0,0,0-16Z"></path>
+	</svg>
+
+	<!-- Moon icon (shown in light mode) -->
+	<svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 256 256">
+		<path d="M235.54,150.21a104.84,104.84,0,0,1-37,52.91A104,104,0,0,1,32,120,103.09,103.09,0,0,1,52.88,57.48a104.84,104.84,0,0,1,52.91-37,8,8,0,0,1,10,10,88.08,88.08,0,0,0,109.8,109.8,8,8,0,0,1,10,10Z"></path>
+	</svg>
+</button>
+
+<script is:inline>
+	(function() {
+		const STORAGE_KEY = 'theme-preference';
+
+		// Get stored theme
+		function getStoredTheme() {
+			if (typeof localStorage === 'undefined') return null;
+			try {
+				return localStorage.getItem(STORAGE_KEY);
+			} catch (e) {
+				return null;
+			}
+		}
+
+		// Get system theme preference
+		function getSystemTheme() {
+			return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+		}
+
+		// Save theme preference
+		function setStoredTheme(theme) {
+			if (typeof localStorage === 'undefined') return;
+			try {
+				localStorage.setItem(STORAGE_KEY, theme);
+			} catch (e) {
+				// localStorage not available
+			}
+		}
+
+		// Apply theme to document
+		function applyTheme(theme) {
+			const html = document.documentElement;
+			const btn = document.getElementById('theme-toggle');
+
+			if (theme === 'dark') {
+				html.classList.add('dark');
+				if (btn) btn.classList.add('is-dark');
+			} else {
+				html.classList.remove('dark');
+				if (btn) btn.classList.remove('is-dark');
+			}
+		}
+
+		// Toggle theme
+		function toggleTheme() {
+			const html = document.documentElement;
+			const isDark = html.classList.contains('dark');
+			const newTheme = isDark ? 'light' : 'dark';
+
+			// Store preference
+			setStoredTheme(newTheme);
+			applyTheme(newTheme);
+		}
+
+		// Initialize immediately (before DOM is fully parsed)
+		const storedTheme = getStoredTheme();
+		const initialTheme = (storedTheme === 'light' || storedTheme === 'dark')
+			? storedTheme
+			: getSystemTheme();
+
+		// Apply theme immediately
+		applyTheme(initialTheme);
+
+		// Attach click handler and sync when DOM is ready
+		function onDOMReady() {
+			const btn = document.getElementById('theme-toggle');
+			if (!btn) return;
+
+			// Sync button state (in case server-side state was wrong)
+			const html = document.documentElement;
+			const currentTheme = html.classList.contains('dark') ? 'dark' : 'light';
+			const buttonState = btn.classList.contains('is-dark') ? 'dark' : 'light';
+
+			// Only apply if out of sync (prevents flicker)
+			if (currentTheme !== buttonState) {
+				applyTheme(currentTheme);
+			}
+
+			// Attach click handler
+			btn.addEventListener('click', toggleTheme);
+		}
+
+		// Initialize
+		if (document.readyState === 'loading') {
+			document.addEventListener('DOMContentLoaded', onDOMReady);
+		} else {
+			onDOMReady();
+		}
+	})();
+</script>
+
+<style>
+	.theme-toggle-btn {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 2.4rem;
+		height: 2.4rem;
+		padding: 0;
+		background: transparent;
+		border: none;
+		border-radius: 0.375rem;
+		cursor: pointer;
+		color: #374151;
+		position: fixed;
+		top: 1.5rem;
+		right: 1.5rem;
+		z-index: 100;
+	}
+
+	.theme-toggle-btn:hover {
+		background: rgba(128, 128, 128, 0.2);
+	}
+
+	.theme-toggle-btn:focus-visible {
+		outline: 2px solid rgba(128, 128, 128, 0.4);
+		outline-offset: 2px;
+	}
+
+	.theme-toggle-btn svg {
+		width: 1.8rem;
+		height: 1.8rem;
+		position: absolute;
+	}
+
+	/* Light mode: show moon, hide sun */
+	.theme-toggle-btn:not(.is-dark) .sun-icon {
+		opacity: 0;
+	}
+
+	.theme-toggle-btn:not(.is-dark) .moon-icon {
+		opacity: 1;
+	}
+
+	/* Dark mode: show sun, hide moon */
+	.theme-toggle-btn.is-dark {
+		color: #d1d5db;
+	}
+
+	.theme-toggle-btn.is-dark .sun-icon {
+		opacity: 1;
+	}
+
+	.theme-toggle-btn.is-dark .moon-icon {
+		opacity: 0;
+	}
+
+	/* Mobile adjustments */
+	@media (max-width: 760px) {
+		.theme-toggle-btn {
+			top: 1rem;
+			right: 1rem;
+		}
+	}
+</style>

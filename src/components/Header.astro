@@ -1,0 +1,18 @@
+---
+import HeaderLink from './HeaderLink.astro';
+import ThemeToggle from './ThemeToggle.astro';
+import SearchButton from './SearchButton.astro';
+import SearchModal from './SearchModal.astro';
+---
+
+<header class="site-header">
+	<nav class="site-nav">
+		<HeaderLink href="/">Home</HeaderLink>
+		<HeaderLink href="/blog">Blog</HeaderLink>
+		<HeaderLink href="/tags">Tags</HeaderLink>
+		<HeaderLink href="/about">About</HeaderLink>
+		<ThemeToggle />
+	</nav>
+</header>
+<SearchButton />
+<SearchModal />
