@@ -467,3 +467,10 @@
   }
 }
 
+
+/* KaTeX display math: constrain to Tufte text column, scroll if wider */
+section > .katex-display {
+  width: 55%;
+  overflow-x: auto;
+  overflow-y: hidden;
+}

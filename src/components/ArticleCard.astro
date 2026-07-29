@@ -16,6 +16,23 @@ const readMins = readingMinutes(id);
 // archive doesn't leave the last cards waiting too long.
 const revealDelay = Math.min(index ?? 0, 6) * 70;
 
+/** Render inline markdown (bold, italic, code, links) to HTML; preserve $...$ for KaTeX auto-render. */
+function renderInlineMd(text: string): string {
+  let s = text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+  // Inline code (protect from further transforms)
+  s = s.replace(/`([^`]+)`/g, '<code>$1</code>');
+  // Bold
+  s = s.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  // Italic
+  s = s.replace(/\*(.+?)\*/g, '<em>$1</em>');
+  // Links → plain text
+  s = s.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1');
+  return s;
+}
+
 const formatDate = (date: Date) => {
   return new Date(date).toLocaleDateString('en-US', {
     year: 'numeric',
@@ -31,7 +48,7 @@ const formatDate = (date: Date) => {
       <a href={`/blog/${id}/`} class="article-title-link">
         <h2 class="article-title">{title}</h2>
       </a>
-      {description && <p class="article-description">{description}</p>}
+      {description && <p class="article-description" set:html={renderInlineMd(description)} />}
       <div class="article-meta">
         <time datetime={pubDate.toISOString()} class="article-date">
           {formatDate(pubDate)}
