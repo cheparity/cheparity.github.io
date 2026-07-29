@@ -38,6 +38,31 @@ case "$ARCH" in
 esac
 
 # =============================================================================
+# Network detection: GitHub connectivity + mirror fallback
+# =============================================================================
+
+GH_PROXY=""
+gh_url() { echo "${GH_PROXY}$1"; }
+
+echo ""
+echo -e "  ${CYAN}▸${NC} Checking GitHub connectivity..."
+if curl -sfI --connect-timeout 3 https://github.com &>/dev/null; then
+    ok "GitHub reachable"
+else
+    warn "GitHub unreachable, trying mirrors..."
+    for MIRROR in "https://ghfast.top/" "https://ghproxy.cc/" "https://mirror.ghproxy.com/"; do
+        if curl -sfI --connect-timeout 3 "${MIRROR}https://github.com" &>/dev/null; then
+            GH_PROXY="$MIRROR"
+            ok "Using mirror: ${GH_PROXY}"
+            break
+        fi
+    done
+    if [ -z "$GH_PROXY" ]; then
+        warn "No mirror available, downloads may fail"
+    fi
+fi
+
+# =============================================================================
 # Package manager detection: brew -> apt -> dnf
 # =============================================================================
 
@@ -116,7 +141,7 @@ elif [ -n "$PKG_MGR" ]; then
     pkg_install jq
     ok "jq installed (package manager)"
 else
-    curl -fsSL "https://github.com/jqlang/jq/releases/download/jq-1.7.1/jq-linux-${ARCH}" \
+    curl -fsSL --retry 3 "$(gh_url "https://github.com/jqlang/jq/releases/download/jq-1.7.1/jq-linux-${ARCH}")" \
         -o /tmp/jq
     chmod +x /tmp/jq
     $SUDO mv /tmp/jq /usr/local/bin/jq
@@ -166,8 +191,8 @@ elif [ "$PKG_MGR" = "brew" ] || [ "$PKG_MGR" = "apt" ]; then
     ok "nvim installed (package manager)"
 else
     NVIM_ARCH=$([ "$ARCH" = "amd64" ] && echo x86_64 || echo arm64)
-    NVIM_VERSION=$(curl -fsSL https://api.github.com/repos/neovim/neovim/releases/latest | jq -r '.tag_name')
-    curl -fsSL "https://github.com/neovim/neovim/releases/download/${NVIM_VERSION}/nvim-linux-${NVIM_ARCH}.tar.gz" \
+    NVIM_VERSION=$(curl -fsSL --retry 3 "$(gh_url "https://api.github.com/repos/neovim/neovim/releases/latest")" | jq -r '.tag_name')
+    curl -fsSL --retry 3 "$(gh_url "https://github.com/neovim/neovim/releases/download/${NVIM_VERSION}/nvim-linux-${NVIM_ARCH}.tar.gz")" \
         | $SUDO tar xz -C /opt
     $SUDO ln -sf /opt/nvim-linux-${NVIM_ARCH}/bin/nvim /usr/local/bin/nvim
     ok "nvim installed (binary)"
@@ -192,8 +217,7 @@ else
             skip "$FONT Nerd Font"
         else
             mkdir -p "$FONT_DIR"
-            curl -fsSL --http1.1 --retry 3 --retry-delay 2 \
-                "https://github.com/ryanoasis/nerd-fonts/releases/latest/download/${FONT}.tar.xz" \
+            curl -fsSL --retry 3 "$(gh_url "https://github.com/ryanoasis/nerd-fonts/releases/latest/download/${FONT}.tar.xz")" \
                 | tar xJ -C "$FONT_DIR"
             ok "$FONT Nerd Font installed"
         fi
@@ -211,8 +235,8 @@ elif [ "$PKG_MGR" = "brew" ]; then
     ok "tree-sitter installed (brew)"
 else
     TS_ARCH=$([ "$ARCH" = "amd64" ] && echo x64 || echo arm64)
-    TS_VERSION=$(curl -fsSL https://api.github.com/repos/tree-sitter/tree-sitter/releases/latest | jq -r '.tag_name')
-    curl -fsSL "https://github.com/tree-sitter/tree-sitter/releases/download/${TS_VERSION}/tree-sitter-cli-linux-${TS_ARCH}.zip" \
+    TS_VERSION=$(curl -fsSL --retry 3 "$(gh_url "https://api.github.com/repos/tree-sitter/tree-sitter/releases/latest")" | jq -r '.tag_name')
+    curl -fsSL --retry 3 "$(gh_url "https://github.com/tree-sitter/tree-sitter/releases/download/${TS_VERSION}/tree-sitter-cli-linux-${TS_ARCH}.zip")" \
         -o /tmp/tree-sitter-cli.zip
     unzip -o /tmp/tree-sitter-cli.zip -d /tmp/tree-sitter-cli
     $SUDO mv /tmp/tree-sitter-cli/tree-sitter /usr/local/bin/tree-sitter
@@ -230,8 +254,8 @@ elif [ "$PKG_MGR" = "brew" ]; then
     ok "lazygit installed (brew)"
 else
     LG_ARCH=$([ "$ARCH" = "amd64" ] && echo x86_64 || echo arm64)
-    LG_VERSION=$(curl -fsSL https://api.github.com/repos/jesseduffield/lazygit/releases/latest | jq -r '.tag_name' | sed 's/^v//')
-    curl -fsSL "https://github.com/jesseduffield/lazygit/releases/download/v${LG_VERSION}/lazygit_${LG_VERSION}_Linux_${LG_ARCH}.tar.gz" \
+    LG_VERSION=$(curl -fsSL --retry 3 "$(gh_url "https://api.github.com/repos/jesseduffield/lazygit/releases/latest")" | jq -r '.tag_name' | sed 's/^v//')
+    curl -fsSL --retry 3 "$(gh_url "https://github.com/jesseduffield/lazygit/releases/download/v${LG_VERSION}/lazygit_${LG_VERSION}_Linux_${LG_ARCH}.tar.gz")" \
         | tar xz -C /tmp lazygit
     $SUDO mv /tmp/lazygit /usr/local/bin/lazygit
     ok "lazygit installed (binary)"
@@ -246,8 +270,8 @@ elif [ -n "$PKG_MGR" ]; then
     pkg_install fzf
     ok "fzf installed (package manager)"
 else
-    FZF_VERSION=$(curl -fsSL https://api.github.com/repos/junegunn/fzf/releases/latest | jq -r '.tag_name' | sed 's/^v//')
-    curl -fsSL "https://github.com/junegunn/fzf/releases/download/v${FZF_VERSION}/fzf-${FZF_VERSION}-linux_${ARCH}.tar.gz" \
+    FZF_VERSION=$(curl -fsSL --retry 3 "$(gh_url "https://api.github.com/repos/junegunn/fzf/releases/latest")" | jq -r '.tag_name' | sed 's/^v//')
+    curl -fsSL --retry 3 "$(gh_url "https://github.com/junegunn/fzf/releases/download/v${FZF_VERSION}/fzf-${FZF_VERSION}-linux_${ARCH}.tar.gz")" \
         | tar xz -C /tmp
     $SUDO mv /tmp/fzf /usr/local/bin/fzf
     ok "fzf installed (binary)"
@@ -258,16 +282,13 @@ echo ""
 echo -e "  ${CYAN}▸${NC} ripgrep (fzf-lua live grep)"
 if have rg; then
     skip "ripgrep"
-elif [ "$PKG_MGR" = "apt" ]; then
-    pkg_install ripgrep
-    ok "ripgrep installed (apt)"
 elif [ -n "$PKG_MGR" ]; then
     pkg_install ripgrep
     ok "ripgrep installed (package manager)"
 else
     RG_ARCH=$([ "$ARCH" = "amd64" ] && echo x86_64 || echo aarch64)
-    RG_VERSION=$(curl -fsSL https://api.github.com/repos/BurntSushi/ripgrep/releases/latest | jq -r '.tag_name')
-    curl -fsSL "https://github.com/BurntSushi/ripgrep/releases/download/${RG_VERSION}/ripgrep-${RG_VERSION}-${RG_ARCH}-unknown-linux-musl.tar.gz" \
+    RG_VERSION=$(curl -fsSL --retry 3 "$(gh_url "https://api.github.com/repos/BurntSushi/ripgrep/releases/latest")" | jq -r '.tag_name')
+    curl -fsSL --retry 3 "$(gh_url "https://github.com/BurntSushi/ripgrep/releases/download/${RG_VERSION}/ripgrep-${RG_VERSION}-${RG_ARCH}-unknown-linux-musl.tar.gz")" \
         | tar xz -C /tmp
     $SUDO mv "/tmp/ripgrep-${RG_VERSION}-${RG_ARCH}-unknown-linux-musl/rg" /usr/local/bin/rg
     rm -rf "/tmp/ripgrep-${RG_VERSION}-${RG_ARCH}-unknown-linux-musl"
@@ -290,8 +311,8 @@ elif [ "$PKG_MGR" = "brew" ]; then
     ok "fd installed (brew)"
 else
     FD_ARCH=$([ "$ARCH" = "amd64" ] && echo x86_64 || echo aarch64)
-    FD_VERSION=$(curl -fsSL https://api.github.com/repos/sharkdp/fd/releases/latest | jq -r '.tag_name')
-    curl -fsSL "https://github.com/sharkdp/fd/releases/download/${FD_VERSION}/fd-${FD_VERSION}-${FD_ARCH}-unknown-linux-gnu.tar.gz" \
+    FD_VERSION=$(curl -fsSL --retry 3 "$(gh_url "https://api.github.com/repos/sharkdp/fd/releases/latest")" | jq -r '.tag_name')
+    curl -fsSL --retry 3 "$(gh_url "https://github.com/sharkdp/fd/releases/download/${FD_VERSION}/fd-${FD_VERSION}-${FD_ARCH}-unknown-linux-gnu.tar.gz")" \
         | tar xz -C /tmp
     $SUDO mv "/tmp/fd-${FD_VERSION}-${FD_ARCH}-unknown-linux-gnu/fd" /usr/local/bin/fd
     rm -rf "/tmp/fd-${FD_VERSION}-${FD_ARCH}-unknown-linux-gnu"
@@ -321,8 +342,8 @@ elif [ "$PKG_MGR" = "dnf" ]; then
     pkg_install gh
     ok "gh installed (dnf)"
 else
-    GH_VERSION=$(curl -fsSL https://api.github.com/repos/cli/cli/releases/latest | jq -r '.tag_name' | sed 's/^v//')
-    curl -fsSL "https://github.com/cli/cli/releases/download/v${GH_VERSION}/gh_${GH_VERSION}_linux_${ARCH}.tar.gz" \
+    GH_VERSION=$(curl -fsSL --retry 3 "$(gh_url "https://api.github.com/repos/cli/cli/releases/latest")" | jq -r '.tag_name' | sed 's/^v//')
+    curl -fsSL --retry 3 "$(gh_url "https://github.com/cli/cli/releases/download/v${GH_VERSION}/gh_${GH_VERSION}_linux_${ARCH}.tar.gz")" \
         | tar xz -C /tmp
     $SUDO mv "/tmp/gh_${GH_VERSION}_linux_${ARCH}/bin/gh" /usr/local/bin/gh
     rm -rf "/tmp/gh_${GH_VERSION}_linux_${ARCH}"
