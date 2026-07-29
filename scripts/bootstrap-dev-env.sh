@@ -116,7 +116,6 @@ if [ "$PKG_MGR" = "brew" ]; then
         brew install --cask "${TO_INSTALL[@]}" && ok "Installed casks: ${TO_INSTALL[*]}" || warn "Some casks failed to install"
     fi
 
-    ok "All tools installed via Homebrew"
     BREW_DONE=true
 fi
 
@@ -191,7 +190,7 @@ else
         && { export PATH="/usr/local/go/bin:$PATH"; ok "go installed (go.dev)"; } \
         || warn "go install failed"
 fi
-export PATH="$HOME/go/bin:$PATH"
+have go && export PATH="$HOME/go/bin:$PATH"
 
 # ---- Bun ----
 echo ""
@@ -244,7 +243,6 @@ if have nvim; then
     skip "nvim"
 elif have cargo; then
     cargo install bob-nvim && {
-        export PATH="$HOME/.cargo/bin:$PATH"
         bob install latest && bob use latest
         export PATH="$HOME/.local/share/bob/nvim-bin:$PATH"
         ok "nvim installed (bob-nvim)"
