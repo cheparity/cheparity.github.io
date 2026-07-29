@@ -52,7 +52,7 @@
     @apply w-[87.5%] mx-auto pl-[12.5%] max-w-[1400px];
     @apply font-serif;
     @apply leading-[1.4];
-    counter-reset: sidenote-counter;
+    counter-reset: sidenote-counter katexEqnNo mmlEqnNo;
     background-color: #fffff8;
     background-image:
       repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(200, 190, 170, 0.015) 2px, rgba(200, 190, 170, 0.015) 4px),
