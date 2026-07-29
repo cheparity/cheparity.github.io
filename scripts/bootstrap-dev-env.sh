@@ -6,9 +6,9 @@
 #   curl -fsSL https://raw.githubusercontent.com/cheparity/cheparity.github.io/master/scripts/bootstrap-dev-env.sh | bash
 #
 # Phase 1: Base tools + dev runtimes (package manager preferred)
-# Phase 2: Neovim ecosystem (fonts, tree-sitter, fzf-lua deps)
+# Phase 2: Dev tools + Neovim ecosystem
 # Phase 3: GitHub CLI + chezmoi dotfiles (interactive)
-# Phase 4: Bun + agent tools
+# Phase 4: Agent tools
 # =============================================================================
 
 set -euo pipefail
@@ -87,8 +87,46 @@ pkg_install() {
 }
 
 # =============================================================================
+# macOS fast path: install everything via brew in one shot
+# =============================================================================
+
+BREW_DONE=false
+if [ "$PKG_MGR" = "brew" ]; then
+    section "macOS: Installing all tools via Homebrew"
+
+    BREW_FORMULAE=(
+        jq rust go uv nvm neovim tree-sitter
+        lazygit fzf ripgrep fd gh chezmoi bun
+        curl git tmux unzip p7zip
+    )
+    TO_INSTALL=()
+    for pkg in "${BREW_FORMULAE[@]}"; do
+        brew list "$pkg" &>/dev/null && skip "$pkg" || TO_INSTALL+=("$pkg")
+    done
+    if [ ${#TO_INSTALL[@]} -gt 0 ]; then
+        brew install "${TO_INSTALL[@]}"
+        ok "Installed: ${TO_INSTALL[*]}"
+    fi
+
+    BREW_CASKS=(font-jetbrains-mono-nerd-font font-iosevka-nerd-font)
+    TO_INSTALL=()
+    for pkg in "${BREW_CASKS[@]}"; do
+        brew list --cask "$pkg" &>/dev/null && skip "$pkg" || TO_INSTALL+=("$pkg")
+    done
+    if [ ${#TO_INSTALL[@]} -gt 0 ]; then
+        brew install --cask "${TO_INSTALL[@]}"
+        ok "Installed casks: ${TO_INSTALL[*]}"
+    fi
+
+    ok "All tools installed via Homebrew"
+    BREW_DONE=true
+fi
+
+# =============================================================================
 # Phase 1: Base tools + dev runtimes
 # =============================================================================
+
+if [ "$BREW_DONE" = false ]; then
 
 section "Phase 1: Base tools + dev runtimes"
 
@@ -156,7 +194,33 @@ if have cargo; then
 else
     curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
     . "$HOME/.cargo/env"
-    ok "rust installed"
+    ok "rust installed (rustup)"
+fi
+
+# ---- Go ----
+echo ""
+echo -e "  ${CYAN}▸${NC} Go"
+if have go; then
+    skip "go"
+else
+    GO_ARCH=$([ "$ARCH" = "amd64" ] && echo amd64 || echo arm64)
+    GO_VERSION=$(curl -fsSL --retry 3 "https://go.dev/VERSION?m=text" | head -1)
+    curl -fsSL --retry 3 "https://go.dev/dl/${GO_VERSION}.linux-${GO_ARCH}.tar.gz" \
+        | $SUDO tar xz -C /usr/local
+    export PATH="/usr/local/go/bin:$PATH"
+    ok "go installed (go.dev)"
+fi
+export PATH="$HOME/go/bin:$PATH"
+
+# ---- Bun ----
+echo ""
+echo -e "  ${CYAN}▸${NC} Bun (JavaScript runtime)"
+if have bun; then
+    skip "bun"
+else
+    curl -fsSL https://bun.sh/install | bash
+    export PATH="$HOME/.bun/bin:$PATH"
+    ok "bun installed (official script)"
 fi
 
 # ---- uv ----
@@ -167,7 +231,22 @@ if have uv; then
 else
     curl -LsSf https://astral.sh/uv/install.sh | sh
     export PATH="$HOME/.local/bin:$PATH"
-    ok "uv installed"
+    ok "uv installed (official script)"
+fi
+
+# ---- nvm ----
+echo ""
+echo -e "  ${CYAN}▸${NC} nvm (Node version manager)"
+if have nvm || [ -s "$HOME/.nvm/nvm.sh" ]; then
+    skip "nvm"
+elif [ "$PKG_MGR" = "brew" ]; then
+    pkg_install nvm
+    ok "nvm installed (brew)"
+else
+    curl -fsSL --retry 3 https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
+    export NVM_DIR="$HOME/.nvm"
+    . "$NVM_DIR/nvm.sh"
+    ok "nvm installed (official script)"
 fi
 
 echo ""
@@ -176,16 +255,23 @@ echo -e "${GREEN}  Phase 1 done${NC}"
 echo -e "${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 
 # =============================================================================
-# Phase 2: Neovim ecosystem
+# Phase 2: Dev tools + Neovim ecosystem
 # =============================================================================
 
-section "Phase 2: Neovim ecosystem"
+section "Phase 2: Dev tools + Neovim ecosystem"
 
-# ---- Neovim ----
+# ---- Neovim (via bob-nvim) ----
 echo ""
 echo -e "  ${CYAN}▸${NC} Neovim (>= 0.11.2, LuaJIT)"
 if have nvim; then
     skip "nvim"
+elif have cargo; then
+    cargo install bob-nvim
+    export PATH="$HOME/.cargo/bin:$PATH"
+    bob install latest
+    bob use latest
+    export PATH="$HOME/.local/share/bob/nvim-bin:$PATH"
+    ok "nvim installed (bob-nvim)"
 elif [ "$PKG_MGR" = "brew" ] || [ "$PKG_MGR" = "apt" ]; then
     pkg_install neovim
     ok "nvim installed (package manager)"
@@ -230,9 +316,15 @@ echo ""
 echo -e "  ${CYAN}▸${NC} tree-sitter-cli (nvim-treesitter)"
 if have tree-sitter; then
     skip "tree-sitter"
+elif have cargo; then
+    cargo install tree-sitter-cli
+    ok "tree-sitter-cli installed (cargo)"
 elif [ "$PKG_MGR" = "brew" ]; then
     pkg_install tree-sitter
     ok "tree-sitter installed (brew)"
+elif [ "$PKG_MGR" = "apt" ]; then
+    pkg_install tree-sitter-cli
+    ok "tree-sitter-cli installed (apt)"
 else
     TS_ARCH=$([ "$ARCH" = "amd64" ] && echo x64 || echo arm64)
     TS_VERSION=$(curl -fsSL --retry 3 "$(gh_url "https://api.github.com/repos/tree-sitter/tree-sitter/releases/latest")" | jq -r '.tag_name')
@@ -249,6 +341,9 @@ echo ""
 echo -e "  ${CYAN}▸${NC} lazygit (optional)"
 if have lazygit; then
     skip "lazygit"
+elif have go; then
+    go install github.com/jesseduffield/lazygit@latest
+    ok "lazygit installed (go)"
 elif [ "$PKG_MGR" = "brew" ]; then
     pkg_install lazygit
     ok "lazygit installed (brew)"
@@ -266,6 +361,9 @@ echo ""
 echo -e "  ${CYAN}▸${NC} fzf (fzf-lua, optional)"
 if have fzf; then
     skip "fzf"
+elif have go; then
+    go install github.com/junegunn/fzf@latest
+    ok "fzf installed (go)"
 elif [ -n "$PKG_MGR" ]; then
     pkg_install fzf
     ok "fzf installed (package manager)"
@@ -282,6 +380,9 @@ echo ""
 echo -e "  ${CYAN}▸${NC} ripgrep (fzf-lua live grep)"
 if have rg; then
     skip "ripgrep"
+elif have cargo; then
+    cargo install ripgrep
+    ok "ripgrep installed (cargo)"
 elif [ -n "$PKG_MGR" ]; then
     pkg_install ripgrep
     ok "ripgrep installed (package manager)"
@@ -300,6 +401,9 @@ echo ""
 echo -e "  ${CYAN}▸${NC} fd (fzf-lua find files)"
 if have fd || have fdfind; then
     skip "fd"
+elif have cargo; then
+    cargo install fd-find
+    ok "fd installed (cargo)"
 elif [ "$PKG_MGR" = "apt" ]; then
     pkg_install fd-find
     ok "fd installed (apt, binary: fdfind)"
@@ -323,6 +427,8 @@ echo ""
 echo -e "${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 echo -e "${GREEN}  Phase 2 done${NC}"
 echo -e "${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+
+fi  # BREW_DONE
 
 # =============================================================================
 # Phase 3: GitHub CLI + chezmoi dotfiles
@@ -422,21 +528,10 @@ echo -e "${GREEN}  Phase 3 done${NC}"
 echo -e "${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 
 # =============================================================================
-# Phase 4: Bun + agent tools
+# Phase 4: Agent tools
 # =============================================================================
 
-section "Phase 4: Bun + agent tools"
-
-# ---- Bun ----
-echo ""
-echo -e "  ${CYAN}▸${NC} Bun (JavaScript runtime)"
-if have bun; then
-    skip "bun"
-else
-    curl -fsSL https://bun.sh/install | bash
-    export PATH="$HOME/.bun/bin:$PATH"
-    ok "bun installed"
-fi
+section "Phase 4: Agent tools"
 
 # ---- Agent tools (via bun) ----
 echo ""
