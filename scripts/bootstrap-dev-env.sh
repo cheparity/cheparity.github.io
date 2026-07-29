@@ -192,7 +192,8 @@ else
             skip "$FONT Nerd Font"
         else
             mkdir -p "$FONT_DIR"
-            curl -fsSL "https://github.com/ryanoasis/nerd-fonts/releases/latest/download/${FONT}.tar.xz" \
+            curl -fsSL --http1.1 --retry 3 --retry-delay 2 \
+                "https://github.com/ryanoasis/nerd-fonts/releases/latest/download/${FONT}.tar.xz" \
                 | tar xJ -C "$FONT_DIR"
             ok "$FONT Nerd Font installed"
         fi
