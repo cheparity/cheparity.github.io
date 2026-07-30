@@ -19,7 +19,8 @@
     "katex": "^0.18.1",
     "rehype-katex": "^7.0.1",
     "remark-math": "^6.0.0",
-    "sharp": "^0.34.3"
+    "sharp": "^0.34.3",
+    "unist-util-visit": "^5.1.0"
   },
   "devDependencies": {
     "@astrojs/tailwind": "^6.0.2"

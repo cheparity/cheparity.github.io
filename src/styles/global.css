@@ -479,3 +479,116 @@ section > .katex-display {
   overflow-x: auto;
   overflow-y: hidden;
 }
+
+/* Link margin cards — float into right margin like sidenotes */
+.link-card {
+  float: right;
+  clear: right;
+  margin-right: -60%;
+  width: 50%;
+  margin-top: 0.3rem;
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.4em;
+  padding: 0.4em 0.6em;
+  border-left: 2px solid rgba(128, 128, 128, 0.25);
+  border-radius: 0 4px 4px 0;
+  background: rgba(128, 128, 128, 0.04);
+  font-size: 0.85rem;
+  line-height: 1.3;
+  vertical-align: baseline;
+  position: relative;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+.link-card:hover {
+  background: rgba(128, 128, 128, 0.08);
+  border-left-color: rgba(128, 128, 128, 0.45);
+}
+.link-card--internal {
+  border-left-color: rgba(176, 137, 104, 0.4);
+}
+.link-card--internal:hover {
+  border-left-color: rgba(176, 137, 104, 0.7);
+  background: rgba(176, 137, 104, 0.06);
+}
+.link-card-favicon {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  margin-top: 0.1em;
+  border-radius: 2px;
+  opacity: 0.7;
+}
+.link-card-icon {
+  flex-shrink: 0;
+  width: 16px;
+  text-align: center;
+  font-size: 1rem;
+  line-height: 1;
+  color: rgba(176, 137, 104, 0.7);
+}
+.link-card-body {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+}
+.link-card-title {
+  font-weight: 500;
+  color: inherit;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.link-card-subtitle {
+  font-size: 0.75rem;
+  color: #888;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+html.dark .link-card {
+  background: rgba(255, 255, 255, 0.03);
+  border-left-color: rgba(255, 255, 255, 0.12);
+}
+html.dark .link-card:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-left-color: rgba(255, 255, 255, 0.25);
+}
+html.dark .link-card--internal {
+  border-left-color: rgba(221, 184, 146, 0.3);
+}
+html.dark .link-card--internal:hover {
+  border-left-color: rgba(221, 184, 146, 0.6);
+  background: rgba(221, 184, 146, 0.05);
+}
+html.dark .link-card-subtitle {
+  color: #777;
+}
+
+@media (max-width: 760px) {
+  .link-card {
+    float: none;
+    clear: none;
+    margin-right: 0;
+    width: auto;
+    display: inline-flex;
+    margin-top: 0;
+    margin-bottom: 0;
+    padding: 0.15em 0.4em;
+    vertical-align: middle;
+    font-size: 0.75rem;
+    border-radius: 3px;
+    border-left-width: 1.5px;
+  }
+  .link-card-body {
+    flex-direction: row;
+    gap: 0.3em;
+    align-items: center;
+  }
+  .link-card-subtitle {
+    display: none;
+  }
+}

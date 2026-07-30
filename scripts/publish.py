@@ -14,6 +14,7 @@ import urllib.parse
 from pathlib import Path
 
 import frontmatter
+import json
 
 # Collected image paths referenced in post bodies (for unused-asset cleanup).
 image_paths: set[str] = set()
@@ -445,6 +446,31 @@ def main():
             frontmatter.dump(post, f)
 
         print(f"  → {dst}")
+
+    # --- Emit posts-manifest.json for rehype-link-cards ---
+    data_dir = Path("src/data")
+    data_dir.mkdir(parents=True, exist_ok=True)
+    manifest: dict[str, dict] = {}
+    for item, article_fm in notes:
+        slug = slug_map[item.relative_to(vault).as_posix()]
+        title, _ = extract_title_and_strip_h1(article_fm.content)
+        if not title:
+            title = item.stem
+        desc = str(article_fm.get("description", "") or "").strip()
+        if not desc:
+            desc = synthesize_teaser(article_fm.content)
+        entry: dict[str, object] = {"title": title}
+        if desc:
+            entry["description"] = desc
+        tags = article_fm.get("tags")
+        if tags:
+            if isinstance(tags, str):
+                tags = [t.strip() for t in tags.split(",") if t.strip()]
+            entry["tags"] = tags
+        manifest[slug] = entry
+    with open(data_dir / "posts-manifest.json", "w", encoding="utf-8") as f:
+        json.dump(manifest, f, ensure_ascii=False, indent=2)
+    print(f"Wrote posts-manifest.json ({len(manifest)} entries)")
 
     # --- Clean unused assets ---
     global image_paths

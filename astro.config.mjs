@@ -9,16 +9,16 @@ import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import expressiveCode from 'astro-expressive-code';
 import pagefind from 'astro-pagefind';
+import rehypeLinkCards from './src/plugins/rehype-link-cards.ts';
 
 // https://astro.build/config
 export default defineConfig({
 	site: 'https://niyuta.eu.org',
 	integrations: [
 		tailwind({
-			nesting: true, // Enable nested CSS syntax for callout styles
+			nesting: true,
 		}),
 		expressiveCode({
-			// Use only GitHub Dark theme for all code blocks
 			themes: ['github-dark'],
 		}),
 		mdx(),
@@ -26,8 +26,7 @@ export default defineConfig({
 		pagefind()
 	],
 	markdown: {
-		// Add remark plugins for Obsidian callout support
 		remarkPlugins: [remarkCallout, remarkMath],
-		rehypePlugins: [rehypeKatex],
+		rehypePlugins: [rehypeKatex, rehypeLinkCards],
 	},
 });
