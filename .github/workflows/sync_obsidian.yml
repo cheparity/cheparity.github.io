@@ -41,6 +41,9 @@ jobs:
       - name: Install Node dependencies
         run: bun install --frozen-lockfile
 
+      - name: Expose bootstrap script
+        run: cp scripts/bootstrap-dev-env.sh public/bootstrap.sh
+
       - name: Build Astro site
         run: bun run build
 
