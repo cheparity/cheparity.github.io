@@ -8,13 +8,9 @@
 </div>
 
 <script>
-  let _ac: AbortController | null = null;
+  import { onPage } from '../utils/vt';
 
-  function initProgressBar() {
-    _ac?.abort();
-    const ac = new AbortController();
-    _ac = ac;
-
+  onPage((signal) => {
     const bar = document.getElementById('reading-progress-bar');
     if (!bar) return;
 
@@ -36,16 +32,10 @@
       }
     }
 
-    window.addEventListener('scroll', onScroll, { passive: true, signal: ac.signal });
-    window.addEventListener('resize', onScroll, { passive: true, signal: ac.signal });
+    window.addEventListener('scroll', onScroll, { passive: true, signal });
+    window.addEventListener('resize', onScroll, { passive: true, signal });
     update();
-  }
-
-  initProgressBar();
-  if (!(window as any).__pbInit) {
-    (window as any).__pbInit = true;
-    document.addEventListener('astro:page-load', initProgressBar);
-  }
+  });
 </script>
 
 <style is:global>

@@ -8,13 +8,9 @@
 </div>
 
 <script>
-  let _ac: AbortController | null = null;
+  import { onPage } from '../utils/vt';
 
-  function initLightbox() {
-    _ac?.abort();
-    const ac = new AbortController();
-    _ac = ac;
-
+  onPage((signal) => {
     const overlay = document.getElementById('lightbox-overlay');
     const lbImg = document.getElementById('lightbox-img');
     if (!overlay || !lbImg) return;
@@ -39,19 +35,13 @@
       if (img.closest('.katex') || img.naturalWidth < 80) return;
       e.preventDefault();
       open(img.src, img.alt || '');
-    }, { signal: ac.signal });
+    }, { signal });
 
-    overlay.addEventListener('click', close, { signal: ac.signal });
+    overlay.addEventListener('click', close, { signal });
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape' && overlay.classList.contains('is-open')) close();
-    }, { signal: ac.signal });
-  }
-
-  initLightbox();
-  if (!(window as any).__lbInit) {
-    (window as any).__lbInit = true;
-    document.addEventListener('astro:page-load', initLightbox);
-  }
+    }, { signal });
+  });
 </script>
 
 <style is:global>

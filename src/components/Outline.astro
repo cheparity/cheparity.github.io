@@ -23,14 +23,9 @@
 </aside>
 
 <script>
-	let _ac: AbortController | null = null;
+	import { onPage } from '../utils/vt';
 
-	function initOutline() {
-		// Abort previous listeners (from prior VT navigation).
-		_ac?.abort();
-		const ac = new AbortController();
-		_ac = ac;
-
+	onPage((signal) => {
 		const outline = document.getElementById('outline');
 		const article = document.querySelector('article');
 		if (!outline || !article) return;
@@ -176,7 +171,7 @@
 			}
 		}
 
-		window.addEventListener('scroll', onScroll, { passive: true, signal: ac.signal });
+		window.addEventListener('scroll', onScroll, { passive: true, signal });
 		computeActive();
 		updateProgress();
 
@@ -191,19 +186,12 @@
 
 		outline!.addEventListener('scroll', () => {
 			requestAnimationFrame(updateOverflow);
-		}, { passive: true, signal: ac.signal });
+		}, { passive: true, signal });
 
-		window.addEventListener('resize', () => requestAnimationFrame(updateOverflow), { signal: ac.signal });
+		window.addEventListener('resize', () => requestAnimationFrame(updateOverflow), { signal });
 
 		updateOverflow();
-	}
-
-	// Run on initial load and on every VT navigation.
-	initOutline();
-	if (!(window as any).__outlineInit) {
-		(window as any).__outlineInit = true;
-		document.addEventListener('astro:page-load', initOutline);
-	}
+	});
 </script>
 
 <style is:global>
