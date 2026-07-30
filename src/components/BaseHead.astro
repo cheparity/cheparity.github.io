@@ -2,6 +2,9 @@
 // Import it's global.css file here so that it is included on
 // all pages through the use of the <BaseHead /> component.
 import '../styles/global.css';
+// Self-hosted KaTeX: CSS through Vite (fonts hashed + bundled), JS from
+// public/scripts. No external CDN — math must survive jsdelivr being blocked.
+import 'katex/dist/katex.min.css';
 import { ViewTransitions } from 'astro:transitions';
 import type { ImageMetadata } from 'astro';
 import FallbackImage from '../assets/blog-placeholder-1.jpg';
@@ -38,10 +41,9 @@ const { title, description, image = FallbackImage } = Astro.props;
 <link rel="preload" href="/fonts/et-book-italic.woff" as="font" type="font/woff" crossorigin />
 <link rel="preload" href="/fonts/et-book-bold.woff" as="font" type="font/woff" crossorigin />
 
-<!-- KaTeX math rendering -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css" crossorigin="anonymous" />
-<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.js" crossorigin="anonymous"></script>
-<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/contrib/auto-render.min.js" crossorigin="anonymous"></script>
+<!-- KaTeX math rendering (self-hosted, see frontmatter) -->
+<script defer src="/scripts/katex.min.js"></script>
+<script defer src="/scripts/auto-render.min.js"></script>
 <script is:inline>
 function initMath() {
   if (typeof renderMathInElement === "function") {

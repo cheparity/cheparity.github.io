@@ -11,6 +11,15 @@ import { SITE_DESCRIPTION, SITE_TITLE } from '../../consts';
 const posts = (await getCollection('blog')).sort(
 	(a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf(),
 );
+
+// Group newest-first into [year, posts] buckets for the archive.
+const years: [number, typeof posts][] = [];
+for (const post of posts) {
+	const year = post.data.pubDate.getFullYear();
+	const last = years[years.length - 1];
+	if (last && last[0] === year) last[1].push(post);
+	else years.push([year, [post]]);
+}
 ---
 
 <html lang="en">
@@ -32,7 +41,12 @@ const posts = (await getCollection('blog')).sort(
 				</section>
 
 				<section class="archive">
-					{posts.map((post, i) => <ArticleCard post={post} index={i} />)}
+					{years.map(([year, yearPosts]) => (
+						<div class="archive-year">
+							<h2 class="year-heading reveal">{year}</h2>
+							{yearPosts.map((post, i) => <ArticleCard post={post} index={i} />)}
+						</div>
+					))}
 				</section>
 			</article>
 		</main>
@@ -45,5 +59,39 @@ const posts = (await getCollection('blog')).sort(
 <style>
 	.archive {
 		margin-top: 1rem;
+	}
+
+	/* Year dividers — et-book oldstyle figures, a hairline rule trailing off
+	   into the margin like a ledger heading. */
+	.year-heading {
+		display: flex;
+		align-items: center;
+		gap: 1.5rem;
+		font-family: 'et-book', serif;
+		font-style: normal;
+		font-weight: normal;
+		font-size: 1.9rem;
+		font-variant-numeric: oldstyle-nums;
+		color: #666;
+		margin: 3rem 0 0.4rem;
+		line-height: 1;
+	}
+
+	.year-heading::after {
+		content: '';
+		flex: 1;
+		max-width: 10rem;
+		border-top: 1px solid rgba(128, 128, 128, 0.35);
+	}
+
+	.archive-year:first-child .year-heading {
+		margin-top: 0;
+	}
+
+	html.dark .year-heading {
+		color: #999;
+	}
+	html.dark .year-heading::after {
+		border-top-color: rgba(221, 221, 221, 0.22);
 	}
 </style>

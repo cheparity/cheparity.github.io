@@ -12,6 +12,7 @@ const isDark = false; // Default state, client-side will update immediately
 	type="button"
 	aria-label="Toggle theme"
 	title="Toggle theme"
+	transition:name="theme-toggle"
 >
 	<!-- Sun icon (shown in dark mode) -->
 	<svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 256 256">
@@ -67,15 +68,43 @@ const isDark = false; // Default state, client-side will update immediately
 			}
 		}
 
-		// Toggle theme
+		// Toggle theme — a circular reveal expanding from the button when the
+		// browser supports view transitions, hard swap otherwise.
 		function toggleTheme() {
 			const html = document.documentElement;
-			const isDark = html.classList.contains('dark');
-			const newTheme = isDark ? 'light' : 'dark';
-
-			// Store preference
+			const newTheme = html.classList.contains('dark') ? 'light' : 'dark';
 			setStoredTheme(newTheme);
-			applyTheme(newTheme);
+
+			const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+			if (!document.startViewTransition || reduceMotion) {
+				applyTheme(newTheme);
+				return;
+			}
+
+			const btn = document.getElementById('theme-toggle');
+			const rect = btn ? btn.getBoundingClientRect() : null;
+			const x = rect ? rect.left + rect.width / 2 : window.innerWidth - 40;
+			const y = rect ? rect.top + rect.height / 2 : 40;
+			const radius = Math.hypot(Math.max(x, window.innerWidth - x), Math.max(y, window.innerHeight - y));
+			const clip = (r) => `circle(${r}px at ${x}px ${y}px)`;
+
+			// Armed before the snapshot so ::view-transition-new(root) starts
+			// clipped to a point; cleared afterwards so plain navigations are
+			// unaffected.
+			html.style.setProperty('--vt-clip', clip(0));
+			const vt = document.startViewTransition(() => applyTheme(newTheme));
+			vt.ready.then(() => {
+				html.animate(
+					{ clipPath: [clip(0), clip(radius)] },
+					{
+						duration: 500,
+						easing: 'ease-in-out',
+						pseudoElement: '::view-transition-new(root)',
+						fill: 'forwards',
+					},
+				);
+			}).catch(() => {});
+			vt.finished.finally(() => html.style.removeProperty('--vt-clip'));
 		}
 
 		// Initialize immediately (before DOM is fully parsed)
@@ -147,6 +176,7 @@ const isDark = false; // Default state, client-side will update immediately
 		width: 1.8rem;
 		height: 1.8rem;
 		position: absolute;
+		transition: opacity 0.25s ease;
 	}
 
 	/* Light mode: show moon, hide sun */

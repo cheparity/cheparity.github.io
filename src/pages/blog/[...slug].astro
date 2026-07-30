@@ -23,8 +23,29 @@ const prevPost =
 	idx > 0 ? { id: all[idx - 1].id, title: all[idx - 1].data.title } : undefined;
 const nextPost =
 	idx < all.length - 1 ? { id: all[idx + 1].id, title: all[idx + 1].data.title } : undefined;
+
+// Related posts: rank by shared-tag overlap, break ties by recency. Posts
+// without tags never match, so the block simply doesn't render for them.
+const ownTags = post.data.tags ?? [];
+const relatedPosts =
+	ownTags.length > 0
+		? all
+				.filter((p) => p.id !== post.id)
+				.map((p) => ({
+					id: p.id,
+					title: p.data.title,
+					tags: (p.data.tags ?? []).filter((t) => ownTags.includes(t)),
+					pubDate: p.data.pubDate.valueOf(),
+				}))
+				.filter((p) => p.tags.length > 0)
+				.sort(
+					(a, b) =>
+						b.tags.length - a.tags.length || b.pubDate - a.pubDate,
+				)
+				.slice(0, 3)
+		: [];
 ---
 
-<BlogPost {...post.data} slug={post.id} prevPost={prevPost} nextPost={nextPost}>
+<BlogPost {...post.data} slug={post.id} prevPost={prevPost} nextPost={nextPost} relatedPosts={relatedPosts}>
 	<Content />
 </BlogPost>
