@@ -5,7 +5,7 @@ export const SITE_CONFIG = {
     "And coser 📷"
   ],
   tagline: "<strong>Flow</strong> like Life, Fall like <strong>Rain</strong>, <strong>Rise</strong> like Dawn.",
-  avatar: "/avatar.svg",
+  avatar: "/avatar.jpg",
   social: {
     email: "cheparity@gmail.com",
     github: "https://github.com/cheparity",
