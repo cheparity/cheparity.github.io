@@ -44,8 +44,82 @@
     font-display: swap;
   }
 
+  /* Candidate monospace faces — only the one named by --font-mono loads in practice */
+  @font-face {
+    font-family: "IBM Plex Mono";
+    src: url("/fonts/cand-plex.woff2") format("woff2");
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+  }
+  @font-face {
+    font-family: "IBM Plex Mono";
+    src: url("/fonts/cand-plex-it.woff2") format("woff2");
+    font-weight: 400;
+    font-style: italic;
+    font-display: swap;
+  }
+  @font-face {
+    font-family: "Source Code Pro";
+    src: url("/fonts/cand-scp.woff2") format("woff2");
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+  }
+  @font-face {
+    font-family: "Source Code Pro";
+    src: url("/fonts/cand-scp-it.woff2") format("woff2");
+    font-weight: 400;
+    font-style: italic;
+    font-display: swap;
+  }
+  @font-face {
+    font-family: "Courier Prime";
+    src: url("/fonts/cand-courier.woff2") format("woff2");
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+  }
+  @font-face {
+    font-family: "Courier Prime";
+    src: url("/fonts/cand-courier-it.woff2") format("woff2");
+    font-weight: 400;
+    font-style: italic;
+    font-display: swap;
+  }
+  @font-face {
+    font-family: "Iosevka Nerd Font Mono";
+    src: url("/fonts/cand-iosevka.woff2") format("woff2");
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+  }
+  @font-face {
+    font-family: "Iosevka Nerd Font Mono";
+    src: url("/fonts/cand-iosevka-it.woff2") format("woff2");
+    font-weight: 400;
+    font-style: italic;
+    font-display: swap;
+  }
+  @font-face {
+    font-family: "Go Mono";
+    src: url("/fonts/cand-gomono.ttf") format("truetype");
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+  }
+  @font-face {
+    font-family: "Go Mono";
+    src: url("/fonts/cand-gomono-it.ttf") format("truetype");
+    font-weight: 400;
+    font-style: italic;
+    font-display: swap;
+  }
+
   html {
-    @apply text-[15px];
+    /* Swap this single value to preview a candidate: "IBM Plex Mono" | "Source Code Pro" | "Courier Prime" | "Maple Mono" */
+    --font-mono: "Go Mono";
+    @apply text-[13px];
   }
 
   body {
@@ -179,6 +253,12 @@
 
   sup {
     @apply leading-[0];
+  }
+
+  code,
+  kbd,
+  pre {
+    font-family: var(--font-mono), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   }
 }
 
@@ -322,7 +402,7 @@
   /* Expressive Code - Override defaults for Tufte design */
   .expressive-code pre,
   .expressive-code pre > code {
-    font-family: 'Maple Mono', monospace !important;
+    font-family: var(--font-mono), monospace !important;
   }
 
   h1 > code,
@@ -484,49 +564,54 @@ section > .katex-display {
 .link-card {
   float: right;
   clear: right;
-  margin-right: -60%;
-  width: 50%;
-  margin-top: 0.3rem;
-  margin-bottom: 0.5rem;
+  margin: 0.35rem -60% 0.6rem 0;
+  width: 52%;
   display: flex;
   align-items: flex-start;
-  gap: 0.4em;
-  padding: 0.4em 0.6em;
-  border-left: 2px solid rgba(128, 128, 128, 0.25);
-  border-radius: 0 4px 4px 0;
-  background: rgba(128, 128, 128, 0.04);
-  font-size: 0.85rem;
-  line-height: 1.3;
+  gap: 0.55em;
+  padding: 0.6em 0.75em;
+  border-left: 2px solid rgba(128, 128, 128, 0.28);
+  border-radius: 0 5px 5px 0;
+  background: rgba(128, 128, 128, 0.05);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  font-size: 0.95rem;
+  line-height: 1.35;
   vertical-align: baseline;
   position: relative;
-  transition: background 0.15s ease, border-color 0.15s ease;
+  text-decoration: none;
+  transition: background 0.18s ease, border-color 0.18s ease,
+    transform 0.18s ease, box-shadow 0.18s ease;
 }
 .link-card:hover {
-  background: rgba(128, 128, 128, 0.08);
-  border-left-color: rgba(128, 128, 128, 0.45);
+  background: rgba(128, 128, 128, 0.09);
+  border-left-color: rgba(128, 128, 128, 0.5);
+  transform: translateX(-2px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.09);
 }
 .link-card--internal {
-  border-left-color: rgba(176, 137, 104, 0.4);
+  border-left-color: rgba(176, 137, 104, 0.45);
 }
 .link-card--internal:hover {
-  border-left-color: rgba(176, 137, 104, 0.7);
-  background: rgba(176, 137, 104, 0.06);
+  border-left-color: rgba(176, 137, 104, 0.75);
+  background: rgba(176, 137, 104, 0.07);
 }
 .link-card-favicon {
   flex-shrink: 0;
-  width: 16px;
-  height: 16px;
-  margin-top: 0.1em;
-  border-radius: 2px;
-  opacity: 0.7;
+  width: 20px;
+  height: 20px;
+  margin-top: 0.12em;
+  border-radius: 3px;
+  opacity: 0.8;
 }
 .link-card-icon {
   flex-shrink: 0;
-  width: 16px;
+  width: 20px;
+  margin-top: 0.05em;
   text-align: center;
-  font-size: 1rem;
+  font-family: "et-book", serif;
+  font-size: 1.25rem;
   line-height: 1;
-  color: rgba(176, 137, 104, 0.7);
+  color: rgba(176, 137, 104, 0.75);
 }
 .link-card-body {
   display: flex;
@@ -535,58 +620,112 @@ section > .katex-display {
   overflow: hidden;
 }
 .link-card-title {
-  font-weight: 500;
+  font-family: "et-book", serif;
+  font-weight: 600;
+  font-size: 1.02rem;
+  line-height: 1.3;
   color: inherit;
-  white-space: nowrap;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
   overflow: hidden;
-  text-overflow: ellipsis;
 }
 .link-card-subtitle {
-  font-size: 0.75rem;
-  color: #888;
-  white-space: nowrap;
+  margin-top: 0.22em;
+  font-family: "Gill Sans", "Gill Sans MT", sans-serif;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: #8a8578;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
   overflow: hidden;
-  text-overflow: ellipsis;
+}
+
+/* Inside blockquotes and lists the text column is narrower;
+   floating would overflow, so render inline like mobile. */
+blockquote .link-card,
+li .link-card {
+  float: none;
+  clear: none;
+  margin: 0;
+  width: auto;
+  display: inline-flex;
+  padding: 0.15em 0.45em;
+  vertical-align: middle;
+  font-size: 0.78rem;
+  border-radius: 3px;
+  border-left-width: 1.5px;
+  box-shadow: none;
+}
+blockquote .link-card:hover,
+li .link-card:hover {
+  transform: none;
+  box-shadow: none;
+}
+blockquote .link-card .link-card-body,
+li .link-card .link-card-body {
+  flex-direction: row;
+  gap: 0.35em;
+  align-items: center;
+}
+blockquote .link-card .link-card-title,
+li .link-card .link-card-title {
+  -webkit-line-clamp: 1;
+  font-size: 0.85rem;
+}
+blockquote .link-card .link-card-subtitle,
+li .link-card .link-card-subtitle {
+  display: none;
 }
 
 html.dark .link-card {
-  background: rgba(255, 255, 255, 0.03);
-  border-left-color: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.035);
+  border-left-color: rgba(255, 255, 255, 0.14);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 html.dark .link-card:hover {
-  background: rgba(255, 255, 255, 0.06);
-  border-left-color: rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.07);
+  border-left-color: rgba(255, 255, 255, 0.3);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
 }
 html.dark .link-card--internal {
-  border-left-color: rgba(221, 184, 146, 0.3);
+  border-left-color: rgba(221, 184, 146, 0.35);
 }
 html.dark .link-card--internal:hover {
-  border-left-color: rgba(221, 184, 146, 0.6);
-  background: rgba(221, 184, 146, 0.05);
+  border-left-color: rgba(221, 184, 146, 0.65);
+  background: rgba(221, 184, 146, 0.06);
 }
 html.dark .link-card-subtitle {
-  color: #777;
+  color: #8a8578;
 }
 
 @media (max-width: 760px) {
   .link-card {
     float: none;
     clear: none;
-    margin-right: 0;
+    margin: 0;
     width: auto;
     display: inline-flex;
-    margin-top: 0;
-    margin-bottom: 0;
-    padding: 0.15em 0.4em;
+    padding: 0.15em 0.45em;
     vertical-align: middle;
-    font-size: 0.75rem;
+    font-size: 0.78rem;
     border-radius: 3px;
     border-left-width: 1.5px;
+    box-shadow: none;
+  }
+  .link-card:hover {
+    transform: none;
+    box-shadow: none;
   }
   .link-card-body {
     flex-direction: row;
-    gap: 0.3em;
+    gap: 0.35em;
     align-items: center;
+  }
+  .link-card-title {
+    -webkit-line-clamp: 1;
+    font-size: 0.85rem;
   }
   .link-card-subtitle {
     display: none;
