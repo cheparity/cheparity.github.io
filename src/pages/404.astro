@@ -1,0 +1,135 @@
+---
+import BaseHead from '../components/BaseHead.astro';
+import Footer from '../components/Footer.astro';
+import Header from '../components/Header.astro';
+import ThemeScript from '../components/ThemeScript.astro';
+import { SITE_TITLE } from '../consts';
+---
+
+<html lang="en">
+	<head>
+		<BaseHead title={`${SITE_TITLE} - Page not found`} description="This page wandered off the margin." />
+		<ThemeScript />
+	</head>
+
+	<body>
+		<Header />
+
+		<main>
+			<article>
+				<section class="nf-section">
+					<p class="nf-overline">Erratum · 404</p>
+					<h1 class="nf-title">This page wandered off&nbsp;the&nbsp;margin.</h1>
+					<p class="nf-body">
+						Like a sidenote that lost its anchor, the page you were looking for
+						has drifted beyond the text column — perhaps it was never set in
+						type, perhaps it was revised away.
+					</p>
+					<p class="nf-body">
+						The rest of the book is still in order:
+					</p>
+					<nav class="nf-links" aria-label="Site navigation">
+						<a href="/">Home</a>
+						<span class="nf-sep" aria-hidden="true">·</span>
+						<a href="/blog">Blog</a>
+						<span class="nf-sep" aria-hidden="true">·</span>
+						<a href="/tags">Tags</a>
+						<span class="nf-sep" aria-hidden="true">·</span>
+						<a href="/about">About</a>
+					</nav>
+				</section>
+			</article>
+		</main>
+
+		<Footer />
+	</body>
+</html>
+
+<style>
+	.nf-section {
+		padding-top: 4rem;
+	}
+
+	/* A proofreader's erratum slip: small-caps label, oversized oldstyle
+	   figures ghosting behind the heading like a misprinted folio number. */
+	.nf-overline {
+		position: relative;
+		font-family: 'Gill Sans', 'Gill Sans MT', Calibri, sans-serif;
+		font-size: 0.85rem;
+		letter-spacing: 0.18em;
+		text-transform: uppercase;
+		color: #999;
+		margin: 0 0 1.2rem;
+	}
+
+	.nf-title {
+		position: relative;
+		max-width: 60%;
+		font-style: italic;
+		margin-top: 0;
+	}
+
+	.nf-title::before {
+		content: '404';
+		position: absolute;
+		left: -0.35em;
+		top: -0.55em;
+		z-index: -1;
+		font-family: 'et-book', serif;
+		font-style: normal;
+		font-size: 7rem;
+		font-variant-numeric: oldstyle-nums;
+		color: rgba(128, 128, 128, 0.14);
+		pointer-events: none;
+		user-select: none;
+	}
+
+	.nf-body {
+		max-width: 60%;
+		font-family: 'et-book', serif;
+		font-size: 1.4rem;
+		line-height: 2.2rem;
+	}
+
+	.nf-links {
+		max-width: 60%;
+		margin-top: 2.4rem;
+		font-family: 'et-book', serif;
+		font-size: 1.4rem;
+	}
+
+	.nf-links a {
+		color: inherit;
+		text-decoration: underline;
+		text-decoration-thickness: 0.05em;
+		text-underline-offset: 0.1em;
+		transition: text-decoration-thickness 0.12s ease;
+	}
+	.nf-links a:hover {
+		text-decoration-thickness: 0.15em;
+	}
+
+	.nf-sep {
+		margin: 0 0.6rem;
+		color: #999;
+	}
+
+	html.dark .nf-title::before {
+		color: rgba(221, 221, 221, 0.08);
+	}
+
+	@media (max-width: 760px) {
+		.nf-section {
+			padding-top: 2rem;
+		}
+		.nf-title,
+		.nf-body,
+		.nf-links {
+			max-width: 100%;
+		}
+		.nf-title::before {
+			font-size: 4.5rem;
+			top: -0.45em;
+		}
+	}
+</style>

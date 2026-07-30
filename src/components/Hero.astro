@@ -1,7 +1,12 @@
 ---
 import { SITE_CONFIG } from "../config";
 
-const { name, bio, tagline, avatar, social } = SITE_CONFIG;
+const { name, bio, tagline, status, avatar, social } = SITE_CONFIG;
+
+// Split the tagline into word chunks (keeping <strong> spans intact) so each
+// word can be inked in with its own delay — the sentence sets itself.
+const taglineChunks = tagline.match(/<strong>.*?<\/strong>|[^<\s]+|\s+/g) ?? [tagline];
+let inkIndex = 0;
 ---
 
 <section class="hero-section">
@@ -12,7 +17,18 @@ const { name, bio, tagline, avatar, social } = SITE_CONFIG;
       </div>
 
       <h1 class="hero-name">{name}'s Blog</h1>
-      <p class="hero-tagline" set:html={tagline} />
+      <p class="hero-tagline" aria-label={tagline.replace(/<[^>]+>/g, '')}>
+        {taglineChunks.map((chunk) => {
+          if (/^\s+$/.test(chunk)) return <>{chunk}</>;
+          const delay = inkIndex++ * 130;
+          return <span class="tag-word" style={`--ink-delay: ${delay}ms`} set:html={chunk} />;
+        })}
+      </p>
+      {status && (
+        <p class="hero-status">
+          <span class="status-mark" aria-hidden="true">✎</span> {status}
+        </p>
+      )}
     </div>
 
     <div class="hero-sidebar">
@@ -225,6 +241,47 @@ const { name, bio, tagline, avatar, social } = SITE_CONFIG;
     opacity: 0.8;
   }
 
+  /* Each tagline word is "set in type": a slight blur resolves into the
+     glyph, staggered left to right, as if the sentence were being inked. */
+  .tag-word {
+    display: inline-block;
+    animation: ink-set 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation-delay: calc(0.35s + var(--ink-delay, 0ms));
+  }
+
+  .hero-tagline strong {
+    font-weight: normal;
+    color: #8a6d4f;
+  }
+
+  @keyframes ink-set {
+    from { opacity: 0; filter: blur(5px); transform: translateY(0.12em); }
+    to   { opacity: 1; filter: blur(0); transform: none; }
+  }
+
+  /* "Currently" line — a quiet hand-written note under the tagline. */
+  .hero-status {
+    margin: 1.1rem 0 0;
+    font-family: 'et-book', serif;
+    font-style: italic;
+    font-size: 1.1rem;
+    color: #888;
+    animation: hero-rise 0.7s cubic-bezier(0.22, 1, 0.36, 1) 0.5s both;
+  }
+
+  .status-mark {
+    font-style: normal;
+    color: rgba(176, 137, 104, 0.8);
+    margin-right: 0.2rem;
+  }
+
+  html.dark .hero-tagline strong {
+    color: #c9a87c;
+  }
+  html.dark .hero-status {
+    color: #999;
+  }
+
   .social-links {
     display: flex;
     gap: 0.75rem;
@@ -261,7 +318,9 @@ const { name, bio, tagline, avatar, social } = SITE_CONFIG;
     .hero-main,
     .hero-sidebar,
     .avatar-wrapper,
-    .avatar {
+    .avatar,
+    .tag-word,
+    .hero-status {
       animation: none !important;
     }
   }
@@ -294,6 +353,10 @@ const { name, bio, tagline, avatar, social } = SITE_CONFIG;
       line-height: 1.6rem;
     }
 
+
+    .hero-status {
+      font-size: 1rem;
+    }
     .avatar {
       width: 100px;
       height: 100px;

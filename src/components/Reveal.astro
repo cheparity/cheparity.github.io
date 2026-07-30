@@ -35,12 +35,18 @@
 </style>
 
 <script>
-	document.documentElement.classList.add('reveal-ready');
-	const els = document.querySelectorAll('.reveal, [data-reveal]');
-	const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-	if (reduce || !('IntersectionObserver' in window)) {
-		els.forEach((el) => el.classList.add('in'));
-	} else {
+	import { onPage } from '../utils/vt';
+
+	// Re-arm on every VT navigation: the new page's `.reveal` elements were
+	// never observed by the previous page's IntersectionObserver.
+	onPage((signal) => {
+		document.documentElement.classList.add('reveal-ready');
+		const els = document.querySelectorAll('.reveal, [data-reveal]');
+		const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+		if (reduce || !('IntersectionObserver' in window)) {
+			els.forEach((el) => el.classList.add('in'));
+			return;
+		}
 		const io = new IntersectionObserver(
 			(entries) => {
 				entries.forEach((entry) => {
@@ -53,5 +59,6 @@
 			{ threshold: 0.12, rootMargin: '0px 0px -8% 0px' },
 		);
 		els.forEach((el) => io.observe(el));
-	}
+		signal.addEventListener('abort', () => io.disconnect());
+	});
 </script>

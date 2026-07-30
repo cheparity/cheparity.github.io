@@ -693,7 +693,7 @@ html.dark .link-card--internal:hover {
   background: rgba(221, 184, 146, 0.06);
 }
 html.dark .link-card-subtitle {
-  color: #8a8578;
+  color: #a89f8d;
 }
 
 @media (max-width: 760px) {
@@ -726,4 +726,71 @@ html.dark .link-card-subtitle {
   .link-card-subtitle {
     display: none;
   }
+}
+
+/* Tag pills — shared by the /tags page, article cards, and post headers.
+   Warm parchment tint matching the inline-code chips. */
+.tag-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.3rem 0.8rem;
+  border-radius: 9999px;
+  background: rgba(176, 137, 104, 0.1);
+  border: 1px solid rgba(176, 137, 104, 0.22);
+  color: #5a4a3a;
+  text-decoration: none;
+  font-family: 'et-book', serif;
+  font-size: 1rem;
+  line-height: 1.4;
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+.tag-pill--sm {
+  font-size: 0.85rem;
+  padding: 0.08rem 0.6rem;
+}
+.tag-pill:hover {
+  background: rgba(176, 137, 104, 0.2);
+  border-color: rgba(176, 137, 104, 0.4);
+  color: #3d3126;
+}
+.tag-count {
+  font-size: 0.8rem;
+  opacity: 0.6;
+  font-variant-numeric: tabular-nums;
+}
+html.dark .tag-pill {
+  background: rgba(221, 184, 146, 0.08);
+  border-color: rgba(221, 184, 146, 0.18);
+  color: #c9b8a3;
+}
+html.dark .tag-pill:hover {
+  background: rgba(221, 184, 146, 0.16);
+  border-color: rgba(221, 184, 146, 0.35);
+  color: #e8d9c5;
+}
+
+/* Dark mode: soften hairlines that read too bright on #151515 */
+html.dark hr {
+  border-top-color: rgba(221, 221, 221, 0.22);
+}
+html.dark th,
+html.dark td {
+  border-bottom-color: rgba(221, 221, 221, 0.22);
+}
+
+/* Theme-switch circular reveal (driven by ThemeToggle's script). Disable the
+   default root crossfade so the new snapshot expands from the toggle button
+   instead of fading in over the old one. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+::view-transition-old(root) {
+  z-index: 1;
+}
+::view-transition-new(root) {
+  z-index: 2;
+  clip-path: var(--vt-clip, none);
 }
