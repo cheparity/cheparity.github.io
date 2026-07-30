@@ -53,7 +53,7 @@ const readMins = readingMinutes(slug);
 					<h1>{title}</h1>
 					<hr />
 				</section>
-				<section>
+				<section class="prose">
 					<slot />
 				</section>
 				{(prevPost || nextPost) && (
@@ -94,7 +94,7 @@ const readMins = readingMinutes(slug);
 	}
 
 	.post-nav {
-		width: 55%;
+		width: 60%;
 		margin-top: 3rem;
 		padding-top: 1.5rem;
 		border-top: 1px solid #ccc;

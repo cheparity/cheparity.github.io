@@ -70,97 +70,30 @@
     unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1EFF, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
   }
 
-
-
-  @font-face {
-    font-family: "Maple Mono";
-    src: url("/fonts/maple-mono.woff") format("woff");
-    font-weight: normal;
-    font-style: normal;
-    font-display: swap;
-  }
-
-  /* Candidate monospace faces — only the one named by --font-mono loads in practice */
-  @font-face {
-    font-family: "IBM Plex Mono";
-    src: url("/fonts/cand-plex.woff2") format("woff2");
-    font-weight: 400;
-    font-style: normal;
-    font-display: swap;
-  }
-  @font-face {
-    font-family: "IBM Plex Mono";
-    src: url("/fonts/cand-plex-it.woff2") format("woff2");
-    font-weight: 400;
-    font-style: italic;
-    font-display: swap;
-  }
-  @font-face {
-    font-family: "Source Code Pro";
-    src: url("/fonts/cand-scp.woff2") format("woff2");
-    font-weight: 400;
-    font-style: normal;
-    font-display: swap;
-  }
-  @font-face {
-    font-family: "Source Code Pro";
-    src: url("/fonts/cand-scp-it.woff2") format("woff2");
-    font-weight: 400;
-    font-style: italic;
-    font-display: swap;
-  }
-  @font-face {
-    font-family: "Courier Prime";
-    src: url("/fonts/cand-courier.woff2") format("woff2");
-    font-weight: 400;
-    font-style: normal;
-    font-display: swap;
-  }
-  @font-face {
-    font-family: "Courier Prime";
-    src: url("/fonts/cand-courier-it.woff2") format("woff2");
-    font-weight: 400;
-    font-style: italic;
-    font-display: swap;
-  }
-  @font-face {
-    font-family: "Iosevka Nerd Font Mono";
-    src: url("/fonts/cand-iosevka.woff2") format("woff2");
-    font-weight: 400;
-    font-style: normal;
-    font-display: swap;
-  }
-  @font-face {
-    font-family: "Iosevka Nerd Font Mono";
-    src: url("/fonts/cand-iosevka-it.woff2") format("woff2");
-    font-weight: 400;
-    font-style: italic;
-    font-display: swap;
-  }
   @font-face {
     font-family: "Go Mono";
-    src: url("/fonts/cand-gomono.ttf") format("truetype");
+    src: url("/fonts/go-mono.ttf") format("truetype");
     font-weight: 400;
     font-style: normal;
     font-display: swap;
   }
   @font-face {
     font-family: "Go Mono";
-    src: url("/fonts/cand-gomono-it.ttf") format("truetype");
+    src: url("/fonts/go-mono-it.ttf") format("truetype");
     font-weight: 400;
     font-style: italic;
     font-display: swap;
   }
 
   html {
-    /* Swap this single value to preview a candidate: "IBM Plex Mono" | "Source Code Pro" | "Courier Prime" | "Maple Mono" */
+    /* Monospace face for code blocks and inline code */
     --font-mono: "Go Mono";
     @apply text-[13px];
   }
 
   body {
     @apply w-[87.5%] mx-auto pl-[12.5%] max-w-[1400px];
-    @apply font-sans antialiased;
+    @apply font-serif antialiased;
     @apply leading-[1.6];
     counter-reset: sidenote-counter katexEqnNo mmlEqnNo;
     background-color: #fffff8;
@@ -222,7 +155,7 @@
   }
 
   hr {
-    @apply block h-px w-[55%] my-[1em] px-0 border-0 border-t-[#ccc];
+    @apply block h-px w-[60%] my-[1em] px-0 border-0 border-t-[#ccc];
   }
 
   p,
@@ -250,24 +183,24 @@
   }
 
   blockquote p {
-    @apply w-[55%] mr-10;
+    @apply w-[60%] mr-10;
   }
 
   blockquote footer {
-    @apply w-[55%] text-[1.1rem] text-right;
+    @apply w-[60%] text-[1.1rem] text-right;
   }
 
   section > p,
   section > footer,
   section > table,
   section > .expressive-code {
-    @apply w-[55%];
+    @apply w-[60%];
   }
 
   section > dl,
   section > ol,
   section > ul {
-    @apply w-[50%];
+    @apply w-[55%];
     -webkit-padding-start: 5%;
   }
 
@@ -305,6 +238,22 @@
   pre {
     font-family: var(--font-mono), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   }
+
+  /* Inline code chips — warm parchment tint for Tufte cohesion.
+     Distinguishes inline code from body text without shouting. */
+  code:not(pre code) {
+    padding: 0.12em 0.4em;
+    border-radius: 3px;
+    font-size: 0.88em;
+    background: rgba(176, 137, 104, 0.1);
+    border: 1px solid rgba(176, 137, 104, 0.22);
+    word-break: break-word;
+  }
+
+  html.dark code:not(pre code) {
+    background: rgba(221, 184, 146, 0.08);
+    border-color: rgba(221, 184, 146, 0.18);
+  }
 }
 
 @layer components {
@@ -314,6 +263,13 @@
 
   section {
     @apply py-4 px-0;
+  }
+
+  /* Article body prose — Source Sans 3 for sustained reading. Everything
+     outside .prose (header nav, hero, cards, sidenotes, footer) keeps
+     et-book via body inheritance — the Tufte chrome. */
+  .prose {
+    @apply font-sans;
   }
 
   /* Site header styling (matching tufted-blog.pages.dev) */
@@ -410,11 +366,11 @@
 
   blockquote .sidenote,
   blockquote .marginnote {
-    @apply -mr-[82%] min-w-[59%] text-left;
+    @apply -mr-[75%] min-w-[54%] text-left;
   }
 
   figure {
-    @apply p-0 border-0 text-base align-baseline max-w-[55%];
+    @apply p-0 border-0 text-base align-baseline max-w-[60%];
     @apply mt-0 mr-0 mb-[3em] ml-0;
   }
 
@@ -436,7 +392,7 @@
   }
 
   table {
-    @apply w-[55%] border-collapse text-[1.4rem];
+    @apply w-[60%] border-collapse text-[1.4rem];
   }
 
   th,
@@ -595,7 +551,7 @@
 
 /* KaTeX display math: constrain to Tufte text column, scroll if wider */
 section > .katex-display {
-  width: 55%;
+  width: 60%;
   overflow-x: auto;
   overflow-y: hidden;
 }

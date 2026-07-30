@@ -154,9 +154,12 @@ export default function rehypeLinkCards() {
 				const norm = stem.replace(/\s+/g, '-').toLowerCase();
 				const key = Object.keys(manifest).find((k) => k.toLowerCase() === norm);
 				const meta = key ? manifest[key] : undefined;
-				const target = key ? `/blog/${key}/` : href;
-				const title = meta?.title || linkText;
-				const desc = cleanDesc(meta?.description || '');
+				// No manifest entry → unpublished note. Skip the card entirely;
+				// the inline chip would just duplicate the link text with a dead href.
+				if (!meta) return;
+				const target = `/blog/${key}/`;
+				const title = meta.title;
+				const desc = cleanDesc(meta.description || '');
 				const subtitle = desc.length > 120 ? desc.slice(0, 120).trimEnd() + '…' : (desc || '内部笔记');
 				card = makeCard({ isInternal: true, title, subtitle, href: target });
 			} else {

@@ -24,6 +24,10 @@ export default defineConfig({
 				// Route code blocks through the site's --font-mono var so the
 				// chosen mono face (see global.css) applies to highlighted code.
 				codeFontFamily: 'var(--font-mono), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
+				// EC's default 0.85rem renders ~11px at our 13px root — too small
+				// beside the 1.4rem prose. Lift block code to a comfortable size.
+				codeFontSize: '1.1rem',
+				codeLineHeight: '1.5',
 			},
 		}),
 		mdx(),
