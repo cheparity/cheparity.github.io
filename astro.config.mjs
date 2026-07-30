@@ -20,6 +20,11 @@ export default defineConfig({
 		}),
 		expressiveCode({
 			themes: ['github-dark'],
+			styleOverrides: {
+				// Route code blocks through the site's --font-mono var so the
+				// chosen mono face (see global.css) applies to highlighted code.
+				codeFontFamily: 'var(--font-mono), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
+			},
 		}),
 		mdx(),
 		sitemap(),

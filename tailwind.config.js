@@ -5,7 +5,8 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        serif: ['et-book', 'Palatino', '"Palatino Linotype"', '"Palatino LT STD"', '"Book Antiqua"', 'Georgia', 'serif'],
+        sans: ['"Source Sans 3"', '"Helvetica Neue"', '"PingFang SC"', '"Hiragino Sans GB"', '"Microsoft YaHei"', '"微软雅黑"', 'sans-serif'],
+        serif: ['et-book', 'Palatino', '"Palatino Linotype"', '"Palatino LT STD"', '"Book Antiqua"', 'Georgia', '"Songti SC"', '"Noto Serif CJK SC"', '"Source Han Serif SC"', 'SimSun', 'serif'],
       },
     },
   },
