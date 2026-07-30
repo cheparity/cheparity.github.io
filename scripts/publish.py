@@ -10,6 +10,7 @@ rewrites image paths, and copies attachments to public/assets/.
 import argparse
 import re
 import shutil
+import urllib.parse
 from pathlib import Path
 
 import frontmatter
@@ -52,6 +53,91 @@ def fix_paths(content: str) -> str:
     content = re.sub(
         r"!\[\[(attachments/[^\]]+)\]\]",
         lambda m: f"![]({process_attachment_path(m)})",
+        content,
+    )
+
+    return content
+
+
+# ---------------------------------------------------------------------------
+# Internal link rewriting
+# ---------------------------------------------------------------------------
+
+def make_slug(stem: str) -> str:
+    """Generate a URL-friendly slug from a note filename stem."""
+    slug = re.sub(r"\s+", "-", stem)
+    slug = re.sub(r"[^\w\-.一-鿿]", "", slug)
+    return slug
+
+
+def fix_internal_links(
+    content: str,
+    slug_map: dict[str, str],
+    note_dir: Path,
+    vault: Path,
+) -> str:
+    """Rewrite Obsidian internal links to blog URLs.
+
+    Handles:
+      [text](relative/path.md)  — relative markdown links
+      [[Note Name]]             — wikilinks (non-embed)
+
+    Links to unpublished notes are degraded to plain text.
+    """
+
+    def resolve_path(raw: str) -> str | None:
+        """Resolve a link target to a slug, or None if unpublished.
+
+        Tries vault-root-relative first (Obsidian default), then
+        note-directory-relative (for ./ or ../ links).
+        """
+        decoded = urllib.parse.unquote(raw.strip())
+        decoded = decoded.lstrip("./")
+        vault_root = vault.resolve()
+        # Try vault-root-relative
+        candidate = (vault_root / decoded).resolve()
+        try:
+            rel = candidate.relative_to(vault_root)
+            slug = slug_map.get(rel.as_posix())
+            if slug:
+                return slug
+        except ValueError:
+            pass
+        # Try note-directory-relative
+        candidate = (note_dir / decoded).resolve()
+        try:
+            rel = candidate.relative_to(vault_root)
+            return slug_map.get(rel.as_posix())
+        except ValueError:
+            return None
+
+    # [text](xxx.md) — skip external URLs and image embeds
+    def replace_md_link(m: re.Match) -> str:
+        text, target = m.group(1), m.group(2)
+        slug = resolve_path(target)
+        if slug:
+            return f"[{text}](/blog/{slug}/)"
+        return text
+
+    content = re.sub(
+        r"\[([^\]]+)\]\((?!https?://)([^)]+\.md)\)",
+        replace_md_link,
+        content,
+    )
+
+    # [[Note Name]] or [[Note Name|display text]] — non-embed wikilinks
+    def replace_wikilink(m: re.Match) -> str:
+        target = m.group(1)
+        display = m.group(2) if m.group(2) else target
+        # Wikilinks use note name without path; search slug_map by stem
+        for vault_rel, slug in slug_map.items():
+            if Path(vault_rel).stem == target:
+                return f"[{display}](/blog/{slug}/)"
+        return display
+
+    content = re.sub(
+        r"(?<!!)\[\[([^\]|]+)(?:\|([^\]]+))?\]\]",
+        replace_wikilink,
         content,
     )
 
@@ -272,16 +358,24 @@ def main():
         shutil.rmtree(assets_dir, ignore_errors=True)
         shutil.copytree(vault / vault_assets, assets_dir, dirs_exist_ok=True)
 
-    # Process notes → src/content/blog/
+    # --- Pass 1: collect publishable notes and build slug map ---
+    slug_map: dict[str, str] = {}  # vault-relative POSIX path → slug
+    notes: list[tuple[Path, object]] = []  # (file_path, parsed_frontmatter)
+
     for item in vault.rglob("*.md"):
-        # Skip .obsidian config and pages directory
         if ".obsidian" in item.parts or vault_page in item.parts:
             continue
-
         article_fm = frontmatter.load(str(item))
         if "post" not in article_fm or not article_fm["post"]:
             continue
+        rel = item.relative_to(vault).as_posix()
+        slug_map[rel] = make_slug(item.stem)
+        notes.append((item, article_fm))
 
+    print(f"Found {len(notes)} publishable note(s), slug map has {len(slug_map)} entries")
+
+    # --- Pass 2: transform and write each note ---
+    for item, article_fm in notes:
         print(f"Processing note: {item.name}")
 
         # --- Body transformations ---
@@ -290,17 +384,18 @@ def main():
         # Extract title from H1
         title, body = extract_title_and_strip_h1(body)
         if not title:
-            # Fallback: filename stem (without .md)
             title = item.stem
             print(f"  No H1 found, using filename stem: {title}")
 
         # Fix image paths
         body = fix_paths(body)
 
+        # Fix internal links (relative .md links and wikilinks)
+        body = fix_internal_links(body, slug_map, item.parent, vault)
+
         # --- Frontmatter mapping ---
         new_meta: dict = {}
 
-        # title
         new_meta["title"] = title
 
         # description: use vault value if present, else synthesize
@@ -312,13 +407,11 @@ def main():
             if teaser:
                 new_meta["description"] = teaser
                 print(f"  Synthesized teaser: {teaser[:60]}…")
-            # If no teaser either, omit description entirely (optional in schema)
 
         # pubDate from vault `date`
         if "date" in article_fm and article_fm["date"]:
             new_meta["pubDate"] = article_fm["date"]
         else:
-            # Fallback: file modification time
             import datetime
             new_meta["pubDate"] = datetime.datetime.fromtimestamp(
                 item.stat().st_mtime
@@ -337,14 +430,7 @@ def main():
             new_meta["tags"] = tags
 
         # --- Write output file ---
-        # Use a slug-friendly filename: the vault relative path, but flatten
-        # directory structure into the filename to avoid deep nesting issues.
-        # e.g. notes/Career/ICML 2026 论文筛选.md → ICML-2026-论文筛选.md
-        slug = item.stem
-        # Replace spaces with hyphens for URL-friendliness
-        slug = re.sub(r"\s+", "-", slug)
-        # Remove characters that are problematic in URLs
-        slug = re.sub(r"[^\w\-.一-鿿]", "", slug)
+        slug = slug_map[item.relative_to(vault).as_posix()]
         dst = blog_dir / f"{slug}.md"
 
         # Handle duplicate slugs
