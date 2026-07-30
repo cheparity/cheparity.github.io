@@ -7,6 +7,8 @@ import FormattedDate from '../components/FormattedDate.astro';
 import Header from '../components/Header.astro';
 import ThemeScript from '../components/ThemeScript.astro';
 import Outline from '../components/Outline.astro';
+import ProgressBar from '../components/ProgressBar.astro';
+import Lightbox from '../components/Lightbox.astro';
 import { readingMinutes } from '../utils/readingTime';
 import { SITE_TITLE } from '../consts';
 
@@ -28,6 +30,7 @@ const readMins = readingMinutes(slug);
 	</head>
 
 	<body>
+		<ProgressBar />
 		<Header />
 
 		<main>
@@ -77,6 +80,7 @@ const readMins = readingMinutes(slug);
 		</main>
 		<Outline />
 		<Footer />
+		<Lightbox />
 	</body>
 </html>
 

@@ -1,0 +1,94 @@
+<!--
+  Zero-dependency image lightbox.
+  Click any <img> inside <article> to open a fullscreen overlay.
+  Escape or click anywhere to dismiss.
+-->
+<div class="lightbox-overlay" id="lightbox-overlay" aria-hidden="true">
+  <img class="lightbox-img" id="lightbox-img" alt="" />
+</div>
+
+<script>
+  let _ac: AbortController | null = null;
+
+  function initLightbox() {
+    _ac?.abort();
+    const ac = new AbortController();
+    _ac = ac;
+
+    const overlay = document.getElementById('lightbox-overlay');
+    const lbImg = document.getElementById('lightbox-img');
+    if (!overlay || !lbImg) return;
+
+    function open(src: string, alt: string) {
+      lbImg.src = src;
+      lbImg.alt = alt;
+      overlay.classList.add('is-open');
+      overlay.setAttribute('aria-hidden', 'false');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function close() {
+      overlay.classList.remove('is-open');
+      overlay.setAttribute('aria-hidden', 'true');
+      document.body.style.overflow = '';
+    }
+
+    document.addEventListener('click', (e) => {
+      const img = (e.target as HTMLElement).closest?.('article img') as HTMLImageElement | null;
+      if (!img) return;
+      if (img.closest('.katex') || img.naturalWidth < 80) return;
+      e.preventDefault();
+      open(img.src, img.alt || '');
+    }, { signal: ac.signal });
+
+    overlay.addEventListener('click', close, { signal: ac.signal });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && overlay.classList.contains('is-open')) close();
+    }, { signal: ac.signal });
+  }
+
+  initLightbox();
+  if (!(window as any).__lbInit) {
+    (window as any).__lbInit = true;
+    document.addEventListener('astro:page-load', initLightbox);
+  }
+</script>
+
+<style is:global>
+  .lightbox-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0);
+    backdrop-filter: blur(0px);
+    cursor: zoom-out;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.25s ease, background 0.25s ease, backdrop-filter 0.25s ease;
+  }
+  .lightbox-overlay.is-open {
+    opacity: 1;
+    pointer-events: auto;
+    background: rgba(0, 0, 0, 0.82);
+    backdrop-filter: blur(6px);
+  }
+  .lightbox-img {
+    max-width: 92vw;
+    max-height: 92vh;
+    object-fit: contain;
+    border-radius: 4px;
+    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.5);
+    transform: scale(0.92);
+    transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .lightbox-overlay.is-open .lightbox-img {
+    transform: scale(1);
+  }
+  /* Hint cursor on article images */
+  article img:not(.katex img) {
+    cursor: zoom-in;
+  }
+</style>

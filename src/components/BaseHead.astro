@@ -2,6 +2,7 @@
 // Import it's global.css file here so that it is included on
 // all pages through the use of the <BaseHead /> component.
 import '../styles/global.css';
+import { ViewTransitions } from 'astro:transitions';
 import type { ImageMetadata } from 'astro';
 import FallbackImage from '../assets/blog-placeholder-1.jpg';
 import { SITE_TITLE } from '../consts';
@@ -29,6 +30,7 @@ const { title, description, image = FallbackImage } = Astro.props;
 	title={SITE_TITLE}
 	href={new URL('rss.xml', Astro.site)}
 />
+<ViewTransitions />
 <meta name="generator" content={Astro.generator} />
 
 <!-- Font preloads -->
@@ -41,7 +43,7 @@ const { title, description, image = FallbackImage } = Astro.props;
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.js" crossorigin="anonymous"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/contrib/auto-render.min.js" crossorigin="anonymous"></script>
 <script is:inline>
-document.addEventListener("DOMContentLoaded", function() {
+function initMath() {
   if (typeof renderMathInElement === "function") {
     renderMathInElement(document.body, {
       delimiters: [
@@ -51,7 +53,8 @@ document.addEventListener("DOMContentLoaded", function() {
       throwOnError: false
     });
   }
-});
+}
+document.addEventListener("astro:page-load", initMath);
 </script>
 
 <!-- Canonical URL -->

@@ -23,171 +23,187 @@
 </aside>
 
 <script>
-	const outline = document.getElementById('outline');
-	const article = document.querySelector('article');
-	if (!outline || !article) throw new Error('Outline: missing outline or article');
+	let _ac: AbortController | null = null;
 
-	const headings = article.querySelectorAll('h2, h3, h4');
-	if (headings.length === 0) {
-		outline.remove();
-		throw new Error('Outline: no headings found');
-	}
+	function initOutline() {
+		// Abort previous listeners (from prior VT navigation).
+		_ac?.abort();
+		const ac = new AbortController();
+		_ac = ac;
 
-	// Ensure every heading has an id for anchor linking.
-	headings.forEach((h, i) => {
-		if (!h.id) {
-			h.id = (h.textContent || '')
-				.trim()
-				.toLowerCase()
-				.replace(/[^\w\s-]/g, '')
-				.replace(/\s+/g, '-')
-				.replace(/-+/g, '-')
-				+ `-${i}`;
-		}
-	});
+		const outline = document.getElementById('outline');
+		const article = document.querySelector('article');
+		if (!outline || !article) return;
 
-	const nav = document.getElementById('outline-nav');
-	const railFill = document.getElementById('outline-rail-fill');
-	const dot = document.getElementById('outline-dot');
-	if (!nav) throw new Error('Outline: no nav element');
-	const items: { el: HTMLAnchorElement; heading: Element }[] = [];
-
-	headings.forEach((h, i) => {
-		const text = h.textContent || '';
-		const a = document.createElement('a');
-		a.href = `#${h.id}`;
-		a.title = text;
-		a.className = 'outline-link';
-		a.dataset.level = h.tagName[1];
-		a.style.setProperty('--i', String(i));
-
-		const bar = document.createElement('span');
-		bar.className = 'outline-bar';
-		const label = document.createElement('span');
-		label.className = 'outline-label';
-		label.textContent = text;
-
-		a.append(bar, label);
-		a.addEventListener('click', (e) => {
-			e.preventDefault();
-			h.scrollIntoView({ behavior: 'smooth', block: 'start' });
-			history.replaceState(null, '', `#${h.id}`);
-		});
-
-		nav.appendChild(a);
-		items.push({ el: a, heading: h });
-	});
-
-	// Inject a hover permalink anchor into each heading so readers can copy a
-	// deep link to any section. The id was guaranteed above, so the anchor and
-	// the matching TOC entry always agree. Done after the nav loop so the '#'
-	// glyph never leaks into the TOC labels.
-	headings.forEach((h) => {
-		const anchor = document.createElement('a');
-		anchor.className = 'heading-anchor';
-		anchor.href = `#${h.id}`;
-		anchor.setAttribute('aria-label', `Link to section: ${h.textContent || ''}`);
-		anchor.textContent = '#';
-		anchor.addEventListener('click', (e) => {
-			e.preventDefault();
-			h.scrollIntoView({ behavior: 'smooth', block: 'start' });
-			history.replaceState(null, '', `#${h.id}`);
-		});
-		h.appendChild(anchor);
-	});
-
-	// Scroll spy + progress rail + sliding dot.
-	let activeId: string | null = null;
-
-	function setActive(id: string) {
-		if (activeId === id) return;
-		activeId = id;
-		items.forEach(({ el, heading }) => {
-			const isActive = heading.id === id;
-			el.classList.toggle('is-active', isActive);
-			if (isActive) {
-				el.setAttribute('aria-current', 'location');
-				reveal(el);
-				positionDot(el);
-			} else {
-				el.removeAttribute('aria-current');
-			}
-		});
-	}
-
-	function positionDot(el: HTMLElement) {
-		if (!dot) return;
-		const oRect = outline!.getBoundingClientRect();
-		const eRect = el.getBoundingClientRect();
-		dot.style.top = `${eRect.top - oRect.top + eRect.height / 2}px`;
-	}
-
-	function updateProgress() {
-		if (!railFill) return;
-		const scrollTop = window.scrollY;
-		const docHeight = document.documentElement.scrollHeight - window.innerHeight;
-		const pct = docHeight > 0 ? Math.min(scrollTop / docHeight, 1) : 0;
-		railFill.style.transform = `scaleY(${pct})`;
-	}
-
-	// Keep the active row in view inside the outline without scrolling the page.
-	function reveal(el: HTMLElement) {
-		const o = outline!.getBoundingClientRect();
-		const r = el.getBoundingClientRect();
-		if (r.top < o.top + 4) outline!.scrollTop -= o.top + 4 - r.top;
-		else if (r.bottom > o.bottom - 4) outline!.scrollTop += r.bottom - (o.bottom - 4);
-	}
-
-	function computeActive() {
-		if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 5) {
-			setActive(items[items.length - 1].heading.id);
+		const headings = article.querySelectorAll('h2, h3, h4');
+		if (headings.length === 0) {
+			outline.remove();
 			return;
 		}
-		const offset = 100;
-		let currentId = items[0]?.heading.id || '';
-		for (const { heading } of items) {
-			if (heading.getBoundingClientRect().top <= offset) {
-				currentId = heading.id;
-			} else {
-				break;
-			}
-		}
-		setActive(currentId);
-	}
 
-	let ticking = false;
-	function onScroll() {
-		if (!ticking) {
-			ticking = true;
-			requestAnimationFrame(() => {
-				computeActive();
-				updateProgress();
-				ticking = false;
+		// Ensure every heading has an id for anchor linking.
+		headings.forEach((h, i) => {
+			if (!h.id) {
+				h.id = (h.textContent || '')
+					.trim()
+					.toLowerCase()
+					.replace(/[^\w\s-]/g, '')
+					.replace(/\s+/g, '-')
+					.replace(/-+/g, '-')
+					+ `-${i}`;
+			}
+		});
+
+		const nav = document.getElementById('outline-nav');
+		const railFill = document.getElementById('outline-rail-fill');
+		const dot = document.getElementById('outline-dot');
+		if (!nav) return;
+
+		// Clear any stale entries from a prior page.
+		nav.innerHTML = '';
+		const items: { el: HTMLAnchorElement; heading: Element }[] = [];
+
+		headings.forEach((h, i) => {
+			const text = h.textContent || '';
+			const a = document.createElement('a');
+			a.href = `#${h.id}`;
+			a.title = text;
+			a.className = 'outline-link';
+			a.dataset.level = h.tagName[1];
+			a.style.setProperty('--i', String(i));
+
+			const bar = document.createElement('span');
+			bar.className = 'outline-bar';
+			const label = document.createElement('span');
+			label.className = 'outline-label';
+			label.textContent = text;
+
+			a.append(bar, label);
+			a.addEventListener('click', (e) => {
+				e.preventDefault();
+				h.scrollIntoView({ behavior: 'smooth', block: 'start' });
+				history.replaceState(null, '', `#${h.id}`);
+			});
+
+			nav.appendChild(a);
+			items.push({ el: a, heading: h });
+		});
+
+		// Inject hover permalink anchors.
+		headings.forEach((h) => {
+			// Remove stale anchors from prior VT init.
+			h.querySelectorAll('.heading-anchor').forEach((a) => a.remove());
+			const anchor = document.createElement('a');
+			anchor.className = 'heading-anchor';
+			anchor.href = `#${h.id}`;
+			anchor.setAttribute('aria-label', `Link to section: ${h.textContent || ''}`);
+			anchor.textContent = '#';
+			anchor.addEventListener('click', (e) => {
+				e.preventDefault();
+				h.scrollIntoView({ behavior: 'smooth', block: 'start' });
+				history.replaceState(null, '', `#${h.id}`);
+			});
+			h.appendChild(anchor);
+		});
+
+		// Scroll spy + progress rail + sliding dot.
+		let activeId: string | null = null;
+
+		function setActive(id: string) {
+			if (activeId === id) return;
+			activeId = id;
+			items.forEach(({ el, heading }) => {
+				const isActive = heading.id === id;
+				el.classList.toggle('is-active', isActive);
+				if (isActive) {
+					el.setAttribute('aria-current', 'location');
+					reveal(el);
+					positionDot(el);
+				} else {
+					el.removeAttribute('aria-current');
+				}
 			});
 		}
+
+		function positionDot(el: HTMLElement) {
+			if (!dot) return;
+			const oRect = outline!.getBoundingClientRect();
+			const eRect = el.getBoundingClientRect();
+			dot.style.top = `${eRect.top - oRect.top + eRect.height / 2}px`;
+		}
+
+		function updateProgress() {
+			if (!railFill) return;
+			const scrollTop = window.scrollY;
+			const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+			const pct = docHeight > 0 ? Math.min(scrollTop / docHeight, 1) : 0;
+			railFill.style.transform = `scaleY(${pct})`;
+		}
+
+		function reveal(el: HTMLElement) {
+			const o = outline!.getBoundingClientRect();
+			const r = el.getBoundingClientRect();
+			if (r.top < o.top + 4) outline!.scrollTop -= o.top + 4 - r.top;
+			else if (r.bottom > o.bottom - 4) outline!.scrollTop += r.bottom - (o.bottom - 4);
+		}
+
+		function computeActive() {
+			if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 5) {
+				setActive(items[items.length - 1].heading.id);
+				return;
+			}
+			const offset = 100;
+			let currentId = items[0]?.heading.id || '';
+			for (const { heading } of items) {
+				if (heading.getBoundingClientRect().top <= offset) {
+					currentId = heading.id;
+				} else {
+					break;
+				}
+			}
+			setActive(currentId);
+		}
+
+		let ticking = false;
+		function onScroll() {
+			if (!ticking) {
+				ticking = true;
+				requestAnimationFrame(() => {
+					computeActive();
+					updateProgress();
+					ticking = false;
+				});
+			}
+		}
+
+		window.addEventListener('scroll', onScroll, { passive: true, signal: ac.signal });
+		computeActive();
+		updateProgress();
+
+		// Overflow detection.
+		function updateOverflow() {
+			const overflowing = outline!.scrollHeight > outline!.clientHeight + 2;
+			outline!.classList.toggle('is-overflowing', overflowing);
+			outline!.classList.toggle('can-scroll-up', outline!.scrollTop > 4);
+			outline!.classList.toggle('can-scroll-down',
+				outline!.scrollTop < outline!.scrollHeight - outline!.clientHeight - 4);
+		}
+
+		outline!.addEventListener('scroll', () => {
+			requestAnimationFrame(updateOverflow);
+		}, { passive: true, signal: ac.signal });
+
+		window.addEventListener('resize', () => requestAnimationFrame(updateOverflow), { signal: ac.signal });
+
+		updateOverflow();
 	}
 
-	window.addEventListener('scroll', onScroll, { passive: true });
-	computeActive();
-	updateProgress();
-
-	// Overflow detection: add fade masks when content exceeds the container.
-	function updateOverflow() {
-		const overflowing = outline!.scrollHeight > outline!.clientHeight + 2;
-		outline!.classList.toggle('is-overflowing', overflowing);
-		outline!.classList.toggle('can-scroll-up', outline!.scrollTop > 4);
-		outline!.classList.toggle('can-scroll-down',
-			outline!.scrollTop < outline!.scrollHeight - outline!.clientHeight - 4);
+	// Run on initial load and on every VT navigation.
+	initOutline();
+	if (!(window as any).__outlineInit) {
+		(window as any).__outlineInit = true;
+		document.addEventListener('astro:page-load', initOutline);
 	}
-
-	outline!.addEventListener('scroll', () => {
-		requestAnimationFrame(updateOverflow);
-	}, { passive: true });
-
-	// Re-check on resize (viewport height changes affect overflow).
-	window.addEventListener('resize', () => requestAnimationFrame(updateOverflow));
-
-	updateOverflow();
 </script>
 
 <style is:global>
