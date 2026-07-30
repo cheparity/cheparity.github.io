@@ -103,7 +103,7 @@
   }
 
   hr {
-    @apply block h-px w-[55%] my-8 px-0 border-0 border-t-[#ccc];
+    @apply block h-px w-[55%] my-[1em] px-0 border-0 border-t-[#ccc];
   }
 
   p,
@@ -160,8 +160,9 @@
     @apply list-decimal;
   }
 
+  dt:not(:first-child),
   li:not(:first-child) {
-    @apply mt-2;
+    @apply mt-[0.25rem];
   }
 
   footer {
@@ -174,6 +175,10 @@
 
   html.dark footer {
     @apply border-t-[rgba(221,221,221,0.3)];
+  }
+
+  sup {
+    @apply leading-[0];
   }
 }
 
@@ -285,7 +290,7 @@
 
   figure {
     @apply p-0 border-0 text-base align-baseline max-w-[55%];
-    @apply my-0 mx-0;
+    @apply mt-0 mr-0 mb-[3em] ml-0;
   }
 
   figcaption {
