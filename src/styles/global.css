@@ -51,7 +51,7 @@
   body {
     @apply w-[87.5%] mx-auto pl-[12.5%] max-w-[1400px];
     @apply font-serif;
-    @apply leading-[1.4];
+    @apply leading-[1.6];
     counter-reset: sidenote-counter katexEqnNo mmlEqnNo;
     background-color: #fffff8;
     background-image:
@@ -110,11 +110,11 @@
   dl,
   ol,
   ul {
-    @apply text-[1.4rem] leading-[2rem];
+    @apply text-[1.4rem] leading-[2.2rem];
   }
 
   p {
-    @apply mt-[1.4rem] mb-[1.4rem] pr-0 align-baseline;
+    @apply mt-[1.6rem] mb-[1.6rem] pr-0 align-baseline;
   }
 
   a:link,
@@ -162,7 +162,7 @@
 
   dt:not(:first-child),
   li:not(:first-child) {
-    @apply mt-[0.25rem];
+    @apply mt-[0.6rem];
   }
 
   footer {
@@ -259,7 +259,7 @@
   .sidenote,
   .marginnote {
     @apply float-right clear-right -mr-[60%] w-1/2 mt-[0.3rem] mb-0;
-    @apply text-[1.1rem] leading-[1.3] align-baseline relative;
+    @apply text-[1.1rem] leading-[1.5] align-baseline relative;
   }
 
   .sidenote-number {
