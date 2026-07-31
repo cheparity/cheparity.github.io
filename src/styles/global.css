@@ -638,10 +638,9 @@ section > .katex-display {
   overflow: hidden;
 }
 
-/* Inside blockquotes and lists the text column is narrower;
+/* Inside blockquotes the text column is narrower;
    floating would overflow, so render inline like mobile. */
-blockquote .link-card,
-li .link-card {
+blockquote .link-card {
   float: none;
   clear: none;
   margin: 0;
@@ -654,24 +653,20 @@ li .link-card {
   border-left-width: 1.5px;
   box-shadow: none;
 }
-blockquote .link-card:hover,
-li .link-card:hover {
+blockquote .link-card:hover {
   transform: none;
   box-shadow: none;
 }
-blockquote .link-card .link-card-body,
-li .link-card .link-card-body {
+blockquote .link-card .link-card-body {
   flex-direction: row;
   gap: 0.35em;
   align-items: center;
 }
-blockquote .link-card .link-card-title,
-li .link-card .link-card-title {
+blockquote .link-card .link-card-title {
   -webkit-line-clamp: 1;
   font-size: 0.85rem;
 }
-blockquote .link-card .link-card-subtitle,
-li .link-card .link-card-subtitle {
+blockquote .link-card .link-card-subtitle {
   display: none;
 }
 
