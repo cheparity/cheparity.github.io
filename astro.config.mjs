@@ -10,6 +10,8 @@ import rehypeKatex from 'rehype-katex';
 import expressiveCode from 'astro-expressive-code';
 import pagefind from 'astro-pagefind';
 import rehypeLinkCards from './src/plugins/rehype-link-cards.ts';
+import remarkMathFix from './src/plugins/remark-math-fix.ts';
+import remarkCodeLang from './src/plugins/remark-code-lang.ts';
 
 // https://astro.build/config
 export default defineConfig({
@@ -35,7 +37,7 @@ export default defineConfig({
 		pagefind()
 	],
 	markdown: {
-		remarkPlugins: [remarkCallout, remarkMath],
-		rehypePlugins: [rehypeKatex, rehypeLinkCards],
+		remarkPlugins: [remarkCallout, remarkMath, remarkMathFix, remarkCodeLang],
+		rehypePlugins: [[rehypeKatex, { strict: false }], rehypeLinkCards],
 	},
 });

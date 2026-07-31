@@ -20,7 +20,7 @@ let inkIndex = 0;
       <p class="hero-tagline" aria-label={tagline.replace(/<[^>]+>/g, '')}>
         {taglineChunks.map((chunk) => {
           if (/^\s+$/.test(chunk)) return <>{chunk}</>;
-          const delay = inkIndex++ * 130;
+          const delay = inkIndex++ * 80;
           return <span class="tag-word" style={`--ink-delay: ${delay}ms`} set:html={chunk} />;
         })}
       </p>
@@ -165,7 +165,7 @@ let inkIndex = 0;
   }
 
   .hero-main {
-    animation: hero-rise 0.7s cubic-bezier(0.22, 1, 0.36, 1) 0.08s both;
+    animation: hero-rise 0.45s cubic-bezier(0.22, 1, 0.36, 1) 0.05s both;
   }
 
   /* Sidebar vertically centres against the taller main column, so the social
@@ -175,7 +175,7 @@ let inkIndex = 0;
     display: flex;
     flex-direction: column;
     gap: 2rem;
-    animation: hero-rise 0.7s cubic-bezier(0.22, 1, 0.36, 1) 0.22s both;
+    animation: hero-rise 0.45s cubic-bezier(0.22, 1, 0.36, 1) 0.12s both;
   }
 
   @keyframes hero-rise {
@@ -193,7 +193,7 @@ let inkIndex = 0;
 
   .avatar-wrapper {
     margin-bottom: 1.8rem;
-    animation: hero-pop 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation: hero-pop 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
   }
 
   .avatar {
@@ -245,8 +245,8 @@ let inkIndex = 0;
      glyph, staggered left to right, as if the sentence were being inked. */
   .tag-word {
     display: inline-block;
-    animation: ink-set 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
-    animation-delay: calc(0.35s + var(--ink-delay, 0ms));
+    animation: ink-set 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation-delay: calc(0.18s + var(--ink-delay, 0ms));
   }
 
   .hero-tagline strong {
@@ -266,7 +266,7 @@ let inkIndex = 0;
     font-style: italic;
     font-size: 1.1rem;
     color: #888;
-    animation: hero-rise 0.7s cubic-bezier(0.22, 1, 0.36, 1) 0.5s both;
+    animation: hero-rise 0.45s cubic-bezier(0.22, 1, 0.36, 1) 0.28s both;
   }
 
   .status-mark {

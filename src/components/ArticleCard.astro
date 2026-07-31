@@ -14,7 +14,7 @@ const { title, description, pubDate, updatedDate, heroImage, tags } = data;
 const readMins = readingMinutes(id);
 // Stagger the scroll-reveal so a list of cards cascades in, capped so a long
 // archive doesn't leave the last cards waiting too long.
-const revealDelay = Math.min(index ?? 0, 6) * 70;
+const revealDelay = Math.min(index ?? 0, 6) * 45;
 
 /** Render inline markdown (bold, italic, code, links) to HTML; preserve $...$ for KaTeX auto-render. */
 function renderInlineMd(text: string): string {
