@@ -48,12 +48,12 @@
 			const cx = cRect.left - proseRect.left;
 			const cy = cRect.top - proseRect.top + cRect.height / 2;
 
-			const dx = cx - ax;
-			// Cubic bezier with horizontal tangents for a smooth S-curve
-			const cp = Math.max(dx * 0.4, 20);
+			// Midpoint x for the vertical segment
+			const mx = ax + (cx - ax) * 0.5;
 
+			// Polyline: horizontal → vertical → horizontal
 			const path = document.createElementNS(SVG_NS, 'path');
-			path.setAttribute('d', `M${ax},${ay} C${ax + cp},${ay} ${cx - cp},${cy} ${cx},${cy}`);
+			path.setAttribute('d', `M${ax},${ay} L${mx},${ay} L${mx},${cy} L${cx},${cy}`);
 			svg.appendChild(path);
 
 			// Endpoint dots
