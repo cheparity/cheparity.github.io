@@ -149,7 +149,7 @@ export default function rehypeLinkCards() {
 				// case-insensitively. The manifest key is the canonical slug (written by
 				// publish.py alongside the post files), so linking to it always hits a route.
 				const stem = href.startsWith('/blog/')
-					? href.replace(/^\/blog\//, '').replace(/\/$/, '')
+					? decodeURIComponent(href.replace(/^\/blog\//, '').replace(/\/$/, ''))
 					: decodeURIComponent(href).split('/').pop()!.replace(/\.md$/, '');
 				const norm = stem.replace(/\s+/g, '-').toLowerCase();
 				const key = Object.keys(manifest).find((k) => k.toLowerCase() === norm);
