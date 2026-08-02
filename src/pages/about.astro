@@ -66,7 +66,7 @@ const threads = [
 					</p>
 				</div>
 
-				<figure class="about-figure fullwidth" data-reveal style="--d: 120ms">
+				<figure class="about-figure" data-reveal style="--d: 120ms">
 					<Image
 						src={AboutHeroImage}
 						alt=""
@@ -246,8 +246,9 @@ const threads = [
 		margin-bottom: 0;
 	}
 
-	/* --- Full-width figure break --- */
+	/* --- Figure, scoped to the reading measure --- */
 	.about-figure {
+		width: 62%;
 		margin: 3.5rem 0;
 	}
 	.about-photo {
@@ -402,6 +403,7 @@ const threads = [
 		}
 		.about-lead,
 		.about-body p,
+		.about-figure,
 		.thread-list {
 			width: 100%;
 		}
