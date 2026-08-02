@@ -1,0 +1,159 @@
+---
+---
+
+<!--
+  LinkCardLayout — pins margin link-cards to their anchor's vertical position
+  in a single shared column, with collision avoidance, and draws dashed
+  connector lines from each anchor to its card.
+
+  Runs after each page load (including View Transitions) and on resize.
+  Skips cards inside [data-callout] (those stay inline) and bails on narrow
+  viewports where the margin collapses.
+-->
+<script>
+	import { onPage } from '../utils/vt';
+
+	const MOBILE_BP = 760;
+	const GAP = 10; // px between stacked cards
+	const SVG_NS = 'http://www.w3.org/2000/svg';
+
+	interface Entry {
+		card: HTMLElement;
+		anchor: HTMLElement;
+		desiredTop: number;
+	}
+
+	function drawConnectors(prose: HTMLElement, entries: Entry[]) {
+		let svg = prose.querySelector(':scope > svg.link-card-connectors') as SVGSVGElement | null;
+		if (!svg) {
+			svg = document.createElementNS(SVG_NS, 'svg');
+			svg.setAttribute('class', 'link-card-connectors');
+			svg.setAttribute('aria-hidden', 'true');
+			prose.insertBefore(svg, prose.firstChild);
+		}
+		// Clear previous paths
+		svg.innerHTML = '';
+
+		const proseRect = prose.getBoundingClientRect();
+
+		for (const { card, anchor } of entries) {
+			const aRect = anchor.getBoundingClientRect();
+			const cRect = card.getBoundingClientRect();
+
+			// Anchor: right edge, vertical center
+			const ax = aRect.right - proseRect.left;
+			const ay = aRect.top - proseRect.top + aRect.height / 2;
+
+			// Card: left edge, vertical center
+			const cx = cRect.left - proseRect.left;
+			const cy = cRect.top - proseRect.top + cRect.height / 2;
+
+			// Midpoint x for the vertical segment
+			const mx = ax + (cx - ax) * 0.5;
+
+			// Polyline: horizontal → vertical → horizontal
+			const path = document.createElementNS(SVG_NS, 'path');
+			path.setAttribute('d', `M${ax},${ay} L${mx},${ay} L${mx},${cy} L${cx},${cy}`);
+			svg.appendChild(path);
+
+			// Endpoint dots
+			const dotA = document.createElementNS(SVG_NS, 'circle');
+			dotA.setAttribute('cx', String(ax));
+			dotA.setAttribute('cy', String(ay));
+			dotA.setAttribute('r', '2.5');
+			svg.appendChild(dotA);
+
+			const dotC = document.createElementNS(SVG_NS, 'circle');
+			dotC.setAttribute('cx', String(cx));
+			dotC.setAttribute('cy', String(cy));
+			dotC.setAttribute('r', '2.5');
+			svg.appendChild(dotC);
+		}
+
+		// Fade in
+		svg.style.opacity = '0';
+		requestAnimationFrame(() => { svg!.style.opacity = '1'; });
+	}
+
+	function layoutCards() {
+		const prose = document.querySelector('section.prose');
+		if (!prose) return;
+
+		const cards = [...prose.querySelectorAll('.link-card')]
+			.filter((c) => !c.closest('[data-callout]'));
+		if (cards.length === 0) return;
+
+		const proseRect = prose.getBoundingClientRect();
+
+		// 1. Record each card's anchor center Y BEFORE removing from flow.
+		const entries: (Entry & { anchorCenterY: number })[] = [];
+		for (const card of cards) {
+			const anchor = card.previousElementSibling as HTMLElement | null;
+			if (!anchor || anchor.tagName !== 'A') continue;
+			const anchorRect = anchor.getBoundingClientRect();
+			const anchorCenterY = anchorRect.top - proseRect.top + anchorRect.height / 2;
+			entries.push({ card: card as HTMLElement, anchor, desiredTop: 0, anchorCenterY });
+		}
+
+		// 2. Pull cards out of flow (absolute) so text reflows without them.
+		for (const { card } of entries) {
+			card.classList.add('link-card--positioned');
+		}
+
+		// 3. Force reflow so offsetHeight reflects the new width.
+		void prose.offsetHeight;
+
+		// 4. Compute desiredTop = anchorCenterY - cardHeight/2 (center-align).
+		for (const entry of entries) {
+			entry.desiredTop = entry.anchorCenterY - entry.card.offsetHeight / 2;
+		}
+
+		// 5. Collision avoidance — process top-to-bottom by desired position.
+		entries.sort((a, b) => a.desiredTop - b.desiredTop);
+		let lastBottom = -Infinity;
+		for (const { card, desiredTop } of entries) {
+			const top = Math.max(desiredTop, lastBottom + GAP);
+			card.style.top = `${top}px`;
+			lastBottom = top + card.offsetHeight;
+		}
+
+		// 5. Draw connector lines.
+		drawConnectors(prose as HTMLElement, entries);
+	}
+
+	function teardown() {
+		const prose = document.querySelector('section.prose');
+		if (!prose) return;
+		for (const card of prose.querySelectorAll('.link-card--positioned')) {
+			card.classList.remove('link-card--positioned');
+			(card as HTMLElement).style.top = '';
+		}
+		const svg = prose.querySelector(':scope > svg.link-card-connectors');
+		if (svg) svg.remove();
+	}
+
+	onPage((signal) => {
+		if (window.innerWidth <= MOBILE_BP) return;
+
+		const run = () => layoutCards();
+		requestAnimationFrame(() => requestAnimationFrame(run));
+
+		if (document.fonts?.ready) {
+			document.fonts.ready.then(run).catch(() => {});
+		}
+
+		let resizeTimer: ReturnType<typeof setTimeout>;
+		const onResize = () => {
+			clearTimeout(resizeTimer);
+			resizeTimer = setTimeout(() => {
+				if (window.innerWidth <= MOBILE_BP) {
+					teardown();
+				} else {
+					teardown();
+					layoutCards();
+				}
+			}, 150);
+		};
+		window.addEventListener('resize', onResize, { signal });
+	});
+</script>
