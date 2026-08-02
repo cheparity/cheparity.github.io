@@ -85,14 +85,14 @@
 
 		const proseRect = prose.getBoundingClientRect();
 
-		// 1. Record each card's anchor vertical position BEFORE removing from flow.
-		const entries: Entry[] = [];
+		// 1. Record each card's anchor center Y BEFORE removing from flow.
+		const entries: (Entry & { anchorCenterY: number })[] = [];
 		for (const card of cards) {
 			const anchor = card.previousElementSibling as HTMLElement | null;
 			if (!anchor || anchor.tagName !== 'A') continue;
 			const anchorRect = anchor.getBoundingClientRect();
-			const desiredTop = anchorRect.top - proseRect.top + anchorRect.height * 0.15;
-			entries.push({ card: card as HTMLElement, anchor, desiredTop });
+			const anchorCenterY = anchorRect.top - proseRect.top + anchorRect.height / 2;
+			entries.push({ card: card as HTMLElement, anchor, desiredTop: 0, anchorCenterY });
 		}
 
 		// 2. Pull cards out of flow (absolute) so text reflows without them.
@@ -103,7 +103,12 @@
 		// 3. Force reflow so offsetHeight reflects the new width.
 		void prose.offsetHeight;
 
-		// 4. Collision avoidance — process top-to-bottom by desired position.
+		// 4. Compute desiredTop = anchorCenterY - cardHeight/2 (center-align).
+		for (const entry of entries) {
+			entry.desiredTop = entry.anchorCenterY - entry.card.offsetHeight / 2;
+		}
+
+		// 5. Collision avoidance — process top-to-bottom by desired position.
 		entries.sort((a, b) => a.desiredTop - b.desiredTop);
 		let lastBottom = -Infinity;
 		for (const { card, desiredTop } of entries) {
