@@ -190,6 +190,13 @@
     @apply w-[60%] text-[1.1rem] text-right;
   }
 
+  blockquote > dl,
+  blockquote > ol,
+  blockquote > ul {
+    @apply w-[55%];
+    -webkit-padding-start: 5%;
+  }
+
   section > p,
   section > footer,
   section > table,
@@ -270,6 +277,7 @@
      et-book via body inheritance — the Tufte chrome. */
   .prose {
     @apply font-sans;
+    position: relative;
   }
 
   /* Site header styling (matching tufted-blog.pages.dev) */
@@ -452,7 +460,10 @@
     }
 
     blockquote p,
-    blockquote footer {
+    blockquote footer,
+    blockquote > dl,
+    blockquote > ol,
+    blockquote > ul {
       @apply w-full;
     }
 
@@ -638,10 +649,23 @@ section > .katex-display {
   overflow: hidden;
 }
 
-/* Inside blockquotes and lists the text column is narrower;
-   floating would overflow, so render inline like mobile. */
-blockquote .link-card,
-li .link-card {
+/* JS-driven absolute positioning — cards pinned to their anchor's vertical
+   position in a single shared margin column, with collision avoidance. */
+.link-card--positioned {
+  position: absolute;
+  float: none;
+  clear: none;
+  margin: 0;
+  right: 4%;
+  width: 31%;
+}
+
+/* Callouts are boxed (border + background, w-[60%]); a card floated out
+   of the box would cross its border, so render inline like mobile. Plain
+   blockquotes and lists keep the margin float — blockquote lists are
+   width-constrained like section lists so the -60% offset lands in the
+   margin column instead of overflowing. */
+[data-callout] .link-card {
   float: none;
   clear: none;
   margin: 0;
@@ -654,24 +678,20 @@ li .link-card {
   border-left-width: 1.5px;
   box-shadow: none;
 }
-blockquote .link-card:hover,
-li .link-card:hover {
+[data-callout] .link-card:hover {
   transform: none;
   box-shadow: none;
 }
-blockquote .link-card .link-card-body,
-li .link-card .link-card-body {
+[data-callout] .link-card .link-card-body {
   flex-direction: row;
   gap: 0.35em;
   align-items: center;
 }
-blockquote .link-card .link-card-title,
-li .link-card .link-card-title {
+[data-callout] .link-card .link-card-title {
   -webkit-line-clamp: 1;
   font-size: 0.85rem;
 }
-blockquote .link-card .link-card-subtitle,
-li .link-card .link-card-subtitle {
+[data-callout] .link-card .link-card-subtitle {
   display: none;
 }
 

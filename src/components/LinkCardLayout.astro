@@ -1,0 +1,97 @@
+---
+---
+
+<!--
+  LinkCardLayout — pins margin link-cards to their anchor's vertical position
+  in a single shared column, with collision avoidance.  Float-based layout
+  can't do this because `clear:right` stacks cards sequentially regardless of
+  where their source link sits vertically.
+
+  Runs after each page load (including View Transitions) and on resize.
+  Skips cards inside [data-callout] (those stay inline) and bails on narrow
+  viewports where the margin collapses.
+-->
+<script>
+	import { onPage } from '../utils/vt';
+
+	const MOBILE_BP = 760;
+	const GAP = 10; // px between stacked cards
+
+	function layoutCards() {
+		const prose = document.querySelector('section.prose');
+		if (!prose) return;
+
+		const cards = [...prose.querySelectorAll('.link-card')]
+			.filter((c) => !c.closest('[data-callout]'));
+		if (cards.length === 0) return;
+
+		const proseRect = prose.getBoundingClientRect();
+
+		// 1. Record each card's anchor vertical position BEFORE removing from flow.
+		const entries: { card: HTMLElement; anchor: HTMLElement; desiredTop: number }[] = [];
+		for (const card of cards) {
+			const anchor = card.previousElementSibling as HTMLElement | null;
+			if (!anchor || anchor.tagName !== 'A') continue;
+			const anchorRect = anchor.getBoundingClientRect();
+			// Align card top with the anchor's vertical midpoint for a natural look.
+			const desiredTop = anchorRect.top - proseRect.top + anchorRect.height * 0.15;
+			entries.push({ card: card as HTMLElement, anchor, desiredTop });
+		}
+
+		// 2. Pull cards out of flow (absolute) so text reflows without them.
+		for (const { card } of entries) {
+			card.classList.add('link-card--positioned');
+		}
+
+		// 3. Force reflow so offsetHeight reflects the new width.
+		void prose.offsetHeight;
+
+		// 4. Collision avoidance — process top-to-bottom by desired position.
+		entries.sort((a, b) => a.desiredTop - b.desiredTop);
+		let lastBottom = -Infinity;
+		for (const { card, desiredTop } of entries) {
+			const top = Math.max(desiredTop, lastBottom + GAP);
+			card.style.top = `${top}px`;
+			lastBottom = top + card.offsetHeight;
+		}
+	}
+
+	function teardown() {
+		const prose = document.querySelector('section.prose');
+		if (!prose) return;
+		for (const card of prose.querySelectorAll('.link-card--positioned')) {
+			card.classList.remove('link-card--positioned');
+			(card as HTMLElement).style.top = '';
+		}
+	}
+
+	onPage((signal) => {
+		// Skip on mobile — cards are inline chips there.
+		if (window.innerWidth <= MOBILE_BP) return;
+
+		// Run after fonts / KaTeX have settled (they shift anchor positions).
+		const run = () => layoutCards();
+		// Double-rAF ensures layout is stable after VT swap.
+		requestAnimationFrame(() => requestAnimationFrame(run));
+
+		// Also re-run once all fonts are ready (CJK web fonts shift line heights).
+		if (document.fonts?.ready) {
+			document.fonts.ready.then(run).catch(() => {});
+		}
+
+		// Debounced resize handler.
+		let resizeTimer: ReturnType<typeof setTimeout>;
+		const onResize = () => {
+			clearTimeout(resizeTimer);
+			resizeTimer = setTimeout(() => {
+				if (window.innerWidth <= MOBILE_BP) {
+					teardown();
+				} else {
+					teardown();
+					layoutCards();
+				}
+			}, 150);
+		};
+		window.addEventListener('resize', onResize, { signal });
+	});
+</script>
