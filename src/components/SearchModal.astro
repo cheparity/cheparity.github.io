@@ -1,52 +1,130 @@
 ---
+import { getCollection } from 'astro:content';
+
+// Tag frequency for the idle "browse the drawers" state. Computed once at
+// build so the drawer renders instantly on open — no async round-trip, no
+// dependency on the search index's filter extraction.
+const posts = await getCollection('blog');
+const tagCounts = new Map<string, number>();
+for (const post of posts) {
+	for (const tag of post.data.tags ?? []) {
+		tagCounts.set(tag, (tagCounts.get(tag) ?? 0) + 1);
+	}
+}
+const topTags = [...tagCounts.entries()]
+	.sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+	.slice(0, 16)
+	.map(([tag, count]) => ({ tag, count }));
 ---
 
-<!-- Search Modal Overlay -->
-<div id="search-modal" class="search-modal" aria-hidden="true">
-	<!-- Modal Backdrop -->
+<!-- Search modal — styled as a card-catalog index card. Persisted across
+     ViewTransitions so the script's element references survive SPA navigation. -->
+<div id="search-modal" class="search-modal" aria-hidden="true" transition:persist>
 	<div class="search-modal-backdrop" id="search-modal-backdrop"></div>
 
-	<!-- Modal Content -->
 	<div class="search-modal-content" role="dialog" aria-modal="true" aria-label="Search">
-		<!-- Search Header -->
-		<div class="search-modal-header">
-			<div class="search-input-wrapper">
-				<svg class="search-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 256 256">
-					<path d="M229.66,218.34l-50.07-50.06a88.11,88.11,0,1,0-11.31,11.31l50.06,50.07a8,8,0,0,0,11.32-11.32ZM40,112a72,72,0,1,1,72,72A72.08,72.08,0,0,1,40,112Z"></path>
-				</svg>
+		<!-- Header: drop-cap mark, display title, input, shortcut chip -->
+		<header class="sm-head">
+			<span class="sm-mark" aria-hidden="true">§</span>
+			<h2 class="sm-title">Search the notes</h2>
+			<div class="sm-input-wrap">
 				<input
 					id="search-input"
 					type="text"
-					placeholder="Search..."
+					placeholder="Try “SVD”, “flow matching”, “假设检验”…"
 					autocomplete="off"
+					spellcheck="false"
 					aria-label="Search"
 				/>
-				<div class="search-shortcut">Cmd+K</div>
+				<kbd class="sm-kbd-chip">esc</kbd>
 			</div>
-			<button id="search-close" class="search-close-btn" aria-label="Close search">
-				<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 256 256">
-					<path d="M205.66,194.34a8,8,0,0,1-11.32,11.32L128,139.31,61.66,205.66a8,8,0,0,1-11.32-11.32L116.69,128,50.34,61.66A8,8,0,0,1,61.66,50.34L128,116.69l66.34-66.35a8,8,0,0,1,11.32,11.32L139.31,128Z"></path>
-				</svg>
-			</button>
+		</header>
+
+		<!-- Results / states -->
+		<div id="search-results" class="sm-results">
+			<div class="sm-state" id="search-loading" hidden>
+				<span class="sm-state-glyph" aria-hidden="true">✳</span>
+				<p class="sm-state-text">Opening the card catalog…</p>
+			</div>
+
+			<div class="sm-state" id="search-empty" hidden>
+				<span class="sm-state-glyph" aria-hidden="true">∅</span>
+				<p class="sm-state-text">
+					Nothing filed under <em id="search-empty-query"></em>.
+				</p>
+				<p class="sm-state-hint">Try a shorter phrase, or browse the drawers below.</p>
+			</div>
+
+			<div class="sm-state" id="search-failed" hidden>
+				<span class="sm-state-glyph" aria-hidden="true">✕</span>
+				<p class="sm-state-text">The index failed to load.</p>
+				<p class="sm-state-hint">Refresh the page and try again.</p>
+			</div>
+
+			<div class="sm-idle" id="search-idle" data-tags={JSON.stringify(topTags)}>
+				<p class="sm-idle-label">Browse the drawers</p>
+				<div class="sm-tags" id="search-idle-tags"></div>
+			</div>
+
+			<ol id="search-results-list" class="sm-list"></ol>
 		</div>
 
-		<!-- Search Results -->
-		<div id="search-results" class="search-results">
-			<div class="search-loading" id="search-loading" style="display: none;">Loading search index...</div>
-			<div class="search-empty" id="search-empty" style="display: none;">No results found</div>
-			<ul id="search-results-list" class="search-results-list"></ul>
-		</div>
+		<!-- Footer: keyboard hints + live result count -->
+		<footer class="sm-foot">
+			<span class="sm-hints">
+				<kbd>↑</kbd><kbd>↓</kbd> navigate
+				<span class="sm-hint-sep" aria-hidden="true">·</span>
+				<kbd>↵</kbd> open
+				<span class="sm-hint-sep" aria-hidden="true">·</span>
+				<kbd>esc</kbd> close
+			</span>
+			<span class="sm-count" id="search-count" aria-live="polite"></span>
+		</footer>
 	</div>
 </div>
 
 <script>
-	// Initialize PageFind search
-	let pagefind = null;
+	// PageFind search with keyboard navigation and a tag-browse idle state.
+	let pagefind: any = null;
+	let initPromise: Promise<boolean> | null = null;
 
-	async function initPageFind() {
+	const modal = document.getElementById('search-modal') as HTMLDivElement;
+	const backdrop = document.getElementById('search-modal-backdrop') as HTMLElement;
+	const input = document.getElementById('search-input') as HTMLInputElement;
+	const resultsList = document.getElementById('search-results-list') as HTMLOListElement;
+	const loading = document.getElementById('search-loading') as HTMLDivElement;
+	const empty = document.getElementById('search-empty') as HTMLDivElement;
+	const emptyQuery = document.getElementById('search-empty-query') as HTMLElement;
+	const failed = document.getElementById('search-failed') as HTMLDivElement;
+	const idle = document.getElementById('search-idle') as HTMLDivElement;
+	const idleTags = document.getElementById('search-idle-tags') as HTMLDivElement;
+	const countEl = document.getElementById('search-count') as HTMLSpanElement;
+
+	let isOpen = false;
+	let searchTimeout: ReturnType<typeof setTimeout> | null = null;
+	let activeIndex = -1;
+	let idleTagsBuilt = false;
+
+	// --- State plumbing -----------------------------------------------------
+
+	function show(el: HTMLElement | null, on: boolean) {
+		if (el) el.hidden = !on;
+	}
+
+	function resetStates() {
+		show(loading, false);
+		show(empty, false);
+		show(failed, false);
+		show(idle, false);
+	}
+
+	function setCount(text: string) {
+		countEl.textContent = text;
+	}
+
+	async function initPageFind(): Promise<boolean> {
 		try {
-			// Load PageFind using ES module import
-			// Put path in variable to avoid Vite static analysis
+			// Path kept in a variable so Vite doesn't statically analyze it.
 			const pagefindPath = '/pagefind/pagefind.js';
 			pagefind = await import(/* @vite-ignore */ pagefindPath);
 			return true;
@@ -56,378 +134,891 @@
 		}
 	}
 
-	// Modal state management
-	let isOpen = false;
-	let searchTimeout = null;
+	function ensurePageFind(): Promise<boolean> {
+		if (!initPromise) {
+			show(loading, true);
+			initPromise = initPageFind().then((ok) => {
+				show(loading, false);
+				if (!ok) show(failed, true);
+				return ok;
+			});
+		}
+		return initPromise;
+	}
 
-	const modal = document.getElementById('search-modal');
-	const input = document.getElementById('search-input');
-	const resultsList = document.getElementById('search-results-list');
-	const loading = document.getElementById('search-loading');
-	const empty = document.getElementById('search-empty');
-	const backdrop = document.getElementById('search-modal-backdrop');
-	const closeBtn = document.getElementById('search-close');
+	// --- Modal open/close ---------------------------------------------------
 
-	// Open modal
 	function openModal() {
 		isOpen = true;
 		modal.setAttribute('aria-hidden', 'false');
-		modal.style.display = 'flex';
+		modal.classList.add('is-open');
 		document.body.style.overflow = 'hidden';
+		if (!idleTagsBuilt) buildIdleTags();
 		input.focus();
+		input.select();
 
-		// Initialize PageFind if not already loaded
-		if (!pagefind) {
-			loading.style.display = 'block';
-			initPageFind().then((success) => {
-				loading.style.display = 'none';
-				if (!success) {
-					empty.textContent = 'Search failed to load. Please refresh the page.';
-					empty.style.display = 'block';
-				}
-			});
-		}
+		// Warm the index in the background; the first real query awaits it.
+		// No loading spinner here — the idle drawer is already on screen.
+		ensurePageFind();
 	}
 
-	// Close modal
 	function closeModal() {
+		if (!isOpen) return;
 		isOpen = false;
 		modal.setAttribute('aria-hidden', 'true');
-		modal.style.display = 'none';
+		modal.classList.remove('is-open');
 		document.body.style.overflow = '';
-		input.value = '';
-		resultsList.innerHTML = '';
-		empty.style.display = 'none';
 	}
 
-	// Perform search
-	async function performSearch(query) {
-		if (!pagefind) return;
+	// --- Searching ----------------------------------------------------------
 
-		if (!query.trim()) {
+	function performSearch(query: string) {
+		const q = query.trim();
+
+		if (searchTimeout) clearTimeout(searchTimeout);
+
+		if (!q) {
+			resetStates();
+			show(idle, true);
 			resultsList.innerHTML = '';
-			empty.style.display = 'none';
+			activeIndex = -1;
+			setCount('');
 			return;
 		}
 
-		// Clear previous timeout
-		if (searchTimeout) {
-			clearTimeout(searchTimeout);
-		}
-
-		// Debounce search
 		searchTimeout = setTimeout(async () => {
+			if (!pagefind) return;
 			try {
-				const results = await pagefind.search(query);
-				displayResults(results);
+				const response = await pagefind.search(q);
+				// Ignore stale responses if the query moved on.
+				if (input.value.trim() !== q) return;
+				renderResults(response.results, q);
 			} catch (e) {
 				console.error('Search error:', e);
 			}
-		}, 300);
+		}, 200);
 	}
 
-	// Display search results
-	function displayResults(results) {
+	function renderResults(results: any[], query: string) {
+		resetStates();
 		resultsList.innerHTML = '';
+		activeIndex = -1;
 
-		if (results.results.length === 0) {
-			empty.style.display = 'block';
+		if (!results.length) {
+			emptyQuery.textContent = `“${query}”`;
+			show(empty, true);
+			setCount('0 results');
 			return;
 		}
 
-		empty.style.display = 'none';
+		const limited = results.slice(0, 10);
 
-		// Limit results to 10
-		const limitedResults = results.results.slice(0, 10);
-
-		Promise.all(
-			limitedResults.map((result) => result.data())
-		).then((dataArray) => {
+		Promise.all(limited.map((r) => r.data())).then((dataArray) => {
 			dataArray.forEach((data, index) => {
-				const li = document.createElement('li');
-				li.className = 'search-result-item';
-
-				const a = document.createElement('a');
-				a.href = data.url;
-				a.textContent = data.meta.title || data.url;
-				a.className = 'search-result-link';
-
-				const excerpt = document.createElement('div');
-				excerpt.className = 'search-result-excerpt';
-				// Use innerHTML to render <mark> tags for highlighting
-				excerpt.innerHTML = data.excerpt || '';
-
-				li.appendChild(a);
-				li.appendChild(excerpt);
-				resultsList.appendChild(li);
+				resultsList.appendChild(buildResult(data, index));
 			});
+			setCount(`${results.length} ${results.length === 1 ? 'card' : 'cards'}`);
 		});
 	}
 
-	// Event listeners
+	function buildResult(data: any, index: number): HTMLLIElement {
+		const meta = data.meta || {};
+		const title = meta.title || data.url;
+		const date = meta.date || '';
+		const readTime = meta.read_time || '';
+		const rawTags = meta.tags;
+		const tags: string[] = Array.isArray(rawTags)
+			? rawTags
+			: typeof rawTags === 'string' && rawTags
+				? rawTags.split(',').map((t: string) => t.trim()).filter(Boolean)
+				: [];
+
+		const li = document.createElement('li');
+		li.className = 'sm-item';
+		li.style.setProperty('--i', String(index));
+
+		const a = document.createElement('a');
+		a.className = 'sm-link';
+		a.href = data.url;
+		a.addEventListener('mouseenter', () => setActive(index));
+
+		const folio = document.createElement('span');
+		folio.className = 'sm-folio';
+		folio.textContent = String(index + 1).padStart(2, '0');
+		folio.setAttribute('aria-hidden', 'true');
+
+		const body = document.createElement('span');
+		body.className = 'sm-body';
+
+		const titleEl = document.createElement('span');
+		titleEl.className = 'sm-item-title';
+		titleEl.textContent = title;
+
+		body.appendChild(titleEl);
+
+		if (data.excerpt) {
+			const excerpt = document.createElement('span');
+			excerpt.className = 'sm-excerpt';
+			// PageFind emits <mark> around matched terms — safe, generated markup.
+			excerpt.innerHTML = data.excerpt;
+			body.appendChild(excerpt);
+		}
+
+		if (date || readTime || tags.length) {
+			const metaRow = document.createElement('span');
+			metaRow.className = 'sm-meta';
+			const parts: string[] = [];
+			if (date) parts.push(date);
+			if (readTime) parts.push(readTime);
+			metaRow.textContent = parts.join(' · ');
+			tags.slice(0, 3).forEach((tag) => {
+				const chip = document.createElement('span');
+				chip.className = 'sm-tag';
+				chip.textContent = tag;
+				metaRow.appendChild(chip);
+			});
+			body.appendChild(metaRow);
+		}
+
+		const arrow = document.createElement('span');
+		arrow.className = 'sm-arrow';
+		arrow.setAttribute('aria-hidden', 'true');
+		arrow.textContent = '→';
+
+		a.append(folio, body, arrow);
+		li.appendChild(a);
+		return li;
+	}
+
+	// --- Keyboard navigation ------------------------------------------------
+
+	function itemLinks(): HTMLAnchorElement[] {
+		return Array.from(resultsList.querySelectorAll<HTMLAnchorElement>('.sm-link'));
+	}
+
+	function setActive(index: number) {
+		const links = itemLinks();
+		if (!links.length) return;
+		activeIndex = Math.max(0, Math.min(index, links.length - 1));
+		links.forEach((link, i) => link.classList.toggle('is-active', i === activeIndex));
+		links[activeIndex]?.scrollIntoView({ block: 'nearest' });
+	}
+
+	function moveActive(delta: number) {
+		const links = itemLinks();
+		if (!links.length) return;
+		const next = activeIndex < 0 ? (delta > 0 ? 0 : links.length - 1) : activeIndex + delta;
+		setActive((next + links.length) % links.length);
+	}
+
+	function buildIdleTags() {
+		let entries: { tag: string; count: number }[] = [];
+		try {
+			entries = JSON.parse(idle.dataset.tags || '[]');
+		} catch (e) {
+			console.error('Failed to parse idle tag data:', e);
+		}
+		if (!entries.length) {
+			idleTagsBuilt = true;
+			return;
+		}
+
+		idleTags.innerHTML = '';
+		entries.forEach(({ tag, count }) => {
+			const btn = document.createElement('button');
+			btn.type = 'button';
+			btn.className = 'sm-tag-btn';
+			btn.innerHTML = `<span class="sm-tag-name"></span><span class="sm-tag-count">${count}</span>`;
+			(btn.querySelector('.sm-tag-name') as HTMLElement).textContent = tag;
+			btn.addEventListener('click', () => {
+				input.value = tag;
+				performSearch(tag);
+			});
+			idleTags.appendChild(btn);
+		});
+		idleTagsBuilt = true;
+	}
+
+	// --- Event wiring ---------------------------------------------------------
+
 	document.getElementById('search-toggle')?.addEventListener('click', openModal);
-	closeBtn?.addEventListener('click', closeModal);
-	backdrop?.addEventListener('click', closeModal);
+	document.getElementById('search-close')?.addEventListener('click', closeModal);
+	backdrop.addEventListener('click', closeModal);
 
-	input?.addEventListener('input', (e) => {
-		performSearch(e.target.value);
-	});
+	input.addEventListener('input', () => performSearch(input.value));
 
-	// Keyboard shortcuts
-	document.addEventListener('keydown', (e) => {
-		// Cmd+K or Ctrl+K to open search
-		if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+	input.addEventListener('keydown', (e) => {
+		if (e.key === 'ArrowDown') {
 			e.preventDefault();
-			if (isOpen) {
-				closeModal();
-			} else {
-				openModal();
+			moveActive(1);
+		} else if (e.key === 'ArrowUp') {
+			e.preventDefault();
+			moveActive(-1);
+		} else if (e.key === 'Enter') {
+			const links = itemLinks();
+			const target = links[activeIndex] ?? links[0];
+			if (target) {
+				e.preventDefault();
+				window.location.href = target.href;
 			}
 		}
-
-		// Escape to close modal
-		if (e.key === 'Escape' && isOpen) {
-			closeModal();
-		}
 	});
 
-	// Close modal on route change (for SPA navigation)
-	window.addEventListener('popstate', () => {
-		if (isOpen) {
-			closeModal();
+	document.addEventListener('keydown', (e) => {
+		if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+			e.preventDefault();
+			isOpen ? closeModal() : openModal();
+			return;
 		}
+		if (e.key === 'Escape' && isOpen) closeModal();
+	});
+
+	// Close on SPA navigation (belt-and-suspenders; the modal persists).
+	document.addEventListener('astro:page-load', () => {
+		if (isOpen) closeModal();
 	});
 </script>
 
 <style>
+	/* All rules for JS-generated nodes (.sm-item, .sm-link, mark, …) are
+	   wrapped in :global() — scoped selectors would never match elements
+	   built at runtime, which is why the old highlight styles were dead. */
+
 	.search-modal {
 		display: none;
 		position: fixed;
-		top: 0;
-		left: 0;
-		right: 0;
-		bottom: 0;
+		inset: 0;
 		z-index: 1000;
 		align-items: flex-start;
 		justify-content: center;
-		padding-top: 15vh;
+		padding: 12vh 1rem 2rem;
 	}
 
-	.search-modal-backdrop {
+	.search-modal.is-open {
+		display: flex;
+	}
+
+	/* Warm ink-wash backdrop instead of a flat black dim */
+	:global(.search-modal-backdrop) {
 		position: absolute;
-		top: 0;
-		left: 0;
-		right: 0;
-		bottom: 0;
-		background: rgba(0, 0, 0, 0.5);
-		backdrop-filter: blur(4px);
+		inset: 0;
+		background: rgba(43, 36, 26, 0.45);
+		backdrop-filter: blur(3px) saturate(0.85);
+		-webkit-backdrop-filter: blur(3px) saturate(0.85);
+		opacity: 0;
+		transition: opacity 0.22s ease;
 	}
 
-	.search-modal-content {
+	.search-modal.is-open :global(.search-modal-backdrop) {
+		opacity: 1;
+	}
+
+	/* The index card: parchment surface, hairline + heavy double rule */
+	:global(.search-modal-content) {
 		position: relative;
-		width: 90%;
-		max-width: 640px;
-		max-height: 70vh;
-		background: #ffffff;
-		border-radius: 12px;
-		box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-		overflow: hidden;
+		width: 100%;
+		max-width: 620px;
+		max-height: min(72vh, 640px);
 		display: flex;
 		flex-direction: column;
+		background: #fffdf4;
+		border: 1px solid rgba(122, 96, 66, 0.3);
+		outline: 3px double rgba(122, 96, 66, 0.22);
+		outline-offset: 4px;
+		border-radius: 6px;
+		box-shadow:
+			0 1px 2px rgba(62, 48, 30, 0.08),
+			0 12px 32px -8px rgba(62, 48, 30, 0.28),
+			0 32px 64px -24px rgba(62, 48, 30, 0.35);
+		opacity: 0;
+		transform: translateY(14px) scale(0.985);
+		transition: opacity 0.24s ease, transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
 	}
 
-	/* Dark mode */
-	:global(html.dark) .search-modal-content {
-		background: #1f2937;
-		box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.3);
+	.search-modal.is-open :global(.search-modal-content) {
+		opacity: 1;
+		transform: none;
 	}
 
-	.search-modal-header {
+	:global(html.dark .search-modal-backdrop) {
+		background: rgba(0, 0, 0, 0.62);
+	}
+
+	:global(html.dark .search-modal-content) {
+		background: #1c1a16;
+		border-color: rgba(221, 184, 146, 0.22);
+		outline-color: rgba(221, 184, 146, 0.14);
+		box-shadow:
+			0 1px 2px rgba(0, 0, 0, 0.4),
+			0 16px 40px -8px rgba(0, 0, 0, 0.55),
+			0 32px 72px -24px rgba(0, 0, 0, 0.6);
+	}
+
+	/* --- Header ----------------------------------------------------------- */
+
+	:global(.sm-head) {
 		display: flex;
-		align-items: center;
-		padding: 1rem;
-		border-bottom: 1px solid #e5e7eb;
-		gap: 0.75rem;
+		align-items: baseline;
+		gap: 0.9rem;
+		padding: 1.1rem 1.35rem 0.95rem;
+		border-bottom: 1px solid rgba(122, 96, 66, 0.25);
 	}
 
-	:global(html.dark) .search-modal-header {
-		border-bottom-color: #374151;
+	:global(html.dark .sm-head) {
+		border-bottom-color: rgba(221, 184, 146, 0.18);
 	}
 
-	.search-input-wrapper {
-		flex: 1;
-		display: flex;
-		align-items: center;
-		gap: 0.75rem;
-		position: relative;
+	/* Drop-cap section mark — the card's ornament */
+	:global(.sm-mark) {
+		font-family: 'et-book', serif;
+		font-size: 2.6rem;
+		line-height: 0.8;
+		color: rgba(176, 137, 104, 0.9);
+		align-self: center;
+		user-select: none;
 	}
 
-	.search-input-wrapper .search-icon {
-		color: #9ca3af;
-		flex-shrink: 0;
+	:global(html.dark .sm-mark) {
+		color: rgba(221, 184, 146, 0.75);
 	}
 
-	.search-input-wrapper input {
-		flex: 1;
-		border: none;
-		background: transparent;
-		font-size: 1rem;
-		outline: none;
-		color: #111827;
-	}
-
-	:global(html.dark) .search-input-wrapper input {
-		color: #f9fafb;
-	}
-
-	.search-input-wrapper input::placeholder {
-		color: #9ca3af;
-	}
-
-	.search-shortcut {
-		font-size: 0.75rem;
-		padding: 0.25rem 0.5rem;
-		background: #f3f4f6;
-		border-radius: 4px;
-		color: #6b7280;
-		font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-	}
-
-	:global(html.dark) .search-shortcut {
-		background: #374151;
-		color: #9ca3af;
-	}
-
-	.search-close-btn {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		width: 2rem;
-		height: 2rem;
+	:global(.sm-title) {
+		font-family: 'et-book', serif;
+		font-style: italic;
+		font-weight: normal;
+		font-size: 1.55rem;
+		line-height: 1;
+		margin: 0;
 		padding: 0;
-		background: transparent;
+		color: #2b241a;
+		white-space: nowrap;
+	}
+
+	:global(html.dark .sm-title) {
+		color: #e9e2d3;
+	}
+
+	:global(.sm-input-wrap) {
+		flex: 1;
+		display: flex;
+		align-items: center;
+		gap: 0.6rem;
+		min-width: 0;
+		border-bottom: 1px solid rgba(122, 96, 66, 0.35);
+		padding-bottom: 0.3rem;
+		transition: border-color 0.2s ease;
+	}
+
+	:global(.sm-input-wrap:focus-within) {
+		border-bottom-color: rgba(158, 116, 76, 0.85);
+	}
+
+	:global(html.dark .sm-input-wrap) {
+		border-bottom-color: rgba(221, 184, 146, 0.3);
+	}
+
+	:global(html.dark .sm-input-wrap:focus-within) {
+		border-bottom-color: rgba(221, 184, 146, 0.7);
+	}
+
+	:global(.sm-input-wrap input) {
+		flex: 1;
+		min-width: 0;
 		border: none;
-		border-radius: 0.375rem;
-		cursor: pointer;
-		color: #6b7280;
-		transition: background-color 0.15s ease, color 0.15s ease;
+		background: transparent;
+		outline: none;
+		font-family: 'Source Sans 3', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+		/* ≥16px so iOS doesn't zoom the viewport on focus */
+		font-size: 1.25rem;
+		color: #2b241a;
+	}
+
+	:global(html.dark .sm-input-wrap input) {
+		color: #e9e2d3;
+	}
+
+	:global(.sm-input-wrap input::placeholder) {
+		color: #a89a82;
+		font-style: italic;
+	}
+
+	:global(html.dark .sm-input-wrap input::placeholder) {
+		color: #7d7466;
+	}
+
+	:global(.sm-kbd-chip) {
+		font-family: var(--font-mono), ui-monospace, monospace;
+		font-size: 0.72rem;
+		line-height: 1;
+		padding: 0.28rem 0.45rem;
+		border: 1px solid rgba(122, 96, 66, 0.3);
+		border-bottom-width: 2px;
+		border-radius: 4px;
+		background: rgba(176, 137, 104, 0.08);
+		color: #8a7a63;
 		flex-shrink: 0;
 	}
 
-	.search-close-btn:hover {
-		background: rgba(128, 128, 128, 0.2);
-		color: #111827;
+	:global(html.dark .sm-kbd-chip) {
+		border-color: rgba(221, 184, 146, 0.25);
+		background: rgba(221, 184, 146, 0.06);
+		color: #a89a82;
 	}
 
-	:global(html.dark) .search-close-btn:hover {
-		color: #f9fafb;
-	}
+	/* --- Results ------------------------------------------------------------ */
 
-	.search-results {
+	:global(.sm-results) {
 		flex: 1;
 		overflow-y: auto;
-		padding: 0.5rem;
+		overscroll-behavior: contain;
+		padding: 0.6rem 0.7rem;
 	}
 
-	.search-loading,
-	.search-empty {
-		padding: 2rem;
-		text-align: center;
-		color: #9ca3af;
-	}
-
-	.search-results-list {
+	:global(.sm-list) {
 		list-style: none;
-		padding: 0;
 		margin: 0;
+		padding: 0;
 	}
 
-	.search-result-item {
-		margin: 0.25rem 0;
+	:global(.sm-item) {
+		margin: 0;
+		animation: sm-rise 0.3s cubic-bezier(0.22, 1, 0.36, 1) both;
+		animation-delay: calc(var(--i, 0) * 24ms);
 	}
 
-	.search-result-link {
-		display: block;
-		padding: 0.75rem 1rem;
+	@keyframes sm-rise {
+		from {
+			opacity: 0;
+			transform: translateY(6px);
+		}
+		to {
+			opacity: 1;
+			transform: none;
+		}
+	}
+
+	:global(.sm-link) {
+		display: flex;
+		align-items: flex-start;
+		gap: 0.85rem;
+		padding: 0.7rem 0.75rem;
+		border-radius: 4px;
 		text-decoration: none;
-		color: #111827;
-		border-radius: 0.5rem;
-		transition: background-color 0.15s ease;
-		font-weight: 500;
+		border-left: 2px solid transparent;
+		transition: background-color 0.15s ease, border-color 0.15s ease;
 	}
 
-	:global(html.dark) .search-result-link {
-		color: #f9fafb;
+	:global(.sm-link:hover),
+	:global(.sm-link.is-active) {
+		background: rgba(176, 137, 104, 0.12);
+		border-left-color: rgba(158, 116, 76, 0.85);
 	}
 
-	.search-result-link:hover {
-		background: rgba(128, 128, 128, 0.1);
+	:global(html.dark .sm-link:hover),
+	:global(html.dark .sm-link.is-active) {
+		background: rgba(221, 184, 146, 0.09);
+		border-left-color: rgba(221, 184, 146, 0.7);
 	}
 
-	.search-result-excerpt {
-		padding: 0 1rem 0.75rem;
-		font-size: 0.875rem;
-		color: #6b7280;
+	/* Folio number — oldstyle figures, like a page corner */
+	:global(.sm-folio) {
+		font-family: 'et-book', serif;
+		font-variant-numeric: oldstyle-nums;
+		font-size: 1.05rem;
 		line-height: 1.5;
+		color: #b3a48c;
+		min-width: 1.6ch;
+		text-align: right;
+		flex-shrink: 0;
+		transition: color 0.15s ease;
 	}
 
-	:global(html.dark) .search-result-excerpt {
-		color: #9ca3af;
+	:global(.sm-link:hover .sm-folio),
+	:global(.sm-link.is-active .sm-folio) {
+		color: #9e744c;
 	}
 
-	/* Mobile adjustments */
-	@media (max-width: 760px) {
-		.search-modal {
-			padding-top: 10vh;
-		}
-
-		.search-modal-content {
-			width: 95%;
-			max-height: 80vh;
-		}
-
-		.search-shortcut {
-			display: none;
-		}
+	:global(html.dark .sm-folio) {
+		color: #6e6558;
 	}
 
-	/* Custom scrollbar for search results */
-	.search-results::-webkit-scrollbar {
+	:global(html.dark .sm-link:hover .sm-folio),
+	:global(html.dark .sm-link.is-active .sm-folio) {
+		color: #ddb892;
+	}
+
+	:global(.sm-body) {
+		flex: 1;
+		min-width: 0;
+		display: flex;
+		flex-direction: column;
+		gap: 0.22rem;
+	}
+
+	:global(.sm-item-title) {
+		font-family: 'et-book', 'Songti SC', 'Noto Serif CJK SC', serif;
+		font-size: 1.2rem;
+		line-height: 1.35;
+		color: #2b241a;
+		transition: color 0.15s ease;
+	}
+
+	:global(.sm-link:hover .sm-item-title),
+	:global(.sm-link.is-active .sm-item-title) {
+		color: #7c5a38;
+	}
+
+	:global(html.dark .sm-item-title) {
+		color: #e9e2d3;
+	}
+
+	:global(html.dark .sm-link:hover .sm-item-title),
+	:global(html.dark .sm-link.is-active .sm-item-title) {
+		color: #ddb892;
+	}
+
+	:global(.sm-excerpt) {
+		font-family: 'Source Sans 3', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+		font-size: 0.95rem;
+		line-height: 1.5;
+		color: #6f6353;
+		display: -webkit-box;
+		-webkit-line-clamp: 2;
+		-webkit-box-orient: vertical;
+		overflow: hidden;
+	}
+
+	:global(html.dark .sm-excerpt) {
+		color: #a89f8d;
+	}
+
+	/* Highlighter-pen marks on matched terms */
+	:global(.sm-excerpt mark) {
+		background: linear-gradient(transparent 15%, rgba(213, 166, 90, 0.45) 15%);
+		color: inherit;
+		font-weight: 600;
+		padding: 0 0.08em;
+		border-radius: 1px;
+	}
+
+	:global(html.dark .sm-excerpt mark) {
+		background: linear-gradient(transparent 15%, rgba(221, 184, 146, 0.32) 15%);
+		color: #f0e6d6;
+	}
+
+	:global(.sm-meta) {
+		display: flex;
+		align-items: center;
+		flex-wrap: wrap;
+		gap: 0.3rem 0.55rem;
+		font-family: var(--font-mono), ui-monospace, monospace;
+		font-size: 0.72rem;
+		letter-spacing: 0.02em;
+		color: #9a8c76;
+	}
+
+	:global(html.dark .sm-meta) {
+		color: #847a6a;
+	}
+
+	:global(.sm-tag) {
+		font-family: 'et-book', serif;
+		font-size: 0.78rem;
+		line-height: 1;
+		padding: 0.22rem 0.5rem;
+		border-radius: 9999px;
+		background: rgba(176, 137, 104, 0.1);
+		border: 1px solid rgba(176, 137, 104, 0.22);
+		color: #5a4a3a;
+	}
+
+	:global(html.dark .sm-tag) {
+		background: rgba(221, 184, 146, 0.08);
+		border-color: rgba(221, 184, 146, 0.18);
+		color: #c9b8a3;
+	}
+
+	:global(.sm-arrow) {
+		font-family: 'Source Sans 3', sans-serif;
+		font-size: 1.05rem;
+		line-height: 1.5;
+		color: #9e744c;
+		opacity: 0;
+		transform: translateX(-4px);
+		transition: opacity 0.15s ease, transform 0.15s ease;
+		flex-shrink: 0;
+	}
+
+	:global(.sm-link:hover .sm-arrow),
+	:global(.sm-link.is-active .sm-arrow) {
+		opacity: 1;
+		transform: none;
+	}
+
+	:global(html.dark .sm-arrow) {
+		color: #ddb892;
+	}
+
+	/* --- States (loading / empty / failed / idle) ---------------------------- */
+
+	:global(.sm-state) {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 0.35rem;
+		padding: 2.6rem 1.5rem 2.2rem;
+		text-align: center;
+	}
+
+	:global(.sm-state[hidden]) {
+		display: none;
+	}
+
+	:global(.sm-state-glyph) {
+		font-family: 'et-book', serif;
+		font-size: 2.4rem;
+		line-height: 1;
+		color: rgba(176, 137, 104, 0.55);
+	}
+
+	:global(html.dark .sm-state-glyph) {
+		color: rgba(221, 184, 146, 0.45);
+	}
+
+	:global(.sm-state-text) {
+		margin: 0.4rem 0 0;
+		font-family: 'et-book', serif;
+		font-style: italic;
+		font-size: 1.25rem;
+		color: #4a4033;
+	}
+
+	:global(html.dark .sm-state-text) {
+		color: #cfc6b4;
+	}
+
+	:global(.sm-state-hint) {
+		margin: 0;
+		font-family: 'Source Sans 3', sans-serif;
+		font-size: 0.9rem;
+		color: #9a8c76;
+	}
+
+	:global(html.dark .sm-state-hint) {
+		color: #847a6a;
+	}
+
+	:global(.sm-idle) {
+		padding: 1.4rem 0.9rem 1.1rem;
+	}
+
+	:global(.sm-idle[hidden]) {
+		display: none;
+	}
+
+	:global(.sm-idle-label) {
+		margin: 0 0 0.8rem;
+		font-family: var(--font-mono), ui-monospace, monospace;
+		font-size: 0.72rem;
+		text-transform: uppercase;
+		letter-spacing: 0.14em;
+		color: #9a8c76;
+	}
+
+	:global(html.dark .sm-idle-label) {
+		color: #847a6a;
+	}
+
+	:global(.sm-tags) {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.45rem;
+	}
+
+	:global(.sm-tag-btn) {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.4rem;
+		padding: 0.28rem 0.7rem;
+		border-radius: 9999px;
+		background: rgba(176, 137, 104, 0.1);
+		border: 1px solid rgba(176, 137, 104, 0.22);
+		color: #5a4a3a;
+		font-family: 'et-book', serif;
+		font-size: 0.95rem;
+		line-height: 1.4;
+		cursor: pointer;
+		transition: background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease,
+			transform 0.18s ease;
+	}
+
+	:global(.sm-tag-btn:hover) {
+		background: rgba(176, 137, 104, 0.2);
+		border-color: rgba(176, 137, 104, 0.4);
+		color: #3d3126;
+		transform: translateY(-1px);
+	}
+
+	:global(.sm-tag-btn:focus-visible) {
+		outline: 2px solid rgba(158, 116, 76, 0.6);
+		outline-offset: 2px;
+	}
+
+	:global(html.dark .sm-tag-btn) {
+		background: rgba(221, 184, 146, 0.08);
+		border-color: rgba(221, 184, 146, 0.18);
+		color: #c9b8a3;
+	}
+
+	:global(html.dark .sm-tag-btn:hover) {
+		background: rgba(221, 184, 146, 0.16);
+		border-color: rgba(221, 184, 146, 0.35);
+		color: #e8d9c5;
+	}
+
+	:global(.sm-tag-count) {
+		font-family: var(--font-mono), ui-monospace, monospace;
+		font-size: 0.7rem;
+		opacity: 0.6;
+		font-variant-numeric: tabular-nums;
+	}
+
+	/* --- Footer --------------------------------------------------------------- */
+
+	:global(.sm-foot) {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 1rem;
+		padding: 0.6rem 1.35rem;
+		border-top: 1px solid rgba(122, 96, 66, 0.25);
+		background: rgba(176, 137, 104, 0.05);
+	}
+
+	:global(html.dark .sm-foot) {
+		border-top-color: rgba(221, 184, 146, 0.18);
+		background: rgba(221, 184, 146, 0.04);
+	}
+
+	:global(.sm-hints) {
+		display: flex;
+		align-items: center;
+		gap: 0.4rem;
+		font-family: 'Source Sans 3', sans-serif;
+		font-size: 0.78rem;
+		color: #8a7a63;
+	}
+
+	:global(html.dark .sm-hints) {
+		color: #847a6a;
+	}
+
+	:global(.sm-hints kbd) {
+		font-family: var(--font-mono), ui-monospace, monospace;
+		font-size: 0.7rem;
+		line-height: 1;
+		padding: 0.22rem 0.4rem;
+		border: 1px solid rgba(122, 96, 66, 0.3);
+		border-bottom-width: 2px;
+		border-radius: 4px;
+		background: #fffdf4;
+		color: #6f6353;
+	}
+
+	:global(html.dark .sm-hints kbd) {
+		border-color: rgba(221, 184, 146, 0.25);
+		background: #24211c;
+		color: #a89f8d;
+	}
+
+	:global(.sm-hint-sep) {
+		opacity: 0.5;
+	}
+
+	:global(.sm-count) {
+		font-family: var(--font-mono), ui-monospace, monospace;
+		font-size: 0.72rem;
+		letter-spacing: 0.04em;
+		color: #9a8c76;
+		font-variant-numeric: tabular-nums;
+	}
+
+	:global(html.dark .sm-count) {
+		color: #847a6a;
+	}
+
+	/* --- Scrollbar -------------------------------------------------------------- */
+
+	:global(.sm-results::-webkit-scrollbar) {
 		width: 8px;
 	}
 
-	.search-results::-webkit-scrollbar-track {
+	:global(.sm-results::-webkit-scrollbar-track) {
 		background: transparent;
 	}
 
-	.search-results::-webkit-scrollbar-thumb {
-		background: #d1d5db;
+	:global(.sm-results::-webkit-scrollbar-thumb) {
+		background: rgba(176, 137, 104, 0.35);
 		border-radius: 4px;
 	}
 
-	:global(html.dark) .search-results::-webkit-scrollbar-thumb {
-		background: #4b5563;
+	:global(.sm-results::-webkit-scrollbar-thumb:hover) {
+		background: rgba(176, 137, 104, 0.55);
 	}
 
-	.search-results::-webkit-scrollbar-thumb:hover {
-		background: #9ca3af;
+	:global(html.dark .sm-results::-webkit-scrollbar-thumb) {
+		background: rgba(221, 184, 146, 0.2);
 	}
 
-	:global(html.dark) .search-results::-webkit-scrollbar-thumb:hover {
-		background: #6b7280;
+	:global(html.dark .sm-results::-webkit-scrollbar-thumb:hover) {
+		background: rgba(221, 184, 146, 0.35);
 	}
 
-	/* Search result highlighting */
-	.search-result-excerpt :global(mark) {
-		background-color: #fde047;
-		color: #111827;
-		padding: 0.1em 0.2em;
-		border-radius: 0.2em;
-		font-weight: 500;
+	/* --- Responsive --------------------------------------------------------------- */
+
+	@media (max-width: 760px) {
+		.search-modal {
+			padding-top: 8vh;
+		}
+
+		:global(.search-modal-content) {
+			max-height: 80vh;
+		}
+
+		:global(.sm-head) {
+			flex-wrap: wrap;
+			gap: 0.5rem 0.9rem;
+		}
+
+		:global(.sm-title) {
+			font-size: 1.35rem;
+		}
+
+		:global(.sm-mark) {
+			font-size: 2.1rem;
+		}
+
+		:global(.sm-input-wrap) {
+			flex-basis: 100%;
+		}
+
+		:global(.sm-hints) {
+			display: none;
+		}
+
+		:global(.sm-foot) {
+			justify-content: flex-end;
+		}
 	}
 
-	:global(html.dark) .search-result-excerpt :global(mark) {
-		background-color: #854d0e;
-		color: #fef9c3;
+	@media (prefers-reduced-motion: reduce) {
+		:global(.search-modal-backdrop),
+		:global(.search-modal-content),
+		:global(.sm-item),
+		:global(.sm-arrow),
+		:global(.sm-tag-btn) {
+			transition: none;
+			animation: none;
+		}
 	}
 </style>

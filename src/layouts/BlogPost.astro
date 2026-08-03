@@ -44,17 +44,17 @@ const readMins = readingMinutes(slug);
 					</figure>
 				)}
 				<section>
-					<div class="date">
-						<FormattedDate date={pubDate} />
-						{updatedDate && (
-							<span class="last-updated-on">
-								Updated <FormattedDate date={updatedDate} />
-							</span>
-						)}
-						<span class="read-time"> · {readMins} min read</span>
-					</div>
+				<div class="date" data-pub-date={pubDate.toISOString().slice(0, 10)} data-read-time={`${readMins} min read`} data-pagefind-meta="date[data-pub-date], read_time[data-read-time]">
+					<FormattedDate date={pubDate} />
+					{updatedDate && (
+						<span class="last-updated-on">
+							Updated <FormattedDate date={updatedDate} />
+						</span>
+					)}
+					<span class="read-time"> · {readMins} min read</span>
+				</div>
 					{tags && tags.length > 0 && (
-						<div class="post-tags">
+						<div class="post-tags" data-tags={tags.join(',')} data-pagefind-meta="tags[data-tags]" data-pagefind-filter-tags={tags.join(',')}>
 							{tags.map((tag) => (
 								<a href={`/tags/${encodeURIComponent(tag)}/`} class="tag-pill tag-pill--sm">
 									{tag}

@@ -34,7 +34,13 @@ export default defineConfig({
 		}),
 		mdx(),
 		sitemap(),
-		pagefind()
+		pagefind({
+			indexConfig: {
+				// Index page content only — keeps header nav, footers, and the
+				// search modal itself out of excerpts and result titles.
+				rootSelector: 'main',
+			},
+		})
 	],
 	markdown: {
 		remarkPlugins: [remarkCallout, remarkMath, remarkMathFix, remarkCodeLang],
