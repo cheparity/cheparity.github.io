@@ -1,0 +1,601 @@
+<!DOCTYPE html><html lang="en" data-astro-cid-bvzihdzo> <head><!-- Global Metadata --><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" type="image/svg+xml" href="/favicon.svg"><link rel="icon" href="/favicon.ico"><link rel="sitemap" href="/sitemap-index.xml"><link rel="alternate" type="application/rss+xml" title="Niyuta's Blog" href="https://niyuta.eu.org/rss.xml"><meta name="astro-view-transitions-enabled" content="true"><meta name="astro-view-transitions-fallback" content="animate"><script type="module" src="/_astro/ClientRouter.astro_astro_type_script_index_0_lang.CDGfc0hd.js"></script><meta name="generator" content="Astro v5.17.1"><!-- Font preloads --><link rel="preload" href="/fonts/et-book-roman.woff" as="font" type="font/woff" crossorigin><link rel="preload" href="/fonts/et-book-italic.woff" as="font" type="font/woff" crossorigin><link rel="preload" href="/fonts/et-book-bold.woff" as="font" type="font/woff" crossorigin><!-- KaTeX math rendering (self-hosted, see frontmatter) --><script defer src="/scripts/katex.min.js"></script><script defer src="/scripts/auto-render.min.js"></script><script>
+function initMath() {
+  if (typeof renderMathInElement === "function") {
+    renderMathInElement(document.body, {
+      delimiters: [
+        {left: "$$", right: "$$", display: true},
+        {left: "$", right: "$", display: false}
+      ],
+      throwOnError: false,
+      strict: false
+    });
+  }
+}
+document.addEventListener("astro:page-load", initMath);
+</script><!-- Canonical URL --><link rel="canonical" href="https://niyuta.eu.org/blog/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84%E5%AE%B9%E5%99%A8%E6%93%8D%E4%BD%9C/"><!-- Primary Meta Tags --><title>容器操作</title><meta name="title" content="容器操作"><!-- Open Graph / Facebook --><meta property="og:type" content="website"><meta property="og:url" content="https://niyuta.eu.org/blog/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84%E5%AE%B9%E5%99%A8%E6%93%8D%E4%BD%9C/"><meta property="og:title" content="容器操作"><meta property="og:image" content="https://niyuta.eu.org/_astro/blog-placeholder-1.Bx0Zcyzv.jpg"><!-- Twitter --><meta property="twitter:card" content="summary_large_image"><meta property="twitter:url" content="https://niyuta.eu.org/blog/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84%E5%AE%B9%E5%99%A8%E6%93%8D%E4%BD%9C/"><meta property="twitter:title" content="容器操作"><meta property="twitter:image" content="https://niyuta.eu.org/_astro/blog-placeholder-1.Bx0Zcyzv.jpg"><!-- Inline script to prevent FOUC and set initial theme --><script>(function(){const defaultTheme = "system";
+
+	(function() {
+		const STORAGE_KEY = 'theme-preference';
+
+		// Get stored theme or use default
+		function getStoredTheme() {
+			if (typeof localStorage === 'undefined') return null;
+			try {
+				return localStorage.getItem(STORAGE_KEY);
+			} catch (e) {
+				return null;
+			}
+		}
+
+		// Get system theme preference
+		function getSystemTheme() {
+			return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+		}
+
+		// Apply theme to html element only (button is managed by ThemeToggle)
+		function applyTheme(theme) {
+			const html = document.documentElement;
+			if (theme === 'dark') {
+				html.classList.add('dark');
+			} else {
+				html.classList.remove('dark');
+			}
+		}
+
+		// Initialize immediately
+		const storedTheme = getStoredTheme();
+		if (storedTheme === 'light' || storedTheme === 'dark') {
+			applyTheme(storedTheme);
+		} else {
+			// Fallback to system preference
+			applyTheme(getSystemTheme());
+		}
+	})();
+})();</script><link rel="stylesheet" href="/_astro/about.C0uVCPM0.css">
+<link rel="stylesheet" href="/_astro/_slug_.BzW-grkh.css">
+<link rel="stylesheet" href="/_astro/_slug_.gIWVl3dk.css"><style>[data-astro-transition-scope="astro-c2up6wv4-1"] { view-transition-name: theme-toggle; }@layer astro { ::view-transition-old(theme-toggle) { 
+	animation-duration: 180ms;
+	animation-timing-function: cubic-bezier(0.76, 0, 0.24, 1);
+	animation-fill-mode: both;
+	animation-name: astroFadeOut; }::view-transition-new(theme-toggle) { 
+	animation-duration: 180ms;
+	animation-timing-function: cubic-bezier(0.76, 0, 0.24, 1);
+	animation-fill-mode: both;
+	animation-name: astroFadeIn; }[data-astro-transition=back]::view-transition-old(theme-toggle) { 
+	animation-duration: 180ms;
+	animation-timing-function: cubic-bezier(0.76, 0, 0.24, 1);
+	animation-fill-mode: both;
+	animation-name: astroFadeOut; }[data-astro-transition=back]::view-transition-new(theme-toggle) { 
+	animation-duration: 180ms;
+	animation-timing-function: cubic-bezier(0.76, 0, 0.24, 1);
+	animation-fill-mode: both;
+	animation-name: astroFadeIn; } }[data-astro-transition-fallback="old"] [data-astro-transition-scope="astro-c2up6wv4-1"],
+			[data-astro-transition-fallback="old"][data-astro-transition-scope="astro-c2up6wv4-1"] { 
+	animation-duration: 180ms;
+	animation-timing-function: cubic-bezier(0.76, 0, 0.24, 1);
+	animation-fill-mode: both;
+	animation-name: astroFadeOut; }[data-astro-transition-fallback="new"] [data-astro-transition-scope="astro-c2up6wv4-1"],
+			[data-astro-transition-fallback="new"][data-astro-transition-scope="astro-c2up6wv4-1"] { 
+	animation-duration: 180ms;
+	animation-timing-function: cubic-bezier(0.76, 0, 0.24, 1);
+	animation-fill-mode: both;
+	animation-name: astroFadeIn; }[data-astro-transition=back][data-astro-transition-fallback="old"] [data-astro-transition-scope="astro-c2up6wv4-1"],
+			[data-astro-transition=back][data-astro-transition-fallback="old"][data-astro-transition-scope="astro-c2up6wv4-1"] { 
+	animation-duration: 180ms;
+	animation-timing-function: cubic-bezier(0.76, 0, 0.24, 1);
+	animation-fill-mode: both;
+	animation-name: astroFadeOut; }[data-astro-transition=back][data-astro-transition-fallback="new"] [data-astro-transition-scope="astro-c2up6wv4-1"],
+			[data-astro-transition=back][data-astro-transition-fallback="new"][data-astro-transition-scope="astro-c2up6wv4-1"] { 
+	animation-duration: 180ms;
+	animation-timing-function: cubic-bezier(0.76, 0, 0.24, 1);
+	animation-fill-mode: both;
+	animation-name: astroFadeIn; }</style></head> <body data-astro-cid-bvzihdzo> <!--
+  Thin reading-progress bar pinned to the top of the viewport.
+  Fills left→right as the reader scrolls through <article>.
+  Only rendered inside BlogPost layout.
+--><div class="reading-progress" aria-hidden="true"> <div class="reading-progress-bar" id="reading-progress-bar"></div> </div> <script type="module" src="/_astro/ProgressBar.astro_astro_type_script_index_0_lang.7dInffcX.js"></script>  <header class="site-header"> <nav class="site-nav"> <a href="/"> Home </a> <a href="/blog" class="active"> Blog </a> <a href="/tags"> Tags </a> <a href="/about"> About </a> <!-- Theme Toggle Button --><button id="theme-toggle" class="theme-toggle-btn" type="button" aria-label="Toggle theme" title="Toggle theme" data-astro-cid-x3pjskd3 data-astro-transition-scope="astro-c2up6wv4-1"> <!-- Sun icon (shown in dark mode) --> <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 256 256" data-astro-cid-x3pjskd3> <path d="M120,40V16a8,8,0,0,1,16,0V40a8,8,0,0,1-16,0Zm8,24a64,64,0,1,0,64,64A64.07,64.07,0,0,0,128,64ZM58.34,69.66A8,8,0,0,0,69.66,58.34l-16-16A8,8,0,0,0,42.34,53.66Zm0,116.68-16,16a8,8,0,0,0,11.32,11.32l16-16a8,8,0,0,0-11.32-11.32ZM192,72a8,8,0,0,0,5.66-2.34l16-16a8,8,0,0,0-11.32-11.32l-16,16A8,8,0,0,0,192,72Zm5.66,114.34a8,8,0,0,0-11.32,11.32l16,16a8,8,0,0,0,11.32-11.32ZM48,128a8,8,0,0,0-8-8H16a8,8,0,0,0,0,16H40A8,8,0,0,0,48,128Zm80,80a8,8,0,0,0-8,8v24a8,8,0,0,0,16,0V216A8,8,0,0,0,128,208Zm112-88H216a8,8,0,0,0,0,16h24a8,8,0,0,0,0-16Z" data-astro-cid-x3pjskd3></path> </svg> <!-- Moon icon (shown in light mode) --> <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 256 256" data-astro-cid-x3pjskd3> <path d="M235.54,150.21a104.84,104.84,0,0,1-37,52.91A104,104,0,0,1,32,120,103.09,103.09,0,0,1,52.88,57.48a104.84,104.84,0,0,1,52.91-37,8,8,0,0,1,10,10,88.08,88.08,0,0,0,109.8,109.8,8,8,0,0,1,10,10Z" data-astro-cid-x3pjskd3></path> </svg> </button> <script>
+	(function() {
+		const STORAGE_KEY = 'theme-preference';
+
+		// Get stored theme
+		function getStoredTheme() {
+			if (typeof localStorage === 'undefined') return null;
+			try {
+				return localStorage.getItem(STORAGE_KEY);
+			} catch (e) {
+				return null;
+			}
+		}
+
+		// Get system theme preference
+		function getSystemTheme() {
+			return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+		}
+
+		// Save theme preference
+		function setStoredTheme(theme) {
+			if (typeof localStorage === 'undefined') return;
+			try {
+				localStorage.setItem(STORAGE_KEY, theme);
+			} catch (e) {
+				// localStorage not available
+			}
+		}
+
+		// Apply theme to document
+		function applyTheme(theme) {
+			const html = document.documentElement;
+			const btn = document.getElementById('theme-toggle');
+
+			if (theme === 'dark') {
+				html.classList.add('dark');
+				if (btn) btn.classList.add('is-dark');
+			} else {
+				html.classList.remove('dark');
+				if (btn) btn.classList.remove('is-dark');
+			}
+		}
+
+		// Toggle theme — a circular reveal expanding from the button when the
+		// browser supports view transitions, hard swap otherwise.
+		function toggleTheme() {
+			const html = document.documentElement;
+			const newTheme = html.classList.contains('dark') ? 'light' : 'dark';
+			setStoredTheme(newTheme);
+
+			const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+			if (!document.startViewTransition || reduceMotion) {
+				applyTheme(newTheme);
+				return;
+			}
+
+			const btn = document.getElementById('theme-toggle');
+			const rect = btn ? btn.getBoundingClientRect() : null;
+			const x = rect ? rect.left + rect.width / 2 : window.innerWidth - 40;
+			const y = rect ? rect.top + rect.height / 2 : 40;
+			const radius = Math.hypot(Math.max(x, window.innerWidth - x), Math.max(y, window.innerHeight - y));
+			const clip = (r) => `circle(${r}px at ${x}px ${y}px)`;
+
+			// Armed before the snapshot so ::view-transition-new(root) starts
+			// clipped to a point; cleared afterwards so plain navigations are
+			// unaffected.
+			html.style.setProperty('--vt-clip', clip(0));
+			const vt = document.startViewTransition(() => applyTheme(newTheme));
+			vt.ready.then(() => {
+				html.animate(
+					{ clipPath: [clip(0), clip(radius)] },
+					{
+						duration: 500,
+						easing: 'ease-in-out',
+						pseudoElement: '::view-transition-new(root)',
+						fill: 'forwards',
+					},
+				);
+			}).catch(() => {});
+			vt.finished.finally(() => html.style.removeProperty('--vt-clip'));
+		}
+
+		// Initialize immediately (before DOM is fully parsed)
+		const storedTheme = getStoredTheme();
+		const initialTheme = (storedTheme === 'light' || storedTheme === 'dark')
+			? storedTheme
+			: getSystemTheme();
+
+		// Apply theme immediately
+		applyTheme(initialTheme);
+
+		// Attach click handler and sync when DOM is ready
+		function onDOMReady() {
+			const btn = document.getElementById('theme-toggle');
+			if (!btn) return;
+
+			// Sync button state (in case server-side state was wrong)
+			const html = document.documentElement;
+			const currentTheme = html.classList.contains('dark') ? 'dark' : 'light';
+			const buttonState = btn.classList.contains('is-dark') ? 'dark' : 'light';
+
+			// Only apply if out of sync (prevents flicker)
+			if (currentTheme !== buttonState) {
+				applyTheme(currentTheme);
+			}
+
+			// Attach click handler
+			btn.addEventListener('click', toggleTheme);
+		}
+
+		// Initialize
+		if (document.readyState === 'loading') {
+			document.addEventListener('DOMContentLoaded', onDOMReady);
+		} else {
+			onDOMReady();
+		}
+	})();
+</script>  </nav> </header> <!-- Search Toggle Button --><button id="search-toggle" class="search-toggle-btn" type="button" aria-label="Open search" title="Search" data-astro-cid-oaulsmxm data-astro-transition-persist="astro-oqc4id4r-2"> <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 256 256" data-astro-cid-oaulsmxm> <path d="M229.66,218.34l-50.07-50.06a88.11,88.11,0,1,0-11.31,11.31l50.06,50.07a8,8,0,0,0,11.32-11.32ZM40,112a72,72,0,1,1,72,72A72.08,72.08,0,0,1,40,112Z" data-astro-cid-oaulsmxm></path> </svg> </button>  <!-- Search modal — styled as a card-catalog index card. Persisted across
+     ViewTransitions so the script's element references survive SPA navigation. --><div id="search-modal" class="search-modal" aria-hidden="true" data-astro-cid-qk3db3zz data-astro-transition-persist="astro-zvgwayiy-3"> <div class="search-modal-backdrop" id="search-modal-backdrop" data-astro-cid-qk3db3zz></div> <div class="search-modal-content" role="dialog" aria-modal="true" aria-label="Search" data-astro-cid-qk3db3zz> <!-- Header: drop-cap mark, display title, input, shortcut chip --> <header class="sm-head" data-astro-cid-qk3db3zz> <span class="sm-mark" aria-hidden="true" data-astro-cid-qk3db3zz>§</span> <h2 class="sm-title" data-astro-cid-qk3db3zz>Search the notes</h2> <div class="sm-input-wrap" data-astro-cid-qk3db3zz> <input id="search-input" type="text" placeholder="Try “SVD”, “flow matching”, “假设检验”…" autocomplete="off" spellcheck="false" aria-label="Search" data-astro-cid-qk3db3zz> <kbd class="sm-kbd-chip" data-astro-cid-qk3db3zz>esc</kbd> </div> </header> <!-- Results / states --> <div id="search-results" class="sm-results" data-astro-cid-qk3db3zz> <div class="sm-state" id="search-loading" hidden data-astro-cid-qk3db3zz> <span class="sm-state-glyph" aria-hidden="true" data-astro-cid-qk3db3zz>✳</span> <p class="sm-state-text" data-astro-cid-qk3db3zz>Opening the card catalog…</p> </div> <div class="sm-state" id="search-empty" hidden data-astro-cid-qk3db3zz> <span class="sm-state-glyph" aria-hidden="true" data-astro-cid-qk3db3zz>∅</span> <p class="sm-state-text" data-astro-cid-qk3db3zz>
+Nothing filed under <em id="search-empty-query" data-astro-cid-qk3db3zz></em>.
+</p> <p class="sm-state-hint" data-astro-cid-qk3db3zz>Try a shorter phrase, or browse the drawers below.</p> </div> <div class="sm-state" id="search-failed" hidden data-astro-cid-qk3db3zz> <span class="sm-state-glyph" aria-hidden="true" data-astro-cid-qk3db3zz>✕</span> <p class="sm-state-text" data-astro-cid-qk3db3zz>The index failed to load.</p> <p class="sm-state-hint" data-astro-cid-qk3db3zz>Refresh the page and try again.</p> </div> <div class="sm-idle" id="search-idle" data-tags="[{&#34;tag&#34;:&#34;statistics&#34;,&#34;count&#34;:7},{&#34;tag&#34;:&#34;eai&#34;,&#34;count&#34;:5},{&#34;tag&#34;:&#34;robotics&#34;,&#34;count&#34;:5},{&#34;tag&#34;:&#34;cornerstone&#34;,&#34;count&#34;:4},{&#34;tag&#34;:&#34;cv&#34;,&#34;count&#34;:4},{&#34;tag&#34;:&#34;estimation&#34;,&#34;count&#34;:3},{&#34;tag&#34;:&#34;hypothesis-testing&#34;,&#34;count&#34;:3},{&#34;tag&#34;:&#34;infra&#34;,&#34;count&#34;:2},{&#34;tag&#34;:&#34;DDPM&#34;,&#34;count&#34;:1},{&#34;tag&#34;:&#34;decomposition&#34;,&#34;count&#34;:1},{&#34;tag&#34;:&#34;dev&#34;,&#34;count&#34;:1},{&#34;tag&#34;:&#34;flow&#34;,&#34;count&#34;:1},{&#34;tag&#34;:&#34;Langevin&#34;,&#34;count&#34;:1},{&#34;tag&#34;:&#34;matrix&#34;,&#34;count&#34;:1},{&#34;tag&#34;:&#34;MCMC&#34;,&#34;count&#34;:1},{&#34;tag&#34;:&#34;RL&#34;,&#34;count&#34;:1}]" data-astro-cid-qk3db3zz> <p class="sm-idle-label" data-astro-cid-qk3db3zz>Browse the drawers</p> <div class="sm-tags" id="search-idle-tags" data-astro-cid-qk3db3zz></div> </div> <ol id="search-results-list" class="sm-list" data-astro-cid-qk3db3zz></ol> </div> <!-- Footer: keyboard hints + live result count --> <footer class="sm-foot" data-astro-cid-qk3db3zz> <span class="sm-hints" data-astro-cid-qk3db3zz> <kbd data-astro-cid-qk3db3zz>↑</kbd><kbd data-astro-cid-qk3db3zz>↓</kbd> navigate
+<span class="sm-hint-sep" aria-hidden="true" data-astro-cid-qk3db3zz>·</span> <kbd data-astro-cid-qk3db3zz>↵</kbd> open
+<span class="sm-hint-sep" aria-hidden="true" data-astro-cid-qk3db3zz>·</span> <kbd data-astro-cid-qk3db3zz>esc</kbd> close
+</span> <span class="sm-count" id="search-count" aria-live="polite" data-astro-cid-qk3db3zz></span> </footer> </div> </div> <script type="module" src="/_astro/SearchModal.astro_astro_type_script_index_0_lang.DWzPSZ-8.js"></script>  <main data-astro-cid-bvzihdzo> <article data-astro-cid-bvzihdzo>  <section data-astro-cid-bvzihdzo> <div class="date" data-pub-date="2025-08-20" data-read-time="8 min read" data-pagefind-meta="date[data-pub-date], read_time[data-read-time]" data-astro-cid-bvzihdzo> <time datetime="2025-08-20T10:55:04.000Z"> Aug 20, 2025 </time> <span class="last-updated-on" data-astro-cid-bvzihdzo>
+Updated <time datetime="2026-02-06T10:53:21.000Z"> Feb 6, 2026 </time> </span> <span class="read-time" data-astro-cid-bvzihdzo> · 8 min read</span> </div>  <h1 data-astro-cid-bvzihdzo>容器操作</h1> <hr data-astro-cid-bvzihdzo> </section> <section class="prose" data-astro-cid-bvzihdzo>  <h2 id="stl-常用容器操作对照表">STL 常用容器操作对照表</h2>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>容器</th><th>初始化方法</th><th>增 (Insert)</th><th>删 (Erase)</th><th>查 (Find / Access)</th><th>改 (Update)</th><th>备注 / 底层实现</th></tr></thead><tbody><tr><td><strong>vector</strong></td><td><code>vector&#x3C;T> v;</code>, <code>vector&#x3C;T> v(n, val);</code></td><td><code>push_back</code> / <code>insert</code> / <code>emplace</code></td><td><code>pop_back</code> / <code>erase</code> / <code>clear</code></td><td>随机访问 <code>[]</code> / <code>at</code></td><td><code>[]</code> / <code>at</code> 直接修改</td><td>动态数组，连续内存，支持随机访问</td></tr><tr><td><strong>deque</strong></td><td><code>deque&#x3C;T> d;</code>, <code>deque&#x3C;T> d(n, val);</code></td><td><code>push_back</code> / <code>push_front</code> / <code>insert</code> / <code>emplace</code></td><td><code>pop_back</code> / <code>pop_front</code> / <code>erase</code> / <code>clear</code></td><td>随机访问 <code>[]</code> / <code>at</code></td><td><code>[]</code> / <code>at</code> 直接修改</td><td>分段连续内存，支持两端高效操作</td></tr><tr><td><strong>list</strong></td><td><code>list&#x3C;T> l;</code>, <code>list&#x3C;T> l(n, val);</code></td><td><code>push_back</code> / <code>push_front</code> / <code>insert</code> / <code>emplace</code></td><td><code>pop_back</code> / <code>pop_front</code> / <code>erase</code> / <code>clear</code></td><td>迭代器遍历查找</td><td>迭代器指向元素可修改</td><td>双向链表，节点分散存储</td></tr><tr><td><strong>map</strong></td><td><code>map&#x3C;K,V> m;</code>, <code>map&#x3C;K,V> m{{k1,v1},{k2,v2}};</code></td><td><code>insert</code> / <code>emplace</code> / <code>operator[]</code></td><td><code>erase</code> / <code>clear</code></td><td><code>find</code> / <code>count</code> / <code>lower_bound</code> / <code>upper_bound</code></td><td><code>operator[]</code> 修改 value</td><td>红黑树，有序唯一键值对</td></tr><tr><td><strong>multimap</strong></td><td><code>multimap&#x3C;K,V> m;</code></td><td><code>insert</code> / <code>emplace</code></td><td><code>erase</code> / <code>clear</code></td><td><code>find</code> / <code>count</code> / <code>lower_bound</code> / <code>upper_bound</code> / <code>equal_range</code></td><td>❌ key 不可改，value 可改</td><td>红黑树，有序，允许重复 key</td></tr><tr><td><strong>unordered_map</strong></td><td><code>unordered_map&#x3C;K,V> m;</code></td><td><code>insert</code> / <code>emplace</code> / <code>operator[]</code></td><td><code>erase</code> / <code>clear</code></td><td><code>find</code> / <code>count</code></td><td><code>operator[]</code> 修改 value</td><td>哈希表，无序唯一键值对</td></tr><tr><td><strong>set</strong></td><td><code>set&#x3C;T> s;</code>, <code>set&#x3C;T> s{val1, val2};</code></td><td><code>insert</code> / <code>emplace</code></td><td><code>erase</code> / <code>clear</code></td><td><code>find</code> / <code>count</code> / <code>lower_bound</code> / <code>upper_bound</code></td><td>❌ 不可直接修改元素</td><td>红黑树，有序唯一集合</td></tr><tr><td><strong>multiset</strong></td><td><code>multiset&#x3C;T> s;</code></td><td><code>insert</code> / <code>emplace</code></td><td><code>erase</code> / <code>clear</code></td><td><code>find</code> / <code>count</code> / <code>lower_bound</code> / <code>upper_bound</code> / <code>equal_range</code></td><td>❌ 不可直接修改元素</td><td>红黑树，有序，允许重复元素</td></tr><tr><td><strong>unordered_set</strong></td><td><code>unordered_set&#x3C;T> s;</code></td><td><code>insert</code> / <code>emplace</code></td><td><code>erase</code> / <code>clear</code></td><td><code>find</code> / <code>count</code></td><td>❌ 不可直接修改元素</td><td>哈希表，无序唯一集合</td></tr><tr><td><strong>stack</strong></td><td><code>stack&#x3C;T> s;</code>, <code>stack&#x3C;T, deque&#x3C;T>> s;</code></td><td><code>push</code> / <code>emplace</code></td><td><code>pop</code></td><td><code>top</code></td><td><code>top()</code> 修改</td><td>适配器，默认基于 <code>deque</code> 实现</td></tr><tr><td><strong>queue</strong></td><td><code>queue&#x3C;T> q;</code>, <code>queue&#x3C;T, deque&#x3C;T>> q;</code></td><td><code>push</code> / <code>emplace</code></td><td><code>pop</code></td><td><code>front</code> / <code>back</code></td><td><code>front()</code> / <code>back()</code> 修改</td><td>适配器，默认基于 <code>deque</code> 实现</td></tr><tr><td><strong>priority_queue</strong></td><td><code>priority_queue&#x3C;T> pq;</code>, <code>priority_queue&#x3C;T, vector&#x3C;T>, less&#x3C;T>> pq;</code></td><td><code>push</code> / <code>emplace</code></td><td><code>pop</code></td><td><code>top</code></td><td>❌ 不能直接修改元素</td><td>适配器，默认基于 <code>vector + 堆 (heap)</code> 实现</td></tr></tbody></table>
+<h2 id="python-常用数据结构操作对照表">Python 常用数据结构操作对照表</h2>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>容器</th><th>初始化方法</th><th>增 (Insert)</th><th>删 (Erase)</th><th>查 (Find / Access)</th><th>改 (Update)</th><th>备注 / 底层实现</th></tr></thead><tbody><tr><td><strong>list</strong></td><td><code>lst = []</code>, <code>lst = [val1, val2]</code></td><td><code>append</code> / <code>insert</code> / <code>extend</code></td><td><code>pop</code> / <code>remove</code> / <code>clear</code></td><td>下标 <code>[]</code> / <code>index</code> / 遍历</td><td><code>[]</code> 直接修改</td><td>动态数组（类似 C++ vector），支持随机访问</td></tr><tr><td><strong>deque</strong> (<code>collections.deque</code>)</td><td><code>from collections import deque; d = deque()</code></td><td><code>append</code> / <code>appendleft</code> / <code>extend</code> / <code>extendleft</code></td><td><code>pop</code> / <code>popleft</code> / <code>remove</code> / <code>clear</code></td><td>下标 <code>[]</code>（部分实现支持 O(1)）/ 遍历</td><td><code>[]</code> 修改元素</td><td>双端队列，基于双向链表/块状数组，适合两端操作</td></tr><tr><td><strong>set</strong></td><td><code>s = set()</code>, <code>s = {val1, val2}</code></td><td><code>add</code> / <code>update</code></td><td><code>remove</code> / <code>discard</code> / <code>pop</code> / <code>clear</code></td><td><code>in</code> 成员检测</td><td>❌ 不可直接修改元素</td><td>哈希表实现，无序唯一集合</td></tr><tr><td><strong>frozenset</strong></td><td><code>fs = frozenset([val1, val2])</code></td><td>❌ 不可添加</td><td>❌ 不可删除</td><td><code>in</code> 成员检测</td><td>❌ 不可修改</td><td>不可变集合，哈希表实现</td></tr><tr><td><strong>dict</strong></td><td><code>d = {}</code>, <code>d = {k1:v1, k2:v2}</code></td><td><code>dict[key] = value</code> / <code>update</code> / <code>setdefault</code></td><td><code>pop(key)</code> / <code>popitem</code> / <code>clear</code> / <code>del</code></td><td><code>dict[key]</code> / <code>get</code> / <code>in</code></td><td><code>dict[key] = new_value</code></td><td>哈希表实现，无序（Python 3.7+ 保持插入顺序）</td></tr><tr><td><strong>defaultdict</strong> (<code>collections</code>)</td><td><code>from collections import defaultdict; d = defaultdict(type)</code></td><td><code>defaultdict[type]</code> 自动插入</td><td>同 <code>dict</code></td><td>同 <code>dict</code></td><td>同 <code>dict</code></td><td>dict 的子类，缺省值自动生成</td></tr><tr><td><strong>OrderedDict</strong> (<code>collections</code>)</td><td><code>from collections import OrderedDict; od = OrderedDict()</code></td><td><code>update</code> / <code>move_to_end</code></td><td><code>pop</code> / <code>popitem</code> / <code>clear</code></td><td>同 <code>dict</code></td><td>同 <code>dict</code></td><td>dict 的子类，记录插入顺序（Python 3.7+ 已默认）</td></tr><tr><td><strong>Counter</strong> (<code>collections</code>)</td><td><code>from collections import Counter; c = Counter()</code></td><td><code>update</code></td><td><code>subtract</code> / <code>clear</code></td><td><code>counter[key]</code> / <code>elements</code> / <code>most_common</code></td><td><code>counter[key] = new_val</code></td><td>计数器，本质是 dict 的子类</td></tr><tr><td><strong>heapq</strong> (最小堆)</td><td><code>import heapq; h = []</code></td><td><code>heappush</code></td><td><code>heappop</code> / <code>heapreplace</code> / <code>heappushpop</code></td><td>最小值 <code>heap[0]</code></td><td>❌ 不可直接修改元素（需 pop+push）</td><td>基于最小堆，默认最小值优先</td></tr><tr><td><strong>queue.Queue</strong></td><td><code>from queue import Queue; q = Queue()</code></td><td><code>put</code></td><td><code>get</code></td><td><code>queue[0]</code> (不推荐) / <code>get_nowait</code></td><td>❌ 不能直接改</td><td>线程安全队列，基于锁实现</td></tr><tr><td><strong>LifoQueue</strong></td><td><code>from queue import LifoQueue; q = LifoQueue()</code></td><td><code>put</code></td><td><code>get</code></td><td><code>queue[-1]</code> (不推荐)</td><td>❌</td><td>栈结构，线程安全</td></tr><tr><td><strong>PriorityQueue</strong></td><td><code>from queue import PriorityQueue; pq = PriorityQueue()</code></td><td><code>put</code> (存 <code>(priority, item)</code>)</td><td><code>get</code></td><td>最小优先级元素</td><td>❌</td><td>基于 heapq 实现，线程安全</td></tr></tbody></table>
+<h3 id="tips">Tips</h3>
+<ol>
+<li><code>d = { }</code> 初始化是 dict，而不是 set。但是为了可读性，建议直接用 <code>dict()</code></li>
+<li>如果一个 <code>key not in dict</code>，会直接抛出 KeyError，所以要用 <code>if key not in dict</code> 检查。<code>collections.defaultdict()</code> 是 <code>dict()</code> 子类，第一个参数为 <code>default_factory</code> 提供一个初始值，默认为 None，改成 <code>int</code> 或者 <code>list</code> 这种可以避免异常。</li>
+<li>字典的 key 只能是可变长度的，因此 tuple 可以当 key，而 list 不行。</li>
+<li><code>ord()</code> 传入字母，输出 ASKII 码。逆运算是 <code>chr()</code>：
+<ul>
+<li><code>ord('a')</code> <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo>→</mo></mrow><annotation encoding="application/x-tex">\rightarrow</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.3669em;"></span><span class="mrel">→</span></span></span></span> <code>97</code></li>
+<li><code>chr(97)</code> <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo>→</mo></mrow><annotation encoding="application/x-tex">\rightarrow</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.3669em;"></span><span class="mrel">→</span></span></span></span> <code>'a'</code></li>
+</ul>
+</li>
+</ol>
+<h2 id="go-常用数据结构操作对照表">Go 常用数据结构操作对照表</h2>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>容器</th><th>初始化方法</th><th>增 (Insert)</th><th>删 (Erase)</th><th>查 (Find / Access)</th><th>改 (Update)</th><th>备注 / 底层实现</th></tr></thead><tbody><tr><td><strong>slice</strong></td><td><code>s := []T{}</code>, <code>s := make([]T, len, cap)</code></td><td><code>append</code> / <code>copy</code></td><td>手动截断（如 <code>s = append(s[:i], s[i+1:]…)</code>）</td><td>下标 <code>s[i]</code></td><td><code>s[i] = val</code></td><td>动态数组，底层基于数组 + 容量自动扩容（类似 C++ <code>vector</code> / Python <code>list</code>）</td></tr><tr><td><strong>array</strong></td><td><code>var a [n]T</code>, <code>a := [n]T{val1, val2}</code></td><td>固定长度，初始化时赋值</td><td>❌ 长度固定不可删</td><td>下标 <code>a[i]</code></td><td><code>a[i] = val</code></td><td>固定长度数组，值类型</td></tr><tr><td><strong>map</strong></td><td><code>m := map[K]V{}</code>, <code>m := make(map[K]V)</code></td><td><code>m[key] = value</code></td><td><code>delete(m, key)</code></td><td><code>m[key]</code> / <code>value, ok := m[key]</code></td><td><code>m[key] = newValue</code></td><td>哈希表实现，键唯一，无序（Go 1.12+ 随机迭代顺序）</td></tr><tr><td><strong>struct</strong></td><td><code>var s T</code>, <code>s := T{field1: val1}</code></td><td>直接定义字段赋值</td><td>❌ 无直接删除（可设零值）</td><td><code>s.field</code></td><td><code>s.field = val</code></td><td>自定义复合数据类型，类似 C 结构体</td></tr><tr><td><strong>list</strong> (<code>container/list</code>)</td><td><code>import "container/list"; l := list.New()</code></td><td><code>PushBack</code> / <code>PushFront</code> / <code>InsertAfter</code> / <code>InsertBefore</code></td><td><code>Remove(element)</code></td><td>遍历迭代器 <code>Front()</code> / <code>Back()</code> / <code>Next()</code></td><td><code>element.Value = newVal</code></td><td>双向链表实现，元素非连续存储</td></tr><tr><td><strong>heap</strong> (<code>container/heap</code>)</td><td><code>import "container/heap"; h := &#x26;HeapType{}</code></td><td><code>heap.Push</code></td><td><code>heap.Pop</code></td><td><code>h[0]</code> 最小元素</td><td>❌ 不可直接修改（需 Pop+Push）</td><td>基于最小堆，需要实现 <code>heap.Interface</code></td></tr><tr><td><strong>ring</strong> (<code>container/ring</code>)</td><td><code>import "container/ring"; r := ring.New(n)</code></td><td><code>r.Link</code> 连接环</td><td><code>r.Unlink(n)</code></td><td><code>r.Value</code> / <code>r.Next()</code> / <code>r.Prev()</code></td><td><code>r.Value = val</code></td><td>环形链表，适合循环队列</td></tr><tr><td><strong>sync.Map</strong></td><td><code>import "sync"; var m sync.Map</code></td><td><code>Store(key, val)</code></td><td><code>Delete(key)</code></td><td><code>Load(key)</code> / <code>LoadOrStore</code></td><td><code>Store(key, newVal)</code></td><td>并发安全哈希表，适合多线程场景</td></tr><tr><td><strong>chan (channel)</strong></td><td><code>ch := make(chan T)</code>, <code>ch := make(chan T, cap)</code></td><td><code>ch &#x3C;val</code> 发送</td><td>❌ 无删除，需 <code>close(ch)</code></td><td><code>&#x3C;-ch</code> 接收</td><td>❌ 不支持修改</td><td>CSP 并发模型，底层队列，线程安全</td></tr></tbody></table>  </section> <nav class="post-nav" aria-label="Post navigation" data-astro-cid-bvzihdzo> <a href="/blog/flow-matching-的基本理解/" class="post-nav-link post-nav-prev" data-astro-cid-bvzihdzo> <span class="post-nav-dir" data-astro-cid-bvzihdzo>← Previous</span> <span class="post-nav-title" data-astro-cid-bvzihdzo>Flow Matching</span> </a> <a href="/blog/霍夫丁不等式和上界置信算法/" class="post-nav-link post-nav-next" data-astro-cid-bvzihdzo> <span class="post-nav-dir" data-astro-cid-bvzihdzo>Next →</span> <span class="post-nav-title" data-astro-cid-bvzihdzo>霍夫丁不等式 (Hoeffding&#39;s inequality)，与多臂赌博机 (MAB) 中的上置信界 (UCB) 算法</span> </a> </nav>  </article> </main> <!--
+  Notion-style outline / table-of-contents sidebar — the "ladder" variant.
+
+  At rest it is a thin vertical strip of horizontal bars with NO text: each
+  bar's *length* encodes the heading level (long = top-level, short = deep),
+  and the current section's bar darkens as you scroll.  On hover (or keyboard
+  focus) the strip blooms open into the full textual outline — the bars stay
+  as a level glyph to the left of each title.  Fixed to the right edge;
+  hidden on narrow viewports where the Tufte margin notes collapse.
+--><aside id="outline" class="outline" aria-label="Table of contents"> <div class="outline-rail" aria-hidden="true"> <div class="outline-rail-fill" id="outline-rail-fill"></div> </div> <div class="outline-dot" id="outline-dot" aria-hidden="true"></div> <span class="outline-title">Contents</span> <nav class="outline-nav" id="outline-nav"> <!-- populated by script --> </nav> </aside> <script type="module" src="/_astro/Outline.astro_astro_type_script_index_0_lang.Bozuw1ok.js"></script>  <footer class="site-footer" data-astro-cid-sz7xmlte> <div class="footer-inner" data-astro-cid-sz7xmlte> <p class="footer-copy" data-astro-cid-sz7xmlte>&copy; 2026 Niyuta</p> <nav class="footer-links" aria-label="Footer links" data-astro-cid-sz7xmlte> <a href="https://github.com/cheparity" class="footer-link" target="_blank" rel="noopener noreferrer" aria-label="GitHub" title="GitHub" data-astro-cid-sz7xmlte> <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" data-astro-cid-sz7xmlte> <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22" data-astro-cid-sz7xmlte></path> </svg> </a> <a href="mailto:cheparity@gmail.com" class="footer-link" aria-label="Email" title="Email" data-astro-cid-sz7xmlte> <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" data-astro-cid-sz7xmlte> <rect width="20" height="16" x="2" y="4" rx="2" data-astro-cid-sz7xmlte></rect> <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" data-astro-cid-sz7xmlte></path> </svg> </a> <a href="/rss.xml" class="footer-link" aria-label="RSS feed" title="RSS" data-astro-cid-sz7xmlte> <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" data-astro-cid-sz7xmlte> <path d="M4 11a9 9 0 0 1 9 9" data-astro-cid-sz7xmlte></path> <path d="M4 4a16 16 0 0 1 16 16" data-astro-cid-sz7xmlte></path> <circle cx="5" cy="19" r="1" data-astro-cid-sz7xmlte></circle> </svg> </a> </nav> </div> <p class="footer-credit" data-astro-cid-sz7xmlte>
+Typeset in <em data-astro-cid-sz7xmlte>et-book</em> · Inspired by
+<a href="https://edwardtufte.github.io/tufte-css/" target="_blank" rel="noopener noreferrer" data-astro-cid-sz7xmlte>Tufte CSS</a>
+· Built with
+<a href="https://astro.build" target="_blank" rel="noopener noreferrer" data-astro-cid-sz7xmlte>Astro</a> </p> </footer>  <!--
+  Zero-dependency image lightbox.
+  Click any <img> inside <article> to open a fullscreen overlay.
+  Escape or click anywhere to dismiss.
+--><div class="lightbox-overlay" id="lightbox-overlay" aria-hidden="true"> <img class="lightbox-img" id="lightbox-img" alt=""> </div> <script type="module" src="/_astro/Lightbox.astro_astro_type_script_index_0_lang.D3OL8kKH.js"></script>  <!--
+  LinkCardLayout — pins margin link-cards to their anchor's vertical position
+  in a single shared column, with collision avoidance, and draws dashed
+  connector lines from each anchor to its card.
+
+  Runs after each page load (including View Transitions) and on resize.
+  Skips cards inside [data-callout] (those stay inline) and bails on narrow
+  viewports where the margin collapses.
+--><script type="module" src="/_astro/LinkCardLayout.astro_astro_type_script_index_0_lang.C-v3sb4p.js"></script> </body></html>
