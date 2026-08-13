@@ -660,7 +660,10 @@ section > .katex-display {
   width: 31%;
 }
 
-/* Dashed connector lines from anchor links to their margin cards */
+/* Connector lines from anchor links to their margin cards. Hidden at rest;
+   hovering an anchor or its card draws the line on from anchor to card
+   (LinkCardLayout.astro toggles .is-visible and normalizes pathLength to 1,
+   so a dashoffset sweep traces the polyline end to end). */
 .link-card-connectors {
   position: absolute;
   inset: 0;
@@ -669,23 +672,52 @@ section > .katex-display {
   pointer-events: none;
   overflow: visible;
   z-index: 0;
-  transition: opacity 0.3s ease;
 }
-.link-card-connectors path {
+.link-card-connectors g {
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+.link-card-connectors g.is-visible {
+  opacity: 1;
+  transition: none;
+}
+/* Dashed connector line. The inline dasharray (set per path in
+   LinkCardLayout.astro) is a real 6/5 dash run followed by one gap as long
+   as that run; sweeping dashoffset from the total to 0 grows the dashes
+   out of the anchor end, so the line is dashed at every frame. */
+.link-card-connectors .connector-dash {
   fill: none;
-  stroke: rgba(128, 128, 128, 0.3);
-  stroke-width: 1;
-  stroke-dasharray: 4 3;
+  stroke: rgba(176, 137, 104, 0.85);
+  stroke-width: 1.7;
   stroke-linejoin: round;
+  stroke-linecap: round;
+  stroke-dashoffset: var(--lc-len, 0);
+  transition: stroke-dashoffset 0.5s cubic-bezier(0.25, 1, 0.3, 1);
+}
+.link-card-connectors g.is-visible .connector-dash {
+  stroke-dashoffset: 0;
 }
 .link-card-connectors circle {
-  fill: rgba(128, 128, 128, 0.35);
+  fill: rgba(176, 137, 104, 0.95);
+  transform-box: fill-box;
+  transform-origin: center;
+  transform: scale(0);
+  transition: transform 0.15s ease;
+}
+.link-card-connectors g.is-visible .dot-start {
+  transform: scale(1);
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+/* Card dot lands just as the stroke finishes its run. */
+.link-card-connectors g.is-visible .dot-end {
+  transform: scale(1);
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) 0.42s;
 }
 html.dark .link-card-connectors path {
-  stroke: rgba(255, 255, 255, 0.18);
+  stroke: rgba(221, 184, 146, 0.75);
 }
 html.dark .link-card-connectors circle {
-  fill: rgba(255, 255, 255, 0.22);
+  fill: rgba(221, 184, 146, 0.9);
 }
 
 /* Callouts are boxed (border + background, w-[60%]); a card floated out

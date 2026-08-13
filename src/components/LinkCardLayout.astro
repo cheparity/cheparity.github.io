@@ -4,7 +4,9 @@
 <!--
   LinkCardLayout — pins margin link-cards to their anchor's vertical position
   in a single shared column, with collision avoidance, and draws dashed
-  connector lines from each anchor to its card.
+  connector lines from each anchor to its card. Connectors stay hidden at
+  rest and fade in while hovering (or keyboard-focusing) an anchor or its
+  card.
 
   Runs after each page load (including View Transitions) and on resize.
   Skips cards inside [data-callout] (those stay inline) and bails on narrow
@@ -23,7 +25,13 @@
 		desiredTop: number;
 	}
 
-	function drawConnectors(prose: HTMLElement, entries: Entry[]) {
+	interface Pair {
+		g: SVGGElement;
+		card: HTMLElement;
+		anchor: HTMLElement;
+	}
+
+	function drawConnectors(prose: HTMLElement, entries: Entry[]): Pair[] {
 		let svg = prose.querySelector(':scope > svg.link-card-connectors') as SVGSVGElement | null;
 		if (!svg) {
 			svg = document.createElementNS(SVG_NS, 'svg');
@@ -35,6 +43,7 @@
 		svg.innerHTML = '';
 
 		const proseRect = prose.getBoundingClientRect();
+		const pairs: Pair[] = [];
 
 		for (const { card, anchor } of entries) {
 			const aRect = anchor.getBoundingClientRect();
@@ -51,37 +60,57 @@
 			// Midpoint x for the vertical segment
 			const mx = ax + (cx - ax) * 0.5;
 
-			// Polyline: horizontal → vertical → horizontal
-			const path = document.createElementNS(SVG_NS, 'path');
-			path.setAttribute('d', `M${ax},${ay} L${mx},${ay} L${mx},${cy} L${cx},${cy}`);
-			svg.appendChild(path);
+			// One group per pair so hover can reveal just this connector.
+			const g = document.createElementNS(SVG_NS, 'g');
+
+			// Dashed polyline: horizontal → vertical → horizontal. The CSS
+			// dashoffset sweep (total → 0) reveals the dashes from the anchor
+			// end; dasharray is built per-path in layout so the pattern is a
+			// real 6/5 dash with one trailing gap as long as the line.
+			const dash = document.createElementNS(SVG_NS, 'path');
+			dash.setAttribute('d', `M${ax},${ay} L${mx},${ay} L${mx},${cy} L${cx},${cy}`);
+			dash.setAttribute('class', 'connector-dash');
+			g.appendChild(dash);
 
 			// Endpoint dots
 			const dotA = document.createElementNS(SVG_NS, 'circle');
 			dotA.setAttribute('cx', String(ax));
 			dotA.setAttribute('cy', String(ay));
-			dotA.setAttribute('r', '2.5');
-			svg.appendChild(dotA);
+			dotA.setAttribute('r', '3');
+			dotA.setAttribute('class', 'dot-start');
+			g.appendChild(dotA);
 
 			const dotC = document.createElementNS(SVG_NS, 'circle');
 			dotC.setAttribute('cx', String(cx));
 			dotC.setAttribute('cy', String(cy));
-			dotC.setAttribute('r', '2.5');
-			svg.appendChild(dotC);
+			dotC.setAttribute('r', '3');
+			dotC.setAttribute('class', 'dot-end');
+			g.appendChild(dotC);
+
+			svg.appendChild(g);
+
+			// Dash pattern: 6/5 dashes covering the line, then a single gap as
+			// long as the dash run. Sweeping dashoffset from that total to 0
+			// grows the dashed line out of the anchor end — always dashed.
+			const len = dash.getTotalLength();
+			let run = 0;
+			let list = '';
+			while (run < len) { list += '6 5 '; run += 11; }
+			dash.setAttribute('stroke-dasharray', `${list}${run}`);
+			dash.style.setProperty('--lc-len', String(run));
+			pairs.push({ g, card, anchor });
 		}
 
-		// Fade in
-		svg.style.opacity = '0';
-		requestAnimationFrame(() => { svg!.style.opacity = '1'; });
+		return pairs;
 	}
 
-	function layoutCards() {
+	function layoutCards(): Pair[] {
 		const prose = document.querySelector('section.prose');
-		if (!prose) return;
+		if (!prose) return [];
 
 		const cards = [...prose.querySelectorAll('.link-card')]
 			.filter((c) => !c.closest('[data-callout]'));
-		if (cards.length === 0) return;
+		if (cards.length === 0) return [];
 
 		const proseRect = prose.getBoundingClientRect();
 
@@ -117,8 +146,8 @@
 			lastBottom = top + card.offsetHeight;
 		}
 
-		// 5. Draw connector lines.
-		drawConnectors(prose as HTMLElement, entries);
+		// 6. Draw connector lines.
+		return drawConnectors(prose as HTMLElement, entries);
 	}
 
 	function teardown() {
@@ -134,13 +163,36 @@
 
 	onPage((signal) => {
 		if (window.innerWidth <= MOBILE_BP) return;
+		const prose = document.querySelector('section.prose');
+		if (!prose) return;
 
-		const run = () => layoutCards();
+		let pairs: Pair[] = [];
+		const run = () => { pairs = layoutCards(); };
 		requestAnimationFrame(() => requestAnimationFrame(run));
 
 		if (document.fonts?.ready) {
 			document.fonts.ready.then(run).catch(() => {});
 		}
+
+		// Connectors are hidden at rest; reveal a pair while hovering (or
+		// keyboard-focusing) its anchor link or margin card.
+		const pairAt = (el: Element | null) =>
+			el ? pairs.find((p) => p.card.contains(el) || p.anchor.contains(el)) : undefined;
+
+		const onOver = (e: Event) => {
+			pairAt(e.target as Element)?.g.classList.add('is-visible');
+		};
+		const onOut = (e: Event) => {
+			const pair = pairAt(e.target as Element);
+			if (!pair) return;
+			const to = (e as MouseEvent).relatedTarget as Element | null;
+			if (to && (pair.card.contains(to) || pair.anchor.contains(to))) return;
+			pair.g.classList.remove('is-visible');
+		};
+		prose.addEventListener('mouseover', onOver, { signal });
+		prose.addEventListener('mouseout', onOut, { signal });
+		prose.addEventListener('focusin', onOver, { signal });
+		prose.addEventListener('focusout', onOut, { signal });
 
 		let resizeTimer: ReturnType<typeof setTimeout>;
 		const onResize = () => {
@@ -148,9 +200,10 @@
 			resizeTimer = setTimeout(() => {
 				if (window.innerWidth <= MOBILE_BP) {
 					teardown();
+					pairs = [];
 				} else {
 					teardown();
-					layoutCards();
+					pairs = layoutCards();
 				}
 			}, 150);
 		};

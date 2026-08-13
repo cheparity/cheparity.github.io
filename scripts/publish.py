@@ -71,6 +71,48 @@ def make_slug(stem: str) -> str:
     return slug
 
 
+_CODE_FENCE_RE = re.compile(r"```[\s\S]*?```|~~~[\s\S]*?~~~")
+_INLINE_CODE_RE = re.compile(r"`[^`\n]*`")
+
+
+def strip_code(content: str) -> str:
+    """Remove fenced code blocks and inline code spans.
+
+    Keeps the graph link scanner from mistaking code literals (e.g. TOML
+    ``[[index]]``) for real links.
+    """
+    return _INLINE_CODE_RE.sub("", _CODE_FENCE_RE.sub("", content))
+
+
+def _resolve_path(
+    raw: str, slug_map: dict[str, str], note_dir: Path, vault: Path
+) -> str | None:
+    """Resolve a link target to a slug, or None if unpublished.
+
+    Tries vault-root-relative first (Obsidian default), then
+    note-directory-relative (for ./ or ../ links).
+    """
+    decoded = urllib.parse.unquote(raw.strip())
+    decoded = decoded.lstrip("./")
+    vault_root = vault.resolve()
+    # Try vault-root-relative
+    candidate = (vault_root / decoded).resolve()
+    try:
+        rel = candidate.relative_to(vault_root)
+        slug = slug_map.get(rel.as_posix())
+        if slug:
+            return slug
+    except ValueError:
+        pass
+    # Try note-directory-relative
+    candidate = (note_dir / decoded).resolve()
+    try:
+        rel = candidate.relative_to(vault_root)
+        return slug_map.get(rel.as_posix())
+    except ValueError:
+        return None
+
+
 def fix_internal_links(
     content: str,
     slug_map: dict[str, str],
@@ -85,37 +127,12 @@ def fix_internal_links(
 
     Links to unpublished notes are degraded to plain text.
     """
-
-    def resolve_path(raw: str) -> str | None:
-        """Resolve a link target to a slug, or None if unpublished.
-
-        Tries vault-root-relative first (Obsidian default), then
-        note-directory-relative (for ./ or ../ links).
-        """
-        decoded = urllib.parse.unquote(raw.strip())
-        decoded = decoded.lstrip("./")
-        vault_root = vault.resolve()
-        # Try vault-root-relative
-        candidate = (vault_root / decoded).resolve()
-        try:
-            rel = candidate.relative_to(vault_root)
-            slug = slug_map.get(rel.as_posix())
-            if slug:
-                return slug
-        except ValueError:
-            pass
-        # Try note-directory-relative
-        candidate = (note_dir / decoded).resolve()
-        try:
-            rel = candidate.relative_to(vault_root)
-            return slug_map.get(rel.as_posix())
-        except ValueError:
-            return None
+    stem_index = {Path(v).stem: s for v, s in slug_map.items()}
 
     # [text](xxx.md) — skip external URLs and image embeds
     def replace_md_link(m: re.Match) -> str:
         text, target = m.group(1), m.group(2)
-        slug = resolve_path(target)
+        slug = _resolve_path(target, slug_map, note_dir, vault)
         if slug:
             return f"[{text}](/blog/{slug}/)"
         return text
@@ -130,10 +147,9 @@ def fix_internal_links(
     def replace_wikilink(m: re.Match) -> str:
         target = m.group(1)
         display = m.group(2) if m.group(2) else target
-        # Wikilinks use note name without path; search slug_map by stem
-        for vault_rel, slug in slug_map.items():
-            if Path(vault_rel).stem == target:
-                return f"[{display}](/blog/{slug}/)"
+        slug = stem_index.get(target)
+        if slug:
+            return f"[{display}](/blog/{slug}/)"
         return display
 
     content = re.sub(
@@ -143,6 +159,34 @@ def fix_internal_links(
     )
 
     return content
+
+
+def extract_graph_links(
+    body: str,
+    slug_map: dict[str, str],
+    note_dir: Path,
+    vault: Path,
+) -> list[tuple[str | None, str]]:
+    """Collect internal-link targets from a raw note body.
+
+    Returns a list of (slug_or_None, stem): slug is None when the target is
+    unpublished (it becomes a ghost node). Resolution mirrors
+    fix_internal_links; code regions are stripped first.
+    """
+    src = strip_code(body)
+    stem_index = {Path(v).stem: s for v, s in slug_map.items()}
+    out: list[tuple[str | None, str]] = []
+
+    for m in re.finditer(r"(?<!!)\[([^\]]+)\]\((?!https?://)([^)]+\.md)\)", src):
+        raw = m.group(2)
+        stem = Path(urllib.parse.unquote(raw.strip()).lstrip("./")).stem
+        out.append((_resolve_path(raw, slug_map, note_dir, vault), stem))
+
+    for m in re.finditer(r"(?<!!)\[\[([^\]|]+)(?:\|([^\]]+))?\]\]", src):
+        stem = m.group(1).split("#")[0].strip()
+        out.append((stem_index.get(stem), stem))
+
+    return out
 
 
 # ---------------------------------------------------------------------------
@@ -471,6 +515,43 @@ def main():
     with open(data_dir / "posts-manifest.json", "w", encoding="utf-8") as f:
         json.dump(manifest, f, ensure_ascii=False, indent=2)
     print(f"Wrote posts-manifest.json ({len(manifest)} entries)")
+
+    # --- Emit graph.json for GraphView (homepage note graph) ---
+    graph_nodes: list[dict] = []
+    graph_links: list[dict] = []
+    seen_pairs: set[tuple[str, str]] = set()
+    ghosts: dict[str, str] = {}  # slug -> display stem
+    for item, article_fm in notes:
+        slug = slug_map[item.relative_to(vault).as_posix()]
+        title, body = extract_title_and_strip_h1(article_fm.content)
+        if not title:
+            title = item.stem
+        tags = article_fm.get("tags")
+        if isinstance(tags, str):
+            tags = [t.strip() for t in tags.split(",") if t.strip()]
+        graph_nodes.append({
+            "id": slug,
+            "title": title,
+            "group": tags[0].lower() if tags else "",
+            "url": f"/blog/{slug}/",
+        })
+        for target_slug, stem in extract_graph_links(body, slug_map, item.parent, vault):
+            if target_slug is None:
+                target_slug = make_slug(stem)
+                ghosts.setdefault(target_slug, stem)
+            if target_slug == slug:
+                continue
+            key = (slug, target_slug) if slug < target_slug else (target_slug, slug)
+            if key in seen_pairs:
+                continue
+            seen_pairs.add(key)
+            graph_links.append({"source": slug, "target": target_slug})
+    for ghost_slug, stem in ghosts.items():
+        if ghost_slug not in slug_map.values():
+            graph_nodes.append({"id": ghost_slug, "title": stem, "group": "", "ghost": True})
+    with open(data_dir / "graph.json", "w", encoding="utf-8") as f:
+        json.dump({"nodes": graph_nodes, "links": graph_links}, f, ensure_ascii=False, indent=2)
+    print(f"Wrote graph.json ({len(graph_nodes)} nodes, {len(graph_links)} links)")
 
     # --- Clean unused assets ---
     global image_paths

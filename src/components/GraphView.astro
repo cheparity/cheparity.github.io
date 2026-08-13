@@ -1,0 +1,585 @@
+---
+/**
+ * GraphView — Obsidian-style note graph rendered on a canvas with d3-force.
+ *
+ * Data is baked in at build time from src/data/graph.json (emitted by
+ * scripts/graph-build.mjs locally, or scripts/publish.py in CI). If that
+ * file is absent the section renders nothing rather than an empty frame.
+ *
+ * Interactions: nodes sized by degree and tinted by first tag; ghost
+ * (unpublished) notes render hollow; hover highlights the neighborhood;
+ * drag nodes to rearrange; drag the background to pan; scroll/pinch or the
+ * corner buttons to zoom; click a published node to navigate. The layout is
+ * pre-settled synchronously and auto-fitted to the frame until the user
+ * takes over the camera. Re-initializes on View Transition navigations and
+ * follows the dark-mode class.
+ */
+import { readFileSync, existsSync } from 'node:fs';
+import { resolve } from 'node:path';
+
+const { height = 440, title = 'Note Graph' } = Astro.props;
+
+let graphData: { nodes: any[]; links: any[] } | null = null;
+const dataPath = resolve(process.cwd(), 'src/data/graph.json');
+if (existsSync(dataPath)) {
+	try {
+		graphData = JSON.parse(readFileSync(dataPath, 'utf-8'));
+	} catch {
+		graphData = null;
+	}
+}
+// Escape "<" so a "</script>" inside a title can't terminate the block.
+const graphJson = graphData ? JSON.stringify(graphData).replace(/</g, '\\u003c') : '';
+---
+
+{graphData && graphData.nodes?.length > 0 && (
+	<section class="graphview reveal" style={`--gv-height: ${height}px`}>
+		<div class="gv-head">
+			<h2 class="gv-title">{title}</h2>
+			<span class="gv-sub">drag nodes · drag background to pan · scroll or pinch to zoom · click a node to open</span>
+		</div>
+		<div class="gv-frame">
+			<canvas class="gv-canvas" aria-label="Interactive note graph"></canvas>
+			<div class="gv-zoom">
+				<button class="gv-btn" data-act="in" aria-label="Zoom in" title="Zoom in">+</button>
+				<button class="gv-btn" data-act="out" aria-label="Zoom out" title="Zoom out">−</button>
+				<button class="gv-btn" data-act="fit" aria-label="Fit graph to view" title="Fit to view">⤢</button>
+				<span class="gv-zoom-pct" aria-hidden="true">100%</span>
+			</div>
+			<div class="gv-tip" hidden></div>
+			<script type="application/json" id="gv-data" set:html={graphJson} />
+			<noscript><p class="gv-fallback">Enable JavaScript to see the note graph.</p></noscript>
+		</div>
+	</section>
+)}
+
+<script>
+	import { onPage } from '../utils/vt';
+
+	const d3Ready = () =>
+		new Promise<void>((resolve) => {
+			if (window.d3?.forceSimulation) return resolve();
+			const s = document.createElement('script');
+			s.src = '/scripts/d3-force.min.js';
+			s.onload = () => resolve();
+			s.onerror = () => resolve(); // degrade silently if the bundle fails
+			document.head.appendChild(s);
+		});
+
+	// Warm, muted palette tuned to the parchment theme.
+	const GROUP_COLORS = [
+		'#b08968', '#8a6d4f', '#a9714b', '#7f5539',
+		'#9c6644', '#6f4e37', '#8d6e63', '#c08552',
+	];
+
+	function groupColor(group) {
+		if (!group) return '#9a9a9a';
+		let h = 0;
+		for (let i = 0; i < group.length; i++) h = (h * 31 + group.charCodeAt(i)) | 0;
+		return GROUP_COLORS[Math.abs(h) % GROUP_COLORS.length];
+	}
+
+	function themeColors() {
+		const dark = document.documentElement.classList.contains('dark');
+		return {
+			link: dark ? 'rgba(255,255,255,0.16)' : 'rgba(120,100,80,0.22)',
+			linkHi: dark ? 'rgba(230,200,160,0.7)' : 'rgba(140,100,60,0.6)',
+			label: dark ? '#e8e2d5' : '#2b2620',
+			fade: dark ? 0.22 : 0.16,
+		};
+	}
+
+	function init(signal) {
+		const root = document.querySelector('.graphview');
+		if (!root) return;
+		const canvas = root.querySelector('.gv-canvas');
+		const tip = root.querySelector('.gv-tip');
+		if (!canvas) return;
+		const ctx = canvas.getContext('2d');
+
+		let width = 0, height = 0, dpr = 1;
+		let nodes = [], links = [];
+		let sim = null;
+		let hoverNode = null;
+		let dragNode = null;
+		let dragged = false;
+		// Camera: screen = world * k + offset (CSS px).
+		const cam = { x: 0, y: 0, k: 1 };
+		const K_MIN = 0.35, K_MAX = 3;
+		let touched = false; // user moved the camera → stop auto-fitting
+		let panning = null; // { startX, startY, camX, camY } while background-dragging
+		const pointers = new Map(); // pointerId -> {cx, cy} for pinch tracking
+		const pinch = { dist: 0, mx: 0, my: 0 };
+		let neighbors = new Map(); // id -> Set(id)
+		let raf = null;
+
+		const zoomPct = root.querySelector('.gv-zoom-pct');
+		function setCamLabel() {
+			if (zoomPct) zoomPct.textContent = Math.round(cam.k * 100) + '%';
+		}
+
+		const ro = new ResizeObserver(() => resize());
+		ro.observe(root.querySelector('.gv-frame'));
+
+		function resize() {
+			const frame = root.querySelector('.gv-frame');
+			width = frame.clientWidth;
+			height = frame.clientHeight;
+			dpr = Math.min(window.devicePixelRatio || 1, 2);
+			canvas.width = width * dpr;
+			canvas.height = height * dpr;
+			canvas.style.width = width + 'px';
+			canvas.style.height = height + 'px';
+			if (!touched) fitToView(); // keep everything in view as the frame resizes
+			schedule();
+		}
+
+		function schedule() {
+			if (raf) return;
+			raf = requestAnimationFrame(() => { raf = null; draw(); });
+		}
+
+		function nodeRadius(n) {
+			const base = n.ghost ? 2.4 : 3.2;
+			const deg = neighbors.get(n.id)?.size ?? 0;
+			return base + Math.sqrt(deg) * 2.2;
+		}
+
+		function draw() {
+			ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+			ctx.clearRect(0, 0, width, height);
+			ctx.translate(cam.x, cam.y);
+			ctx.scale(cam.k, cam.k);
+			const c = themeColors();
+			const hover = hoverNode || dragNode;
+			const lw = (w) => w / cam.k; // constant screen-width strokes
+
+			// links
+			for (const l of links) {
+				const a = l.source, b = l.target;
+				const active = hover && (a.id === hover.id || b.id === hover.id);
+				const dim = hover && !active;
+				ctx.globalAlpha = dim ? c.fade : 1;
+				ctx.strokeStyle = active ? c.linkHi : c.link;
+				ctx.lineWidth = lw(active ? 1.4 : 1);
+				ctx.beginPath();
+				ctx.moveTo(a.x, a.y);
+				ctx.lineTo(b.x, b.y);
+				ctx.stroke();
+			}
+
+			// nodes
+			for (const n of nodes) {
+				const isHover = hover && n.id === hover.id;
+				const isNeighbor = hover && neighbors.get(hover.id)?.has(n.id);
+				const dim = hover && !isHover && !isNeighbor;
+				ctx.globalAlpha = dim ? c.fade : 1;
+				const r = Math.max(nodeRadius(n), 2.6 / cam.k); // stay visible when zoomed out
+				if (n.ghost) {
+					ctx.beginPath();
+					ctx.arc(n.x, n.y, r, 0, Math.PI * 2);
+					ctx.fillStyle = 'rgba(150,150,150,0.12)';
+					ctx.fill();
+					ctx.strokeStyle = isHover ? c.linkHi : 'rgba(150,150,150,0.6)';
+					ctx.lineWidth = lw(1.2);
+					ctx.stroke();
+				} else {
+					ctx.beginPath();
+					ctx.arc(n.x, n.y, r, 0, Math.PI * 2);
+					ctx.fillStyle = groupColor(n.group);
+					ctx.fill();
+					if (isHover) {
+						ctx.strokeStyle = c.label;
+						ctx.lineWidth = lw(2);
+						ctx.stroke();
+					}
+				}
+			}
+			ctx.globalAlpha = 1;
+		}
+
+		function pick(x, y) {
+			let best = null, bestD = Infinity;
+			for (const n of nodes) {
+				const dx = n.x - x, dy = n.y - y;
+				const d = dx * dx + dy * dy;
+				const r = nodeRadius(n) + 4 / cam.k; // constant screen-px tolerance
+				if (d < r * r && d < bestD) { bestD = d; best = n; }
+			}
+			return best;
+		}
+
+		function toLocal(e) {
+			const rect = canvas.getBoundingClientRect();
+			return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+		}
+
+		// Screen (canvas CSS px) → simulation world coordinates.
+		function toWorld(e) {
+			const p = toLocal(e);
+			return { x: (p.x - cam.x) / cam.k, y: (p.y - cam.y) / cam.k };
+		}
+
+		// Zoom toward (px, py), keeping the world point under it fixed.
+		function applyZoom(px, py, targetK) {
+			const k = Math.min(K_MAX, Math.max(K_MIN, targetK));
+			if (k === cam.k) return;
+			const r = k / cam.k;
+			cam.x = px - (px - cam.x) * r;
+			cam.y = py - (py - cam.y) * r;
+			cam.k = k;
+			setCamLabel();
+			schedule();
+		}
+
+		// Scale + translate so every node fits the frame with padding.
+		function fitToView(maxK = 1.5) {
+			if (!nodes.length || !width || !height) return;
+			const k0 = Number.isFinite(cam.k) && cam.k > 0 ? cam.k : 1;
+			let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+			let used = 0;
+			for (const n of nodes) {
+				if (!Number.isFinite(n.x) || !Number.isFinite(n.y)) continue; // pre-tick
+				used++;
+				const r = Math.max(nodeRadius(n), 2.6 / k0);
+				minX = Math.min(minX, n.x - r);
+				minY = Math.min(minY, n.y - r);
+				maxX = Math.max(maxX, n.x + r);
+				maxY = Math.max(maxY, n.y + r);
+			}
+			if (!used) return;
+			const bw = maxX - minX, bh = maxY - minY;
+			if (bw <= 0 || bh <= 0) return;
+			const pad = 28;
+			const k = Math.max(0.1, Math.min((width - pad * 2) / bw, (height - pad * 2) / bh, maxK));
+			cam.k = k;
+			cam.x = (width - bw * k) / 2 - minX * k;
+			cam.y = (height - bh * k) / 2 - minY * k;
+			setCamLabel();
+			schedule();
+		}
+
+		function showTip(n, e) {
+			if (!n) { tip.hidden = true; return; }
+			tip.textContent = n.title;
+			tip.hidden = false;
+			const frame = root.querySelector('.gv-frame').getBoundingClientRect();
+			const x = e.clientX - frame.left, y = e.clientY - frame.top;
+			tip.style.left = Math.min(x + 12, width - 10) + 'px';
+			tip.style.top = Math.max(y - 12, 8) + 'px';
+		}
+
+		canvas.addEventListener('pointermove', (e) => {
+			// two-finger pinch zoom (touch)
+			if (pointers.has(e.pointerId)) pointers.set(e.pointerId, { cx: e.clientX, cy: e.clientY });
+			if (pointers.size === 2) {
+				const [a, b] = [...pointers.values()];
+				const dist = Math.hypot(a.cx - b.cx, a.cy - b.cy);
+				const rect = canvas.getBoundingClientRect();
+				const mx = (a.cx + b.cx) / 2 - rect.left, my = (a.cy + b.cy) / 2 - rect.top;
+				if (pinch.dist > 0) {
+					applyZoom(pinch.mx, pinch.my, cam.k * (dist / pinch.dist)); // scale about old midpoint
+					cam.x += mx - pinch.mx; // then follow the midpoint
+					cam.y += my - pinch.my;
+					touched = true;
+					schedule();
+				}
+				pinch.dist = dist; pinch.mx = mx; pinch.my = my;
+				return;
+			}
+			if (dragNode) {
+				dragged = true;
+				const { x, y } = toWorld(e);
+				dragNode.fx = x; dragNode.fy = y;
+				sim.alphaTarget(0.12).restart();
+				schedule();
+				return;
+			}
+			if (panning) {
+				const p = toLocal(e);
+				cam.x = panning.camX + (p.x - panning.startX);
+				cam.y = panning.camY + (p.y - panning.startY);
+				touched = true;
+				tip.hidden = true;
+				schedule();
+				return;
+			}
+			const { x, y } = toWorld(e);
+			const n = pick(x, y);
+			if (n !== hoverNode) { hoverNode = n; schedule(); }
+			canvas.style.cursor = n && !n.ghost ? 'pointer' : n ? 'default' : 'grab';
+			showTip(n, e);
+		}, { signal });
+
+		canvas.addEventListener('pointerleave', () => {
+			hoverNode = null; tip.hidden = true; schedule();
+		}, { signal });
+
+		canvas.addEventListener('pointerdown', (e) => {
+			if (e.pointerType === 'touch') {
+				pointers.set(e.pointerId, { cx: e.clientX, cy: e.clientY });
+				if (pointers.size === 2) {
+					// second finger: abandon any node drag / pan and start pinch
+					if (dragNode) { dragNode.fx = null; dragNode.fy = null; dragNode = null; sim.alphaTarget(0); }
+					panning = null;
+					pinch.dist = 0;
+					canvas.setPointerCapture(e.pointerId);
+					return;
+				}
+				// single finger falls through: drag nodes / pan like the mouse
+			}
+			const { x, y } = toWorld(e);
+			const n = pick(x, y);
+			if (n) {
+				dragNode = n; dragged = false;
+				n.fx = n.x; n.fy = n.y;
+			} else {
+				const p = toLocal(e);
+				panning = { startX: p.x, startY: p.y, camX: cam.x, camY: cam.y };
+				canvas.style.cursor = 'grabbing';
+			}
+			canvas.setPointerCapture(e.pointerId);
+		}, { signal });
+
+		const endPointer = (e) => {
+			pointers.delete(e.pointerId);
+			if (pointers.size < 2) pinch.dist = 0;
+			if (dragNode) {
+				const n = dragNode;
+				dragNode = null;
+				n.fx = null; n.fy = null;
+				touched = true;
+				sim.alphaTarget(0);
+				if (!dragged && n.url) window.location.href = n.url;
+				return;
+			}
+			if (panning) {
+				panning = null;
+				canvas.style.cursor = 'grab';
+			}
+		};
+		canvas.addEventListener('pointerup', endPointer, { signal });
+		canvas.addEventListener('pointercancel', endPointer, { signal });
+
+		canvas.addEventListener('wheel', (e) => {
+			e.preventDefault();
+			const p = toLocal(e);
+			applyZoom(p.x, p.y, cam.k * Math.exp(-e.deltaY * 0.0016));
+			touched = true;
+		}, { passive: false, signal });
+
+		canvas.addEventListener('dblclick', (e) => {
+			const p = toLocal(e);
+			applyZoom(p.x, p.y, cam.k * 1.6);
+			touched = true;
+		}, { signal });
+
+		root.querySelector('.gv-zoom').addEventListener('click', (e) => {
+			const btn = e.target.closest('[data-act]');
+			if (!btn) return;
+			const act = btn.dataset.act;
+			if (act === 'fit') {
+				touched = false;
+				fitToView(2);
+				return;
+			}
+			applyZoom(width / 2, height / 2, cam.k * (act === 'in' ? 1.35 : 1 / 1.35));
+			touched = true;
+		}, { signal });
+
+		// Redraw when the theme class flips.
+		const mo = new MutationObserver(() => schedule());
+		mo.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+
+		const dataEl = root.querySelector('#gv-data');
+		let data = null;
+		try { data = JSON.parse(dataEl.textContent); } catch { /* fall through */ }
+		if (!data || !data.nodes?.length) { root.style.display = 'none'; return; }
+		nodes = data.nodes;
+		links = data.links;
+		// neighbor map from raw id pairs (before d3 resolves them to objects)
+		for (const l of links) {
+			const s = typeof l.source === 'object' ? l.source.id : l.source;
+			const t = typeof l.target === 'object' ? l.target.id : l.target;
+			if (!neighbors.has(s)) neighbors.set(s, new Set());
+			if (!neighbors.has(t)) neighbors.set(t, new Set());
+			neighbors.get(s).add(t);
+			neighbors.get(t).add(s);
+		}
+		resize();
+		sim = window.d3.forceSimulation(nodes)
+			.force('link', window.d3.forceLink(links).id((d) => d.id).distance(40).strength(0.5))
+			.force('charge', window.d3.forceManyBody().strength(-80))
+			.force('center', window.d3.forceCenter(width / 2, height / 2))
+			.force('collide', window.d3.forceCollide((d) => nodeRadius(d) + 3))
+			.stop();
+		// Pre-settle the layout synchronously so the very first paint already
+		// shows the final arrangement, fitted inside the frame.
+		sim.tick(300);
+		fitToView();
+		sim.on('tick', schedule);
+		sim.on('end', () => { if (!touched) fitToView(); });
+		sim.alpha(0.15).restart();
+
+		signal.addEventListener('abort', () => {
+			ro.disconnect();
+			mo.disconnect();
+			sim?.stop();
+			if (raf) cancelAnimationFrame(raf);
+		});
+	}
+
+	onPage((signal) => {
+		d3Ready().then(() => init(signal));
+	});
+</script>
+
+<style is:global>
+	.graphview {
+		margin-top: 2.4rem;
+	}
+
+	.gv-head {
+		display: flex;
+		align-items: baseline;
+		gap: 0.9rem;
+		flex-wrap: wrap;
+	}
+
+	.gv-title {
+		position: relative;
+		padding-left: 1.6rem;
+		font-family: 'et-book', serif;
+		font-size: 1.8rem;
+		font-weight: normal;
+		font-style: normal;
+		font-variant: small-caps;
+		letter-spacing: 0.05em;
+		color: #666;
+		line-height: 1;
+		margin: 0;
+	}
+	html.dark .gv-title { color: #a89f8d; }
+
+	.gv-title::before {
+		content: '';
+		position: absolute;
+		left: 0;
+		top: 0.12em;
+		bottom: 0.12em;
+		width: 2px;
+		background: currentColor;
+		opacity: 0.5;
+	}
+
+	.gv-sub {
+		font-family: 'Source Sans 3', sans-serif;
+		font-size: 0.95rem;
+		color: #9a938a;
+		letter-spacing: 0.01em;
+	}
+
+	.gv-frame {
+		position: relative;
+		width: 100%;
+		height: var(--gv-height, 440px);
+		margin-top: 1.2rem;
+		border: 1px solid rgba(176, 137, 104, 0.22);
+		border-radius: 8px;
+		overflow: hidden;
+		background: rgba(176, 137, 104, 0.03);
+	}
+	html.dark .gv-frame {
+		border-color: rgba(221, 184, 146, 0.16);
+		background: rgba(255, 255, 255, 0.02);
+	}
+
+	.gv-canvas {
+		display: block;
+		width: 100%;
+		height: 100%;
+		touch-action: none;
+		cursor: grab;
+	}
+
+	.gv-zoom {
+		position: absolute;
+		top: 10px;
+		right: 10px;
+		display: flex;
+		align-items: center;
+		gap: 4px;
+		z-index: 2;
+	}
+
+	.gv-btn {
+		width: 28px;
+		height: 28px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		padding: 0;
+		border-radius: 6px;
+		border: 1px solid rgba(176, 137, 104, 0.3);
+		background: rgba(255, 252, 244, 0.85);
+		color: #5c4a38;
+		font-family: 'Source Sans 3', sans-serif;
+		font-size: 1.15rem;
+		line-height: 1;
+		cursor: pointer;
+		transition: background-color 0.15s ease;
+	}
+	.gv-btn:hover {
+		background: rgba(238, 228, 208, 0.95);
+	}
+	html.dark .gv-btn {
+		background: rgba(30, 27, 23, 0.85);
+		border-color: rgba(221, 184, 146, 0.25);
+		color: #d8cfbf;
+	}
+	html.dark .gv-btn:hover {
+		background: rgba(48, 42, 35, 0.95);
+	}
+
+	.gv-zoom-pct {
+		min-width: 4ch;
+		margin-left: 3px;
+		font-family: 'Source Sans 3', sans-serif;
+		font-size: 0.8rem;
+		color: #9a938a;
+		text-align: right;
+	}
+
+	.gv-tip {
+		position: absolute;
+		pointer-events: none;
+		transform: translate(-50%, -110%);
+		padding: 3px 8px;
+		font-family: 'Source Sans 3', sans-serif;
+		font-size: 0.85rem;
+		line-height: 1.3;
+		color: #1c1814;
+		background: rgba(255, 252, 244, 0.96);
+		border: 1px solid rgba(176, 137, 104, 0.35);
+		border-radius: 5px;
+		box-shadow: 0 2px 8px rgba(60, 40, 20, 0.12);
+		white-space: nowrap;
+		z-index: 2;
+	}
+	html.dark .gv-tip {
+		color: #ece6d9;
+		background: rgba(30, 27, 23, 0.96);
+		border-color: rgba(221, 184, 146, 0.3);
+		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+	}
+
+	.gv-fallback {
+		padding: 1rem;
+		color: #9a938a;
+	}
+
+	@media (max-width: 760px) {
+		.graphview { margin-top: 2rem; }
+		.gv-frame { height: 320px; }
+	}
+</style>
