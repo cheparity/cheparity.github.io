@@ -118,7 +118,6 @@ const graphJson = graphData ? JSON.stringify(graphData).replace(/</g, '\u003c') 
 			frame: 'rgba(110, 88, 62, 0.5)',
 			frameIn: 'rgba(110, 88, 62, 0.3)',
 			compass: 'rgba(110, 88, 62, 0.6)',
-			rings: 'rgba(110, 88, 62, 0.08)',
 			scale: 'rgba(90, 70, 48, 0.55)',
 	};
 	}
@@ -195,22 +194,63 @@ const graphJson = graphData ? JSON.stringify(graphData).replace(/</g, '\u003c') 
 			const p = plateRect();
 			const r = Math.min(p.w, p.h) * 0.055;
 			const cx = p.x + p.w - r - 26, cy = p.y + r + 26;
-			// concentric rings radiating from the middle of the plate, like a
-			// navigator's wind-rose chart — under the frame, towns and roads
+			// wind-rose web at the middle of the plate: sixteen spokes radiate
+			// from the center under a set of concentric ink rings (cardinal
+			// spokes run longer), fading with distance, over faint aged-paper
+			// stains; under the frame, towns and roads
 			const ringCx = p.x + p.w / 2, ringCy = p.y + p.h / 2;
 			ctx.save();
 			ctx.beginPath();
 			ctx.rect(p.x + 8, p.y + 8, p.w - 16, p.h - 16);
 			ctx.clip();
-			ctx.strokeStyle = c.rings;
+			for (const [fx, fy, fr] of [[0.24, 0.32, 110], [0.68, 0.6, 140], [0.42, 0.82, 80]]) {
+				const sx = p.x + p.w * fx, sy = p.y + p.h * fy;
+				const g = ctx.createRadialGradient(sx, sy, 0, sx, sy, fr);
+				g.addColorStop(0, 'rgba(140, 110, 70, 0.05)');
+				g.addColorStop(1, 'rgba(140, 110, 70, 0)');
+				ctx.fillStyle = g;
+				ctx.fillRect(p.x, p.y, p.w, p.h);
+			}
+			const maxR = Math.hypot(p.w, p.h) / 2;
+			ctx.strokeStyle = '#6e583e';
 			ctx.lineWidth = 1;
-			const step = 72;
-			const maxR = Math.hypot(p.w, p.h);
-			for (let rr = step; rr < maxR; rr += step) {
+			// spokes first, so the rings cross over them
+			for (let i = 0; i < 16; i++) {
+				const a = (i * Math.PI) / 8;
+				const L = maxR * (i % 4 === 0 ? 1 : i % 2 === 0 ? 0.92 : 0.85);
+				ctx.globalAlpha = 0.06;
 				ctx.beginPath();
-				ctx.arc(ringCx, ringCy, rr, 0, Math.PI * 2);
+				ctx.moveTo(ringCx, ringCy);
+				ctx.lineTo(ringCx + Math.cos(a) * L, ringCy + Math.sin(a) * L);
 				ctx.stroke();
 			}
+			const wobbly = (r, seed) => {
+				ctx.beginPath();
+				const N = 96;
+				for (let s = 0; s <= N; s++) {
+					const t = (s / N) * Math.PI * 2;
+					const w = Math.sin(t * 3 + seed) * 0.6 + Math.sin(t * 5 + seed * 1.7) * 0.4;
+					const rad = r + w;
+					const x = ringCx + Math.cos(t) * rad, y = ringCy + Math.sin(t) * rad;
+					if (s) ctx.lineTo(x, y); else ctx.moveTo(x, y);
+				}
+				ctx.closePath();
+			};
+			for (let rr = 70, i = 0; rr < maxR; rr += 70, i++) {
+				ctx.globalAlpha = 0.1 * (1 - (rr / maxR) * 0.55);
+				wobbly(rr, i * 2.3);
+				ctx.stroke();
+			}
+			ctx.globalAlpha = 1;
+			// small double circle anchors the rings' center
+			ctx.strokeStyle = c.compass;
+			ctx.beginPath();
+			ctx.arc(ringCx, ringCy, 3, 0, Math.PI * 2);
+			ctx.stroke();
+			ctx.strokeStyle = c.frameIn;
+			ctx.beginPath();
+			ctx.arc(ringCx, ringCy, 7, 0, Math.PI * 2);
+			ctx.stroke();
 			ctx.restore();
 			// double frame
 			ctx.strokeStyle = c.frame;
