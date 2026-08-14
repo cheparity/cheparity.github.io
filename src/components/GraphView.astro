@@ -577,8 +577,19 @@ const graphJson = graphData ? JSON.stringify(graphData).replace(/</g, '\u003c') 
 			touched = true;
 		}, { signal });
 
-		// Redraw when the theme class flips.
-		const mo = new MutationObserver(() => schedule());
+		// Redraw when the theme class flips; re-jostle too so switching themes
+		// mid-sky keeps the constellation alive, like the opening burst.
+		// (sky-open toggles also mutate the class attribute — filtering on the
+		// dark flag keeps those from double-triggering the jostle.)
+		let wasDark = document.documentElement.classList.contains('dark');
+		const mo = new MutationObserver(() => {
+			const dark = document.documentElement.classList.contains('dark');
+			if (dark !== wasDark) {
+				wasDark = dark;
+				if (isOpen() && !reduced) { jostle(); sim.alpha(0.7).restart(); }
+			}
+			schedule();
+		});
 		mo.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
 
 		// Build the simulation lazily on first open so hidden pages pay nothing.
