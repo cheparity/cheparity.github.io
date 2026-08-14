@@ -214,32 +214,39 @@ const graphJson = graphData ? JSON.stringify(graphData).replace(/</g, '\u003c') 
 			const maxR = Math.hypot(p.w, p.h) / 2;
 			ctx.strokeStyle = '#6e583e';
 			ctx.lineWidth = 1;
-			// spokes first, so the rings cross over them
+			// spokes stay in the inner half so the outer plate carries rings
+			// alone — fewer crossings, calmer eye
 			for (let i = 0; i < 16; i++) {
 				const a = (i * Math.PI) / 8;
-				const L = maxR * (i % 4 === 0 ? 1 : i % 2 === 0 ? 0.92 : 0.85);
-				ctx.globalAlpha = 0.06;
+				const L = maxR * (i % 4 === 0 ? 0.8 : i % 2 === 0 ? 0.62 : 0.5);
+				ctx.globalAlpha = 0.05;
 				ctx.beginPath();
 				ctx.moveTo(ringCx, ringCy);
 				ctx.lineTo(ringCx + Math.cos(a) * L, ringCy + Math.sin(a) * L);
 				ctx.stroke();
 			}
-			const wobbly = (r, seed) => {
-				ctx.beginPath();
-				const N = 96;
-				for (let s = 0; s <= N; s++) {
-					const t = (s / N) * Math.PI * 2;
-					const w = Math.sin(t * 3 + seed) * 0.6 + Math.sin(t * 5 + seed * 1.7) * 0.4;
-					const rad = r + w;
-					const x = ringCx + Math.cos(t) * rad, y = ringCy + Math.sin(t) * rad;
-					if (s) ctx.lineTo(x, y); else ctx.moveTo(x, y);
+			// rings as broken arcs — ink that lifts off the paper in places,
+			// so no full hypnotic circles
+			const arcs = (r, seed) => {
+				const rot = seed * 0.9;
+				for (let seg = 0; seg < 3; seg++) {
+					const a0 = rot + seg * ((Math.PI * 2) / 3) + 0.18;
+					const a1 = rot + (seg + 1) * ((Math.PI * 2) / 3) - 0.18;
+					ctx.beginPath();
+					const N = 40;
+					for (let s = 0; s <= N; s++) {
+						const t = a0 + ((a1 - a0) * s) / N;
+						const w = Math.sin(t * 3 + seed) * 0.6 + Math.sin(t * 5 + seed * 1.7) * 0.4;
+						const rad = r + w;
+						const x = ringCx + Math.cos(t) * rad, y = ringCy + Math.sin(t) * rad;
+						if (s) ctx.lineTo(x, y); else ctx.moveTo(x, y);
+					}
+					ctx.stroke();
 				}
-				ctx.closePath();
 			};
-			for (let rr = 70, i = 0; rr < maxR; rr += 70, i++) {
-				ctx.globalAlpha = 0.1 * (1 - (rr / maxR) * 0.55);
-				wobbly(rr, i * 2.3);
-				ctx.stroke();
+			for (let rr = 90, i = 0; rr < maxR; rr += 90, i++) {
+				ctx.globalAlpha = 0.09 * (1 - (rr / maxR) * 0.5);
+				arcs(rr, i * 2.3 + 1);
 			}
 			ctx.globalAlpha = 1;
 			// small double circle anchors the rings' center
