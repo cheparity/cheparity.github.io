@@ -427,6 +427,7 @@ const graphJson = graphData ? JSON.stringify(graphData).replace(/</g, '\u003c') 
 
 		function openSky() {
 			start();
+			if (!reduced) { jostle(); sim.alpha(0.7).restart(); }
 			reveal(() => {
 				root.hidden = false;
 				document.documentElement.classList.add('sky-open');
@@ -445,6 +446,7 @@ const graphJson = graphData ? JSON.stringify(graphData).replace(/</g, '\u003c') 
 				tip.hidden = true;
 			});
 			setLoop(false);
+			sim?.stop();
 			document.dispatchEvent(new CustomEvent('sky:change', { detail: { open: false } }));
 		}
 
@@ -596,8 +598,17 @@ const graphJson = graphData ? JSON.stringify(graphData).replace(/</g, '\u003c') 
 			sim.tick(300);
 			fitToView();
 			sim.on('tick', schedule);
-			sim.on('end', () => { if (!touched) fitToView(); });
-			sim.alpha(0.15).restart();
+		}
+
+		// Opening life: give the settled constellation a random shove so every
+		// reveal shows a live settle back into place. Skipped under
+		// prefers-reduced-motion — the sim simply stays stopped.
+		function jostle() {
+			const s = 160;
+			for (const n of nodes) {
+				n.vx += (Math.random() - 0.5) * s;
+				n.vy += (Math.random() - 0.5) * s;
+			}
 		}
 
 		signal.addEventListener('abort', () => {
