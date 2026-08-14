@@ -11,9 +11,11 @@
  *
  * Interactions (unchanged from the original graph): nodes sized by degree
  * and tinted by first tag. Dark mode draws them as warm stars over
- * stardust; light mode renders the same graph as an antique atlas page —
- * sepia towns with place-name labels, ink roads, a framed plate and a
- * compass rose. Ghost (unpublished) notes render hollow in both; hover
+ * sepia towns with place-name labels and ink roads, framed by a fixed
+ * screen-space plate (double frame + compass rose) that never moves while
+ * the map pans and zooms underneath it; anything outside the frame is
+ * clipped away and labels stay on for every town inside it. Ghost
+ * (unpublished) notes render hollow in both; hover
  * highlights the neighborhood; drag nodes to rearrange; drag the
  * background to pan; scroll/pinch or the corner buttons to zoom; click a
  * published node to navigate. The layout is pre-settled synchronously
@@ -163,9 +165,10 @@ const graphJson = graphData ? JSON.stringify(graphData).replace(/</g, '\u003c') 
 		}
 
 		// --- antique-atlas chrome (light mode only) --------------------------
-		// World-space double frame and compass rose, fitted to the settled
-		// layout once and drawn under the towns/roads.
-		let atlas = null;
+		// The plate (double frame + compass rose) is a fixed screen-space
+		// picture frame: the graph pans and zooms underneath it, and anything
+		// outside the frame is clipped away.
+		let atlasBounds = null;
 		function buildAtlas() {
 			let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
 			for (const n of nodes) {
@@ -173,33 +176,35 @@ const graphJson = graphData ? JSON.stringify(graphData).replace(/</g, '\u003c') 
 				minX = Math.min(minX, n.x); maxX = Math.max(maxX, n.x);
 				minY = Math.min(minY, n.y); maxY = Math.max(maxY, n.y);
 			}
-			if (!Number.isFinite(minX)) return;
-			const m = 70; // margin around the settled layout
-			minX -= m; minY -= m; maxX += m; maxY += m;
-			const w = maxX - minX, h = maxY - minY;
-			atlas = {
-				minX, minY, maxX, maxY, w, h,
-				cx: minX + w * 0.86, cy: minY + h * 0.14, r: Math.min(w, h) * 0.05,
-			};
+			if (Number.isFinite(minX)) atlasBounds = { minX, minY, maxX, maxY };
+		}
+
+		function plateRect() {
+			return { x: 26, y: 64, w: width - 52, h: height - 96 };
+		}
+
+		function inPlate(n) {
+			const p = plateRect();
+			const sx = n.x * cam.k + cam.x, sy = n.y * cam.k + cam.y;
+			return sx >= p.x && sx <= p.x + p.w && sy >= p.y && sy <= p.y + p.h;
 		}
 
 		function drawAtlas(c) {
-			const a = atlas;
-			if (!a) return;
-			const lw = (w) => w / cam.k;
+			const p = plateRect();
 			// double frame
 			ctx.strokeStyle = c.frame;
-			ctx.lineWidth = lw(1.6);
-			ctx.strokeRect(a.minX, a.minY, a.w, a.h);
-			const g = 7;
+			ctx.lineWidth = 1.6;
+			ctx.strokeRect(p.x, p.y, p.w, p.h);
 			ctx.strokeStyle = c.frameIn;
-			ctx.lineWidth = lw(0.8);
-			ctx.strokeRect(a.minX + g, a.minY + g, a.w - 2 * g, a.h - 2 * g);
+			ctx.lineWidth = 0.8;
+			ctx.strokeRect(p.x + 7, p.y + 7, p.w - 14, p.h - 14);
 			// compass rose: outer ring, four-point star, north tick
+			const r = Math.min(p.w, p.h) * 0.055;
+			const cx = p.x + p.w - r - 26, cy = p.y + r + 26;
 			ctx.strokeStyle = c.compass;
-			ctx.lineWidth = lw(1);
+			ctx.lineWidth = 1;
 			ctx.beginPath();
-			ctx.arc(a.cx, a.cy, a.r, 0, Math.PI * 2);
+			ctx.arc(cx, cy, r, 0, Math.PI * 2);
 			ctx.stroke();
 			ctx.fillStyle = c.compass;
 			const star = (rl, rw2) => {
@@ -207,37 +212,34 @@ const graphJson = graphData ? JSON.stringify(graphData).replace(/</g, '\u003c') 
 				for (let i = 0; i < 8; i++) {
 					const ang = (i * Math.PI) / 4 - Math.PI / 2;
 					const rad = i % 2 === 0 ? rl : rw2;
-					const px = a.cx + Math.cos(ang) * rad, py = a.cy + Math.sin(ang) * rad;
+					const px = cx + Math.cos(ang) * rad, py = cy + Math.sin(ang) * rad;
 					if (i) ctx.lineTo(px, py); else ctx.moveTo(px, py);
 				}
 				ctx.closePath();
 				ctx.fill();
 			};
-			star(a.r * 0.86, a.r * 0.16);
+			star(r * 0.86, r * 0.16);
 			ctx.globalAlpha = 0.55;
-			star(a.r * 0.42, a.r * 0.12);
+			star(r * 0.42, r * 0.12);
 			ctx.globalAlpha = 1;
 			ctx.beginPath();
-			ctx.moveTo(a.cx, a.cy - a.r * 0.86);
-			ctx.lineTo(a.cx, a.cy - a.r * 1.18);
+			ctx.moveTo(cx, cy - r * 0.86);
+			ctx.lineTo(cx, cy - r * 1.18);
 			ctx.stroke();
 		}
 
 		function drawLabels(c) {
-			const hubK = 0.6, allK = 1.5;
 			for (const n of nodes) {
-				if (n.ghost) continue;
+				if (n.ghost || !inPlate(n)) continue; // place names live on the plate
 				const deg = neighbors.get(n.id)?.size ?? 0;
 				const isHub = deg >= 3;
 				const isHover = hoverNode && n.id === hoverNode.id;
 				const isNeighbor = hoverNode && neighbors.get(hoverNode.id)?.has(n.id);
-				const show = isHover || isNeighbor || cam.k >= allK || (isHub && cam.k >= hubK);
-				if (!show) continue;
 				const dim = hoverNode && !isHover && !isNeighbor;
 				const r = Math.max(nodeRadius(n), 2.6 / cam.k);
 				ctx.globalAlpha = dim ? c.fade : 1;
 				ctx.fillStyle = isHub ? c.labelHub : c.labelMinor;
-				ctx.font = `${isHub ? 13 : 11}px 'et-book', Georgia, serif`;
+				ctx.font = `${(isHub ? 13 : 11) / cam.k}px 'et-book', Georgia, serif`;
 				ctx.textAlign = 'center';
 				ctx.textBaseline = 'top';
 				ctx.fillText(n.title, n.x, n.y + r + 5 / cam.k);
@@ -253,6 +255,14 @@ const graphJson = graphData ? JSON.stringify(graphData).replace(/</g, '\u003c') 
 			if (zoomPct) zoomPct.textContent = Math.round(cam.k * 100) + '%';
 		}
 
+		const hint = root.querySelector('.sky-hint');
+		function setHint() {
+			if (!hint) return;
+			hint.textContent = isDark()
+				? 'drag a star · drag the sky to pan · scroll or pinch to zoom · click a star to open · esc to close'
+				: 'drag a town · pan and zoom the map · click a town to open · esc to close';
+		}
+
 		function resize() {
 			width = window.innerWidth;
 			height = window.innerHeight;
@@ -262,7 +272,7 @@ const graphJson = graphData ? JSON.stringify(graphData).replace(/</g, '\u003c') 
 			canvas.style.width = width + 'px';
 			canvas.style.height = height + 'px';
 			seedDust();
-			if (!touched) fitToView(); // keep everything in view as the frame resizes
+			if (!touched || themeColors().map) fitToView(); // the plate always stays fitted
 			schedule();
 		}
 
@@ -349,9 +359,16 @@ const graphJson = graphData ? JSON.stringify(graphData).replace(/</g, '\u003c') 
 			ctx.clearRect(0, 0, width, height);
 			const c = themeColors();
 			drawDust(c, now);
+			if (c.map) {
+				drawAtlas(c); // the plate is a fixed screen-space picture frame
+				const p = plateRect();
+				ctx.save();
+				ctx.beginPath();
+				ctx.rect(p.x + 1, p.y + 1, p.w - 2, p.h - 2);
+				ctx.clip(); // towns, roads and names never leave the frame
+			}
 			ctx.translate(cam.x, cam.y);
 			ctx.scale(cam.k, cam.k);
-			if (c.map) drawAtlas(c); // frame + compass live in world space
 			const hover = hoverNode || dragNode;
 			const lw = (w) => w / cam.k; // constant screen-width strokes
 			const t = now / 1000;
@@ -423,7 +440,10 @@ const graphJson = graphData ? JSON.stringify(graphData).replace(/</g, '\u003c') 
 					ctx.stroke();
 				}
 			}
-			if (c.map) drawLabels(c);
+			if (c.map) {
+				drawLabels(c);
+				ctx.restore(); // release the plate clip
+			}
 			ctx.globalAlpha = 1;
 		}
 
@@ -479,13 +499,19 @@ const graphJson = graphData ? JSON.stringify(graphData).replace(/</g, '\u003c') 
 			if (!used) return;
 			const bw = maxX - minX, bh = maxY - minY;
 			if (bw <= 0 || bh <= 0) return;
-			// the atlas page wraps the layout in a frame + margin, so it needs
-			// more breathing room than the bare constellation
-			const pad = themeColors().map ? 96 : 28;
-			const k = Math.max(0.1, Math.min((width - pad * 2) / bw, (height - pad * 2) / bh, maxK));
+			// the atlas plate wraps the layout in a frame + margin, so it needs
+			// more breathing room than the bare constellation; center the fitted
+			// content on the plate, not the raw viewport
+			const m = themeColors().map ? 70 : 0;
+			const bw2 = bw + 2 * m, bh2 = bh + 2 * m;
+			const pad = 28;
+			const k = Math.max(0.1, Math.min((width - pad * 2) / bw2, (height - pad * 2) / bh2, maxK));
+			const p = plateRect();
+			const cx = m ? p.x + p.w / 2 : width / 2;
+			const cy = m ? p.y + p.h / 2 : height / 2;
 			cam.k = k;
-			cam.x = (width - bw * k) / 2 - minX * k;
-			cam.y = (height - bh * k) / 2 - minY * k;
+			cam.x = cx - (minX + bw / 2) * k;
+			cam.y = cy - (minY + bh / 2) * k;
 			setCamLabel();
 			schedule();
 		}
@@ -530,6 +556,7 @@ const graphJson = graphData ? JSON.stringify(graphData).replace(/</g, '\u003c') 
 		function openSky() {
 			start();
 			if (!reduced) { jostle(); sim.alpha(0.7).restart(); }
+			touched = false; // every reveal opens on the fitted plate
 			reveal(() => {
 				root.hidden = false;
 				document.documentElement.classList.add('sky-open');
@@ -537,6 +564,7 @@ const graphJson = graphData ? JSON.stringify(graphData).replace(/</g, '\u003c') 
 				fitToView();
 			});
 			setLoop(!document.hidden && isDark());
+			setHint();
 			document.dispatchEvent(new CustomEvent('sky:change', { detail: { open: true } }));
 		}
 
@@ -688,8 +716,9 @@ const graphJson = graphData ? JSON.stringify(graphData).replace(/</g, '\u003c') 
 			const dark = document.documentElement.classList.contains('dark');
 			if (dark !== wasDark) {
 				wasDark = dark;
-				if (isOpen() && !reduced) { jostle(); sim.alpha(0.7).restart(); }
+				if (isOpen() && !dark) { touched = false; fitToView(); } // re-plate the map
 				if (isOpen()) setLoop(!document.hidden && dark);
+				if (isOpen()) setHint();
 			}
 			schedule();
 		});
