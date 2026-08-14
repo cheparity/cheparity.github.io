@@ -220,15 +220,47 @@ const graphJson = graphData ? JSON.stringify(graphData).replace(/</g, '\u003c') 
 				g.lineTo(x + Math.cos(a) * l, y + Math.sin(a) * l);
 				g.stroke();
 			}
-			for (let i = 0; i < 12; i++) {
-				const x = p.x + rnd() * p.w, y = p.y + rnd() * p.h;
-				const fr = 5 + rnd() * 16;
-				const grad = g.createRadialGradient(x, y, 0, x, y, fr);
-				grad.addColorStop(0, `rgba(140, 105, 60, ${0.04 + rnd() * 0.04})`);
-				grad.addColorStop(1, 'rgba(140, 105, 60, 0)');
-				g.fillStyle = grad;
-				g.fillRect(x - fr, y - fr, fr * 2, fr * 2);
+			// graticule — the lat/long mesh of an old chart: hand-wobbled
+			// lines every 64px, every fourth slightly stronger, with
+			// pen-lift gaps erased at random
+			const gl = (x0, y0, x1, y1, seed) => {
+				const horiz = y0 === y1;
+				g.beginPath();
+				const N = 48;
+				for (let s = 0; s <= N; s++) {
+					const t = s / N;
+					const wob = Math.sin(t * 21 + seed) * 0.5 + Math.sin(t * 47 + seed * 2) * 0.3;
+					const x = x0 + (x1 - x0) * t + (horiz ? 0 : wob);
+					const y = y0 + (y1 - y0) * t + (horiz ? wob : 0);
+					if (s) g.lineTo(x, y); else g.moveTo(x, y);
+				}
+				g.stroke();
+			};
+			g.lineWidth = 1;
+			let gi = 0;
+			for (let x = p.x + 64; x < p.x + p.w - 16; x += 64, gi++) {
+				g.strokeStyle = `rgba(110, 88, 62, ${gi % 4 === 3 ? 0.28 : 0.18})`;
+				gl(x, p.y + 9, x, p.y + p.h - 9, x * 0.7);
 			}
+			let gj = 0;
+			for (let y = p.y + 64; y < p.y + p.h - 16; y += 64, gj++) {
+				g.strokeStyle = `rgba(110, 88, 62, ${gj % 4 === 3 ? 0.28 : 0.18})`;
+				gl(p.x + 9, y, p.x + p.w - 9, y, y * 0.7);
+			}
+			g.globalCompositeOperation = 'destination-out';
+			for (let i = 0; i < 90; i++) {
+				const x = p.x + rnd() * p.w, y = p.y + rnd() * p.h;
+				const horiz = rnd() < 0.5;
+				const l = 6 + rnd() * 14;
+				g.strokeStyle = `rgba(0, 0, 0, ${0.5 + rnd() * 0.5})`;
+				g.lineWidth = 2;
+				g.beginPath();
+				g.moveTo(x, y);
+				g.lineTo(horiz ? x + l : x, horiz ? y : y + l);
+				g.stroke();
+			}
+			g.globalCompositeOperation = 'source-over';
+			g.lineWidth = 1;
 			for (const [fx, fy, fr] of [[0.24, 0.32, 110], [0.68, 0.6, 140], [0.42, 0.82, 80]]) {
 				const sx = p.x + p.w * fx, sy = p.y + p.h * fy;
 				const grad = g.createRadialGradient(sx, sy, 0, sx, sy, fr);
@@ -244,55 +276,13 @@ const graphJson = graphData ? JSON.stringify(graphData).replace(/</g, '\u003c') 
 			const p = plateRect();
 			const r = Math.min(p.w, p.h) * 0.055;
 			const cx = p.x + p.w - r - 26, cy = p.y + r + 26;
-			// wind-rose web at the middle of the plate: sixteen spokes radiate
-			// from the center under a set of concentric ink rings (cardinal
-			// spokes run longer), fading with distance, over faint aged-paper
-			// stains; under the frame, towns and roads
 			const ringCx = p.x + p.w / 2, ringCy = p.y + p.h / 2;
 			if (paper) ctx.drawImage(paper, 0, 0);
 			ctx.save();
 			ctx.beginPath();
 			ctx.rect(p.x + 8, p.y + 8, p.w - 16, p.h - 16);
 			ctx.clip();
-			const maxR = Math.hypot(p.w, p.h) / 2;
-			ctx.strokeStyle = '#6e583e';
-			ctx.lineWidth = 1;
-			// spokes stay in the inner half so the outer plate carries rings
-			// alone — fewer crossings, calmer eye
-			for (let i = 0; i < 16; i++) {
-				const a = (i * Math.PI) / 8;
-				const L = maxR * (i % 4 === 0 ? 0.8 : i % 2 === 0 ? 0.62 : 0.5);
-				ctx.globalAlpha = 0.05;
-				ctx.beginPath();
-				ctx.moveTo(ringCx, ringCy);
-				ctx.lineTo(ringCx + Math.cos(a) * L, ringCy + Math.sin(a) * L);
-				ctx.stroke();
-			}
-			// rings as broken arcs — ink that lifts off the paper in places,
-			// so no full hypnotic circles
-			const arcs = (r, seed) => {
-				const rot = seed * 0.9;
-				for (let seg = 0; seg < 3; seg++) {
-					const a0 = rot + seg * ((Math.PI * 2) / 3) + 0.18;
-					const a1 = rot + (seg + 1) * ((Math.PI * 2) / 3) - 0.18;
-					ctx.beginPath();
-					const N = 40;
-					for (let s = 0; s <= N; s++) {
-						const t = a0 + ((a1 - a0) * s) / N;
-						const w = Math.sin(t * 3 + seed) * 0.6 + Math.sin(t * 5 + seed * 1.7) * 0.4;
-						const rad = r + w;
-						const x = ringCx + Math.cos(t) * rad, y = ringCy + Math.sin(t) * rad;
-						if (s) ctx.lineTo(x, y); else ctx.moveTo(x, y);
-					}
-					ctx.stroke();
-				}
-			};
-			for (let rr = 90, i = 0; rr < maxR; rr += 90, i++) {
-				ctx.globalAlpha = 0.09 * (1 - (rr / maxR) * 0.5);
-				arcs(rr, i * 2.3 + 1);
-			}
-			ctx.globalAlpha = 1;
-			// small double circle anchors the rings' center
+			// small double circle anchors the plate's center
 			ctx.strokeStyle = c.compass;
 			ctx.beginPath();
 			ctx.arc(ringCx, ringCy, 3, 0, Math.PI * 2);
