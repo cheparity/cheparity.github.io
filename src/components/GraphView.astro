@@ -118,6 +118,8 @@ const graphJson = graphData ? JSON.stringify(graphData).replace(/</g, '\u003c') 
 			frame: 'rgba(110, 88, 62, 0.5)',
 			frameIn: 'rgba(110, 88, 62, 0.3)',
 			compass: 'rgba(110, 88, 62, 0.6)',
+			rhumb: 'rgba(110, 88, 62, 0.08)',
+			scale: 'rgba(90, 70, 48, 0.55)',
 	};
 	}
 
@@ -191,6 +193,25 @@ const graphJson = graphData ? JSON.stringify(graphData).replace(/</g, '\u003c') 
 
 		function drawAtlas(c) {
 			const p = plateRect();
+			const r = Math.min(p.w, p.h) * 0.055;
+			const cx = p.x + p.w - r - 26, cy = p.y + r + 26;
+			// rhumb lines radiating from the rose across the page, portolan
+			// style — under the frame, towns and roads
+			ctx.save();
+			ctx.beginPath();
+			ctx.rect(p.x + 8, p.y + 8, p.w - 16, p.h - 16);
+			ctx.clip();
+			ctx.strokeStyle = c.rhumb;
+			ctx.lineWidth = 1;
+			const L = Math.hypot(p.w, p.h);
+			for (let i = 0; i < 16; i++) {
+				const a = (i * Math.PI) / 8;
+				ctx.beginPath();
+				ctx.moveTo(cx - Math.cos(a) * L, cy - Math.sin(a) * L);
+				ctx.lineTo(cx + Math.cos(a) * L, cy + Math.sin(a) * L);
+				ctx.stroke();
+			}
+			ctx.restore();
 			// double frame
 			ctx.strokeStyle = c.frame;
 			ctx.lineWidth = 1.6;
@@ -198,9 +219,20 @@ const graphJson = graphData ? JSON.stringify(graphData).replace(/</g, '\u003c') 
 			ctx.strokeStyle = c.frameIn;
 			ctx.lineWidth = 0.8;
 			ctx.strokeRect(p.x + 7, p.y + 7, p.w - 14, p.h - 14);
+			// scale bar, bottom-left
+			const bx = p.x + 24, by = p.y + p.h - 26, bw = 140, seg = bw / 4;
+			ctx.strokeStyle = c.scale;
+			ctx.fillStyle = c.scale;
+			ctx.lineWidth = 1;
+			for (let i = 0; i < 4; i++) {
+				if (i % 2 === 0) ctx.fillRect(bx + i * seg, by, seg, 5);
+				else ctx.strokeRect(bx + i * seg + 0.5, by + 0.5, seg - 1, 4);
+			}
+			ctx.font = "italic 10px 'et-book', Georgia, serif";
+			ctx.textAlign = 'right';
+			ctx.textBaseline = 'bottom';
+			ctx.fillText('leagues', bx + bw, by - 4);
 			// compass rose: outer ring, four-point star, north tick
-			const r = Math.min(p.w, p.h) * 0.055;
-			const cx = p.x + p.w - r - 26, cy = p.y + r + 26;
 			ctx.strokeStyle = c.compass;
 			ctx.lineWidth = 1;
 			ctx.beginPath();
