@@ -118,7 +118,7 @@ const graphJson = graphData ? JSON.stringify(graphData).replace(/</g, '\u003c') 
 			frame: 'rgba(110, 88, 62, 0.5)',
 			frameIn: 'rgba(110, 88, 62, 0.3)',
 			compass: 'rgba(110, 88, 62, 0.6)',
-			rhumb: 'rgba(110, 88, 62, 0.08)',
+			rings: 'rgba(110, 88, 62, 0.08)',
 			scale: 'rgba(90, 70, 48, 0.55)',
 	};
 	}
@@ -195,20 +195,20 @@ const graphJson = graphData ? JSON.stringify(graphData).replace(/</g, '\u003c') 
 			const p = plateRect();
 			const r = Math.min(p.w, p.h) * 0.055;
 			const cx = p.x + p.w - r - 26, cy = p.y + r + 26;
-			// rhumb lines radiating from the rose across the page, portolan
-			// style — under the frame, towns and roads
+			// concentric rings radiating from the middle of the plate, like a
+			// navigator's wind-rose chart — under the frame, towns and roads
+			const ringCx = p.x + p.w / 2, ringCy = p.y + p.h / 2;
 			ctx.save();
 			ctx.beginPath();
 			ctx.rect(p.x + 8, p.y + 8, p.w - 16, p.h - 16);
 			ctx.clip();
-			ctx.strokeStyle = c.rhumb;
+			ctx.strokeStyle = c.rings;
 			ctx.lineWidth = 1;
-			const L = Math.hypot(p.w, p.h);
-			for (let i = 0; i < 16; i++) {
-				const a = (i * Math.PI) / 8;
+			const step = 72;
+			const maxR = Math.hypot(p.w, p.h);
+			for (let rr = step; rr < maxR; rr += step) {
 				ctx.beginPath();
-				ctx.moveTo(cx - Math.cos(a) * L, cy - Math.sin(a) * L);
-				ctx.lineTo(cx + Math.cos(a) * L, cy + Math.sin(a) * L);
+				ctx.arc(ringCx, ringCy, rr, 0, Math.PI * 2);
 				ctx.stroke();
 			}
 			ctx.restore();
