@@ -12,7 +12,7 @@
  * Interactions (unchanged from the original graph): nodes sized by degree
  * and tinted by first tag. Dark mode draws them as warm stars over
  * stardust; light mode renders the same graph as an antique atlas page —
- * sepia towns with place-name labels, ink roads, graticule frame and a
+ * sepia towns with place-name labels, ink roads, a framed plate and a
  * compass rose. Ghost (unpublished) notes render hollow in both; hover
  * highlights the neighborhood; drag nodes to rearrange; drag the
  * background to pan; scroll/pinch or the corner buttons to zoom; click a
@@ -67,7 +67,7 @@ const graphJson = graphData ? JSON.stringify(graphData).replace(/</g, '\u003c') 
 		});
 
 	// Dark mode reads as a warm night sky; light mode trades the sky for an
-	// antique atlas page — sepia towns, ink roads and a graticule on parchment.
+	// antique atlas page — sepia towns, ink roads and a framed plate on parchment.
 	const INK_COLORS = [
 		'#b08968', '#8a6d4f', '#a9714b', '#7f5539',
 		'#9c6644', '#6f4e37', '#8d6e63', '#c08552',
@@ -113,7 +113,6 @@ const graphJson = graphData ? JSON.stringify(graphData).replace(/</g, '\u003c') 
 			ink: '#4a3a28',
 			labelMinor: 'rgba(74, 58, 40, 0.8)',
 			labelHub: 'rgba(52, 40, 26, 0.95)',
-			graticule: 'rgba(120, 100, 80, 0.15)',
 			frame: 'rgba(110, 88, 62, 0.5)',
 			frameIn: 'rgba(110, 88, 62, 0.3)',
 			compass: 'rgba(110, 88, 62, 0.6)',
@@ -164,8 +163,8 @@ const graphJson = graphData ? JSON.stringify(graphData).replace(/</g, '\u003c') 
 		}
 
 		// --- antique-atlas chrome (light mode only) --------------------------
-		// World-space graticule, double frame and compass rose, fitted to the
-		// settled layout once and drawn under the towns/roads.
+		// World-space double frame and compass rose, fitted to the settled
+		// layout once and drawn under the towns/roads.
 		let atlas = null;
 		function buildAtlas() {
 			let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
@@ -178,11 +177,8 @@ const graphJson = graphData ? JSON.stringify(graphData).replace(/</g, '\u003c') 
 			const m = 70; // margin around the settled layout
 			minX -= m; minY -= m; maxX += m; maxY += m;
 			const w = maxX - minX, h = maxY - minY;
-			const vlines = [], hlines = [];
-			for (let i = 1; i <= 5; i++) vlines.push(minX + (w * i) / 6);
-			for (let i = 1; i <= 4; i++) hlines.push(minY + (h * i) / 5);
 			atlas = {
-				minX, minY, maxX, maxY, w, h, vlines, hlines,
+				minX, minY, maxX, maxY, w, h,
 				cx: minX + w * 0.86, cy: minY + h * 0.14, r: Math.min(w, h) * 0.05,
 			};
 		}
@@ -191,13 +187,6 @@ const graphJson = graphData ? JSON.stringify(graphData).replace(/</g, '\u003c') 
 			const a = atlas;
 			if (!a) return;
 			const lw = (w) => w / cam.k;
-			// graticule
-			ctx.strokeStyle = c.graticule;
-			ctx.lineWidth = lw(1);
-			ctx.beginPath();
-			for (const x of a.vlines) { ctx.moveTo(x, a.minY); ctx.lineTo(x, a.maxY); }
-			for (const y of a.hlines) { ctx.moveTo(a.minX, y); ctx.lineTo(a.maxX, y); }
-			ctx.stroke();
 			// double frame
 			ctx.strokeStyle = c.frame;
 			ctx.lineWidth = lw(1.6);
@@ -362,7 +351,7 @@ const graphJson = graphData ? JSON.stringify(graphData).replace(/</g, '\u003c') 
 			drawDust(c, now);
 			ctx.translate(cam.x, cam.y);
 			ctx.scale(cam.k, cam.k);
-			if (c.map) drawAtlas(c); // frame + graticule live in world space
+			if (c.map) drawAtlas(c); // frame + compass live in world space
 			const hover = hoverNode || dragNode;
 			const lw = (w) => w / cam.k; // constant screen-width strokes
 			const t = now / 1000;
