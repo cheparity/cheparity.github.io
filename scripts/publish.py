@@ -65,10 +65,14 @@ def fix_paths(content: str) -> str:
 # ---------------------------------------------------------------------------
 
 def make_slug(stem: str) -> str:
-    """Generate a URL-friendly slug from a note filename stem."""
+    """Generate a URL-friendly slug from a note filename stem.
+
+    Lowercased to match Astro's glob loader, which lowercases collection
+    ids — routes are lowercase regardless of filename case.
+    """
     slug = re.sub(r"\s+", "-", stem)
     slug = re.sub(r"[^\w\-.一-鿿]", "", slug)
-    return slug
+    return slug.lower()
 
 
 _CODE_FENCE_RE = re.compile(r"```[\s\S]*?```|~~~[\s\S]*?~~~")

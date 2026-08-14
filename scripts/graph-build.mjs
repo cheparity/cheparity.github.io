@@ -42,11 +42,14 @@ function parseFrontmatter(text) {
 	return { title, tags, body };
 }
 
-/** Mirror of publish.py's make_slug (Python \w ≈ unicode letters/digits/_). */
+/** Mirror of publish.py's make_slug (Python \w ≈ unicode letters/digits/_).
+    Lowercased: Astro's glob loader lowercases collection ids, so routes are
+    always lowercase regardless of the filename's case. */
 function makeSlug(stem) {
 	return stem
 		.replace(/\s+/g, '-')
-		.replace(/[^\p{L}\p{N}_\-.]/gu, '');
+		.replace(/[^\p{L}\p{N}_\-.]/gu, '')
+		.toLowerCase();
 }
 
 /** Remove fenced code blocks and inline code spans so TOML `[[index]]` or
@@ -64,7 +67,7 @@ function extractLinkStems(body) {
 	const out = new Set();
 	// Rewritten form: (/blog/<slug>/...) — already a slug
 	for (const m of src.matchAll(/\]\(\/blog\/([^)#\s/]+)[^)]*\)/g)) {
-		out.add(JSON.stringify({ stem: decodeURIComponent(m[1]), slug: m[1] }));
+		out.add(JSON.stringify({ stem: decodeURIComponent(m[1]), slug: m[1].toLowerCase() }));
 	}
 	// Raw markdown links to notes: (notes/AI/Some Name.md), skip http(s) and images
 	for (const m of src.matchAll(/(?<!\!)\[[^\]]*\]\((?!https?:\/\/)([^)]+\.md)\)/g)) {
@@ -85,16 +88,18 @@ try {
 } catch {
 	console.warn(`warn: ${MANIFEST} missing/unreadable — titles fall back to frontmatter`);
 }
+// Older manifests are keyed by mixed-case slugs; look up case-insensitively.
+const manifestLC = Object.fromEntries(Object.entries(manifest).map(([k, v]) => [k.toLowerCase(), v]));
 
 const files = readdirSync(BLOG_DIR).filter((f) => f.endsWith('.md') || f.endsWith('.mdx'));
 const nodes = [];
 const links = [];
 
 for (const file of files.sort()) {
-	const id = file.replace(/\.(md|mdx)$/, '');
+	const id = makeSlug(file.replace(/\.(md|mdx)$/, ''));
 	const raw = readFileSync(join(BLOG_DIR, file), 'utf-8');
 	const fm = parseFrontmatter(raw);
-	const meta = manifest[id] ?? {};
+	const meta = manifestLC[id] ?? {};
 	const title = meta.title || fm.title || id;
 	const tags = meta.tags ?? fm.tags;
 	nodes.push({
