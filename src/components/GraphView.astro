@@ -239,17 +239,17 @@ const graphJson = graphData ? JSON.stringify(graphData).replace(/</g, '\u003c') 
 			g.lineWidth = 1;
 			let gi = 0;
 			for (let x = p.x + 32; x < p.x + p.w - 16; x += 32, gi++) {
-				g.strokeStyle = `rgba(110, 88, 62, ${gi % 4 === 3 ? 0.18 : 0.09})`;
+				g.strokeStyle = `rgba(110, 88, 62, ${gi % 4 === 3 ? 0.13 : 0.06})`;
 				gl(x, p.y + 9, x, p.y + p.h - 9, x * 0.7);
 			}
 			let gj = 0;
 			for (let y = p.y + 32; y < p.y + p.h - 16; y += 32, gj++) {
-				g.strokeStyle = `rgba(110, 88, 62, ${gj % 4 === 3 ? 0.18 : 0.09})`;
+				g.strokeStyle = `rgba(110, 88, 62, ${gj % 4 === 3 ? 0.13 : 0.06})`;
 				gl(p.x + 9, y, p.x + p.w - 9, y, y * 0.7);
 			}
 			// edge graduation — the latitude scale ticks of a chart's border:
 			// short ticks every 16px, long every 64px, on all four edges
-			g.strokeStyle = 'rgba(110, 88, 62, 0.28)';
+			g.strokeStyle = 'rgba(110, 88, 62, 0.22)';
 			for (let x = p.x + 16; x < p.x + p.w - 12; x += 16) {
 				const l = (x - p.x) % 64 === 0 ? 8 : 4;
 				g.beginPath(); g.moveTo(x, p.y + 9); g.lineTo(x, p.y + 9 + l); g.stroke();
