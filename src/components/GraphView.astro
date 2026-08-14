@@ -190,9 +190,9 @@ const graphJson = graphData ? JSON.stringify(graphData).replace(/</g, '\u003c') 
 			return sx >= p.x && sx <= p.x + p.w && sy >= p.y && sy <= p.y + p.h;
 		}
 
-		// baked paper texture — fibre specks, short fibre strokes, foxing
-		// spots and aged stains, drawn once per resize onto an offscreen
-		// canvas and blitted each frame
+		// baked paper texture — fibre specks, short fibre strokes, a two-tier
+		// graticule with edge graduation ticks, and aged stains; drawn once
+		// per resize onto an offscreen canvas and blitted each frame
 		let paper = null;
 		function seedPaper() {
 			paper = document.createElement('canvas');
@@ -220,9 +220,9 @@ const graphJson = graphData ? JSON.stringify(graphData).replace(/</g, '\u003c') 
 				g.lineTo(x + Math.cos(a) * l, y + Math.sin(a) * l);
 				g.stroke();
 			}
-			// graticule — the lat/long mesh of an old chart: hand-wobbled
-			// lines every 64px, every fourth slightly stronger, with
-			// pen-lift gaps erased at random
+			// graticule — the two-tier lat/long mesh of an old chart: fine
+			// 32px lines under a stronger 128px major mesh, hand-wobbled,
+			// with pen-lift gaps erased at random below
 			const gl = (x0, y0, x1, y1, seed) => {
 				const horiz = y0 === y1;
 				g.beginPath();
@@ -238,14 +238,27 @@ const graphJson = graphData ? JSON.stringify(graphData).replace(/</g, '\u003c') 
 			};
 			g.lineWidth = 1;
 			let gi = 0;
-			for (let x = p.x + 64; x < p.x + p.w - 16; x += 64, gi++) {
-				g.strokeStyle = `rgba(110, 88, 62, ${gi % 4 === 3 ? 0.28 : 0.18})`;
+			for (let x = p.x + 32; x < p.x + p.w - 16; x += 32, gi++) {
+				g.strokeStyle = `rgba(110, 88, 62, ${gi % 4 === 3 ? 0.26 : 0.13})`;
 				gl(x, p.y + 9, x, p.y + p.h - 9, x * 0.7);
 			}
 			let gj = 0;
-			for (let y = p.y + 64; y < p.y + p.h - 16; y += 64, gj++) {
-				g.strokeStyle = `rgba(110, 88, 62, ${gj % 4 === 3 ? 0.28 : 0.18})`;
+			for (let y = p.y + 32; y < p.y + p.h - 16; y += 32, gj++) {
+				g.strokeStyle = `rgba(110, 88, 62, ${gj % 4 === 3 ? 0.26 : 0.13})`;
 				gl(p.x + 9, y, p.x + p.w - 9, y, y * 0.7);
+			}
+			// edge graduation — the latitude scale ticks of a chart's border:
+			// short ticks every 16px, long every 64px, on all four edges
+			g.strokeStyle = 'rgba(110, 88, 62, 0.35)';
+			for (let x = p.x + 16; x < p.x + p.w - 12; x += 16) {
+				const l = (x - p.x) % 64 === 0 ? 8 : 4;
+				g.beginPath(); g.moveTo(x, p.y + 9); g.lineTo(x, p.y + 9 + l); g.stroke();
+				g.beginPath(); g.moveTo(x, p.y + p.h - 9); g.lineTo(x, p.y + p.h - 9 - l); g.stroke();
+			}
+			for (let y = p.y + 16; y < p.y + p.h - 12; y += 16) {
+				const l = (y - p.y) % 64 === 0 ? 8 : 4;
+				g.beginPath(); g.moveTo(p.x + 9, y); g.lineTo(p.x + 9 + l, y); g.stroke();
+				g.beginPath(); g.moveTo(p.x + p.w - 9, y); g.lineTo(p.x + p.w - 9 - l, y); g.stroke();
 			}
 			g.globalCompositeOperation = 'destination-out';
 			for (let i = 0; i < 90; i++) {
@@ -276,22 +289,7 @@ const graphJson = graphData ? JSON.stringify(graphData).replace(/</g, '\u003c') 
 			const p = plateRect();
 			const r = Math.min(p.w, p.h) * 0.055;
 			const cx = p.x + p.w - r - 26, cy = p.y + r + 26;
-			const ringCx = p.x + p.w / 2, ringCy = p.y + p.h / 2;
 			if (paper) ctx.drawImage(paper, 0, 0);
-			ctx.save();
-			ctx.beginPath();
-			ctx.rect(p.x + 8, p.y + 8, p.w - 16, p.h - 16);
-			ctx.clip();
-			// small double circle anchors the plate's center
-			ctx.strokeStyle = c.compass;
-			ctx.beginPath();
-			ctx.arc(ringCx, ringCy, 3, 0, Math.PI * 2);
-			ctx.stroke();
-			ctx.strokeStyle = c.frameIn;
-			ctx.beginPath();
-			ctx.arc(ringCx, ringCy, 7, 0, Math.PI * 2);
-			ctx.stroke();
-			ctx.restore();
 			// fold creases — a folded chart's signature: dark fold line with a
 			// light catch on the raised side
 			const crease = (x0, y0, x1, y1, dx, dy) => {
@@ -424,6 +422,7 @@ const graphJson = graphData ? JSON.stringify(graphData).replace(/</g, '\u003c') 
 			canvas.style.width = width + 'px';
 			canvas.style.height = height + 'px';
 			seedDust();
+			seedPaper();
 			if (!touched || themeColors().map) fitToView(); // the plate always stays fitted
 			if (sim) { refreshCollide(); sim.alpha(0.2).restart(); }
 			schedule();
