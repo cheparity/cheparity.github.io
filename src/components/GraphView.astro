@@ -10,13 +10,16 @@
  * file is absent the overlay and its toggle render nothing.
  *
  * Interactions (unchanged from the original graph): nodes sized by degree
- * and tinted by first tag, drawn as warm stars over stardust; ghost
- * (unpublished) notes render hollow; hover highlights the neighborhood;
- * drag nodes to rearrange; drag the background to pan; scroll/pinch or the
- * corner buttons to zoom; click a published node to navigate. The layout
- * is pre-settled synchronously and auto-fitted until the user takes over
- * the camera. Esc or the close button dismisses. Follows the dark-mode
- * class; re-initializes on View Transition navigations.
+ * and tinted by first tag. Dark mode draws them as warm stars over
+ * stardust; light mode renders the same graph as an antique atlas page —
+ * sepia towns with place-name labels, ink roads, graticule frame and a
+ * compass rose. Ghost (unpublished) notes render hollow in both; hover
+ * highlights the neighborhood; drag nodes to rearrange; drag the
+ * background to pan; scroll/pinch or the corner buttons to zoom; click a
+ * published node to navigate. The layout is pre-settled synchronously
+ * and auto-fitted until the user takes over the camera. Esc or the close
+ * button dismisses. Follows the dark-mode class; re-initializes on View
+ * Transition navigations.
  */
 import { readFileSync, existsSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -63,8 +66,8 @@ const graphJson = graphData ? JSON.stringify(graphData).replace(/</g, '\u003c') 
 			document.head.appendChild(s);
 		});
 
-	// Star palettes tuned to the parchment theme: dark mode reads as a warm
-	// night sky, light mode as an old sepia star chart on paper.
+	// Dark mode reads as a warm night sky; light mode trades the sky for an
+	// antique atlas page — sepia towns, ink roads and a graticule on parchment.
 	const INK_COLORS = [
 		'#b08968', '#8a6d4f', '#a9714b', '#7f5539',
 		'#9c6644', '#6f4e37', '#8d6e63', '#c08552',
@@ -94,18 +97,27 @@ const graphJson = graphData ? JSON.stringify(graphData).replace(/</g, '\u003c') 
 			noGroup: '#cfc6b4',
 			core: '#fff6e6',
 			haloA: 0.34,
+			map: false,
 		} : {
-			link: 'rgba(120, 100, 80, 0.22)',
-			linkHi: 'rgba(140, 100, 60, 0.6)',
+			link: 'rgba(120, 100, 80, 0.30)',
+			linkHi: 'rgba(140, 100, 60, 0.75)',
 			label: '#2b2620',
-			fade: 0.16,
+			fade: 0.18,
 			dust: 'rgba(120, 100, 80, 1)',
-			ghost: 'rgba(140, 130, 115, 0.55)',
+			ghost: 'rgba(140, 130, 115, 0.6)',
 			stars: INK_COLORS,
 			noGroup: '#8d8577',
 			core: null,
-			haloA: 0.16,
-		};
+			haloA: 0,
+			map: true,
+			ink: '#4a3a28',
+			labelMinor: 'rgba(74, 58, 40, 0.8)',
+			labelHub: 'rgba(52, 40, 26, 0.95)',
+			graticule: 'rgba(120, 100, 80, 0.15)',
+			frame: 'rgba(110, 88, 62, 0.5)',
+			frameIn: 'rgba(110, 88, 62, 0.3)',
+			compass: 'rgba(110, 88, 62, 0.6)',
+	};
 	}
 
 	function init(signal) {
@@ -149,6 +161,99 @@ const graphJson = graphData ? JSON.stringify(graphData).replace(/</g, '\u003c') 
 			if (!neighbors.has(t)) neighbors.set(t, new Set());
 			neighbors.get(s).add(t);
 			neighbors.get(t).add(s);
+		}
+
+		// --- antique-atlas chrome (light mode only) --------------------------
+		// World-space graticule, double frame and compass rose, fitted to the
+		// settled layout once and drawn under the towns/roads.
+		let atlas = null;
+		function buildAtlas() {
+			let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+			for (const n of nodes) {
+				if (!Number.isFinite(n.x) || !Number.isFinite(n.y)) continue;
+				minX = Math.min(minX, n.x); maxX = Math.max(maxX, n.x);
+				minY = Math.min(minY, n.y); maxY = Math.max(maxY, n.y);
+			}
+			if (!Number.isFinite(minX)) return;
+			const m = 70; // margin around the settled layout
+			minX -= m; minY -= m; maxX += m; maxY += m;
+			const w = maxX - minX, h = maxY - minY;
+			const vlines = [], hlines = [];
+			for (let i = 1; i <= 5; i++) vlines.push(minX + (w * i) / 6);
+			for (let i = 1; i <= 4; i++) hlines.push(minY + (h * i) / 5);
+			atlas = {
+				minX, minY, maxX, maxY, w, h, vlines, hlines,
+				cx: minX + w * 0.86, cy: minY + h * 0.14, r: Math.min(w, h) * 0.05,
+			};
+		}
+
+		function drawAtlas(c) {
+			const a = atlas;
+			if (!a) return;
+			const lw = (w) => w / cam.k;
+			// graticule
+			ctx.strokeStyle = c.graticule;
+			ctx.lineWidth = lw(1);
+			ctx.beginPath();
+			for (const x of a.vlines) { ctx.moveTo(x, a.minY); ctx.lineTo(x, a.maxY); }
+			for (const y of a.hlines) { ctx.moveTo(a.minX, y); ctx.lineTo(a.maxX, y); }
+			ctx.stroke();
+			// double frame
+			ctx.strokeStyle = c.frame;
+			ctx.lineWidth = lw(1.6);
+			ctx.strokeRect(a.minX, a.minY, a.w, a.h);
+			const g = 7;
+			ctx.strokeStyle = c.frameIn;
+			ctx.lineWidth = lw(0.8);
+			ctx.strokeRect(a.minX + g, a.minY + g, a.w - 2 * g, a.h - 2 * g);
+			// compass rose: outer ring, four-point star, north tick
+			ctx.strokeStyle = c.compass;
+			ctx.lineWidth = lw(1);
+			ctx.beginPath();
+			ctx.arc(a.cx, a.cy, a.r, 0, Math.PI * 2);
+			ctx.stroke();
+			ctx.fillStyle = c.compass;
+			const star = (rl, rw2) => {
+				ctx.beginPath();
+				for (let i = 0; i < 8; i++) {
+					const ang = (i * Math.PI) / 4 - Math.PI / 2;
+					const rad = i % 2 === 0 ? rl : rw2;
+					const px = a.cx + Math.cos(ang) * rad, py = a.cy + Math.sin(ang) * rad;
+					if (i) ctx.lineTo(px, py); else ctx.moveTo(px, py);
+				}
+				ctx.closePath();
+				ctx.fill();
+			};
+			star(a.r * 0.86, a.r * 0.16);
+			ctx.globalAlpha = 0.55;
+			star(a.r * 0.42, a.r * 0.12);
+			ctx.globalAlpha = 1;
+			ctx.beginPath();
+			ctx.moveTo(a.cx, a.cy - a.r * 0.86);
+			ctx.lineTo(a.cx, a.cy - a.r * 1.18);
+			ctx.stroke();
+		}
+
+		function drawLabels(c) {
+			const hubK = 0.6, allK = 1.5;
+			for (const n of nodes) {
+				if (n.ghost) continue;
+				const deg = neighbors.get(n.id)?.size ?? 0;
+				const isHub = deg >= 3;
+				const isHover = hoverNode && n.id === hoverNode.id;
+				const isNeighbor = hoverNode && neighbors.get(hoverNode.id)?.has(n.id);
+				const show = isHover || isNeighbor || cam.k >= allK || (isHub && cam.k >= hubK);
+				if (!show) continue;
+				const dim = hoverNode && !isHover && !isNeighbor;
+				const r = Math.max(nodeRadius(n), 2.6 / cam.k);
+				ctx.globalAlpha = dim ? c.fade : 1;
+				ctx.fillStyle = isHub ? c.labelHub : c.labelMinor;
+				ctx.font = `${isHub ? 13 : 11}px 'et-book', Georgia, serif`;
+				ctx.textAlign = 'center';
+				ctx.textBaseline = 'top';
+				ctx.fillText(n.title, n.x, n.y + r + 5 / cam.k);
+			}
+			ctx.globalAlpha = 1;
 		}
 		let dust = [];
 		let raf = 0, loopOn = false, loopRaf = 0;
@@ -228,7 +333,7 @@ const graphJson = graphData ? JSON.stringify(graphData).replace(/</g, '\u003c') 
 			for (const d of dust) {
 				const x = (((d.x + cam.x * d.f) % width) + width) % width;
 				const y = (((d.y + cam.y * d.f) % height) + height) % height;
-				ctx.globalAlpha = d.a * (reduced ? 1 : 0.7 + 0.3 * Math.sin(d.ph + d.sp * t));
+				ctx.globalAlpha = d.a * (reduced || c.map ? 1 : 0.7 + 0.3 * Math.sin(d.ph + d.sp * t));
 				ctx.fillRect(x, y, d.s, d.s);
 			}
 			ctx.globalAlpha = 1;
@@ -257,6 +362,7 @@ const graphJson = graphData ? JSON.stringify(graphData).replace(/</g, '\u003c') 
 			drawDust(c, now);
 			ctx.translate(cam.x, cam.y);
 			ctx.scale(cam.k, cam.k);
+			if (c.map) drawAtlas(c); // frame + graticule live in world space
 			const hover = hoverNode || dragNode;
 			const lw = (w) => w / cam.k; // constant screen-width strokes
 			const t = now / 1000;
@@ -275,12 +381,12 @@ const graphJson = graphData ? JSON.stringify(graphData).replace(/</g, '\u003c') 
 				ctx.stroke();
 			}
 
-			// nodes — each note is a star: warm halo + bright core, magnitude by degree
+			// nodes — stars in the night sky, towns on the atlas page; size by degree
 			for (const n of nodes) {
 				const isHover = hover && n.id === hover.id;
 				const isNeighbor = hover && neighbors.get(hover.id)?.has(n.id);
 				const dim = hover && !isHover && !isNeighbor;
-				const tw = reduced ? 1 : 0.82 + 0.18 * Math.sin(n.twPhase + n.twSpeed * t);
+				const tw = reduced || c.map ? 1 : 0.82 + 0.18 * Math.sin(n.twPhase + n.twSpeed * t);
 				const alpha = dim ? c.fade : 1;
 				const r = Math.max(nodeRadius(n), 2.6 / cam.k); // stay visible when zoomed out
 				if (n.ghost) {
@@ -294,16 +400,18 @@ const graphJson = graphData ? JSON.stringify(graphData).replace(/</g, '\u003c') 
 				}
 				const col = n.ci < 0 ? c.noGroup : c.stars[n.ci];
 				const rr = r * (isHover ? 1.3 : 1);
-				// halo
-				const glowR = rr * (isHover ? 7 : 4.5);
-				const g = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, glowR);
-				g.addColorStop(0, col + hexA(c.haloA * alpha * tw));
-				g.addColorStop(1, col + '00');
-				ctx.globalAlpha = 1;
-				ctx.fillStyle = g;
-				ctx.beginPath();
-				ctx.arc(n.x, n.y, glowR, 0, Math.PI * 2);
-				ctx.fill();
+				// halo (night sky only — the atlas page keeps flat ink)
+				if (c.haloA > 0) {
+					const glowR = rr * (isHover ? 7 : 4.5);
+					const g = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, glowR);
+					g.addColorStop(0, col + hexA(c.haloA * alpha * tw));
+					g.addColorStop(1, col + '00');
+					ctx.globalAlpha = 1;
+					ctx.fillStyle = g;
+					ctx.beginPath();
+					ctx.arc(n.x, n.y, glowR, 0, Math.PI * 2);
+					ctx.fill();
+				}
 				// core
 				ctx.globalAlpha = alpha * (reduced ? 1 : 0.85 + 0.15 * tw);
 				ctx.beginPath();
@@ -326,6 +434,7 @@ const graphJson = graphData ? JSON.stringify(graphData).replace(/</g, '\u003c') 
 					ctx.stroke();
 				}
 			}
+			if (c.map) drawLabels(c);
 			ctx.globalAlpha = 1;
 		}
 
@@ -381,7 +490,9 @@ const graphJson = graphData ? JSON.stringify(graphData).replace(/</g, '\u003c') 
 			if (!used) return;
 			const bw = maxX - minX, bh = maxY - minY;
 			if (bw <= 0 || bh <= 0) return;
-			const pad = 28;
+			// the atlas page wraps the layout in a frame + margin, so it needs
+			// more breathing room than the bare constellation
+			const pad = themeColors().map ? 96 : 28;
 			const k = Math.max(0.1, Math.min((width - pad * 2) / bw, (height - pad * 2) / bh, maxK));
 			cam.k = k;
 			cam.x = (width - bw * k) / 2 - minX * k;
@@ -423,6 +534,8 @@ const graphJson = graphData ? JSON.stringify(graphData).replace(/</g, '\u003c') 
 			vt.finished.finally(() => html.style.removeProperty('--vt-clip'));
 		}
 
+		const isDark = () => document.documentElement.classList.contains('dark');
+
 		function isOpen() { return !root.hidden; }
 
 		function openSky() {
@@ -434,7 +547,7 @@ const graphJson = graphData ? JSON.stringify(graphData).replace(/</g, '\u003c') 
 				document.body.style.overflow = 'hidden';
 				fitToView();
 			});
-			setLoop(!document.hidden);
+			setLoop(!document.hidden && isDark());
 			document.dispatchEvent(new CustomEvent('sky:change', { detail: { open: true } }));
 		}
 
@@ -455,7 +568,7 @@ const graphJson = graphData ? JSON.stringify(graphData).replace(/</g, '\u003c') 
 		document.addEventListener('keydown', (e) => {
 			if (e.key === 'Escape' && isOpen()) closeSky();
 		}, { signal });
-		document.addEventListener('visibilitychange', () => setLoop(isOpen() && !document.hidden), { signal });
+		document.addEventListener('visibilitychange', () => setLoop(isOpen() && !document.hidden && isDark()), { signal });
 
 		// --- interactions ----------------------------------------------------
 
@@ -587,6 +700,7 @@ const graphJson = graphData ? JSON.stringify(graphData).replace(/</g, '\u003c') 
 			if (dark !== wasDark) {
 				wasDark = dark;
 				if (isOpen() && !reduced) { jostle(); sim.alpha(0.7).restart(); }
+				if (isOpen()) setLoop(!document.hidden && dark);
 			}
 			schedule();
 		});
@@ -607,6 +721,7 @@ const graphJson = graphData ? JSON.stringify(graphData).replace(/</g, '\u003c') 
 			// Pre-settle the layout synchronously so the reveal already shows
 			// the final arrangement, fitted inside the viewport.
 			sim.tick(300);
+			buildAtlas();
 			fitToView();
 			sim.on('tick', schedule);
 		}
@@ -644,10 +759,10 @@ const graphJson = graphData ? JSON.stringify(graphData).replace(/</g, '\u003c') 
 		inset: 0;
 		z-index: 90;
 		background:
-			radial-gradient(ellipse at 28% 24%, rgba(210, 200, 170, 0.14) 0%, transparent 55%),
-			radial-gradient(ellipse at 76% 78%, rgba(200, 190, 160, 0.10) 0%, transparent 50%),
-			radial-gradient(circle at center, transparent 58%, rgba(180, 170, 150, 0.10) 100%),
-			#fffdf6;
+			radial-gradient(ellipse at 28% 24%, rgba(210, 200, 170, 0.16) 0%, transparent 55%),
+			radial-gradient(ellipse at 76% 78%, rgba(200, 190, 160, 0.12) 0%, transparent 50%),
+			radial-gradient(circle at center, transparent 52%, rgba(160, 140, 105, 0.16) 100%),
+			#fbf6ea;
 	}
 	html.dark .skyfield {
 		background:
