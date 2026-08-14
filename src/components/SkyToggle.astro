@@ -1,0 +1,90 @@
+<!-- Star chart toggle: a star button aligned with the theme toggle in the
+     top-right corner. Dispatches sky:toggle; GraphView's script performs the
+     open/close with the theme toggle's circular reveal. -->
+<button
+	id="sky-toggle"
+	class="sky-toggle-btn"
+	type="button"
+	aria-label="Open star chart"
+	title="Star chart"
+	transition:persist
+>
+	<svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 256 256">
+		<path d="M234.81,156.55a8,8,0,0,0-9.1-2.67l-55.65,20.47-44.73-77.43a8,8,0,0,0-13.86,0L66.74,174.35,11.09,153.88a8,8,0,0,0-9.63,11.28l32,68a8,8,0,0,0,7.24,4.61H215.3a8,8,0,0,0,7.24-4.61l32-68A8,8,0,0,0,234.81,156.55ZM118.4,116.93l33.51,57.93-22.19,8.17a8,8,0,0,0,5.54,15l37.13-13.67,30.31,13.41H45.8l-24.6-52.4,46.32,17.05a8,8,0,0,0,9.7-3.6Z"></path>
+		<path d="M120.62,60.62a8,8,0,0,0,14.76,0l6.13-14.81,14.81-6.13a8,8,0,0,0,0-14.77l-14.81-6.12-6.13-14.81a8,8,0,0,0-14.76,0l-6.13,14.81-14.81,6.12a8,8,0,0,0,0,14.77l14.81,6.13Z"></path>
+	</svg>
+</button>
+
+<script>
+	// Ask GraphView to open/close; it owns the overlay and the reveal.
+	document.getElementById('sky-toggle')?.addEventListener('click', () => {
+		document.dispatchEvent(new CustomEvent('sky:toggle'));
+	});
+
+	// Reflect the overlay state for a11y + a subtle lit state while open.
+	document.addEventListener('sky:change', (e) => {
+		const btn = document.getElementById('sky-toggle');
+		if (!btn) return;
+		const open = e.detail?.open;
+		btn.classList.toggle('is-open', !!open);
+		btn.setAttribute('aria-label', open ? 'Close star chart' : 'Open star chart');
+	});
+</script>
+
+<style>
+	.sky-toggle-btn {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 2.4rem;
+		height: 2.4rem;
+		padding: 0;
+		background: transparent;
+		border: none;
+		border-radius: 0.375rem;
+		cursor: pointer;
+		transition: background-color 0.15s ease;
+		color: #374151;
+		position: fixed;
+		top: 1.5rem;
+		right: 7.5rem;
+		z-index: 100;
+	}
+
+	.sky-toggle-btn:hover {
+		background: rgba(128, 128, 128, 0.2);
+	}
+
+	.sky-toggle-btn:focus-visible {
+		outline: 2px solid rgba(128, 128, 128, 0.4);
+		outline-offset: 2px;
+	}
+
+	.sky-toggle-btn svg {
+		width: 1.8rem;
+		height: 1.8rem;
+	}
+
+	/* lit while the chart is open */
+	.sky-toggle-btn.is-open {
+		color: #8a6d4f;
+		background: rgba(176, 137, 104, 0.18);
+	}
+
+	html.dark .sky-toggle-btn {
+		color: #d1d5db;
+	}
+
+	html.dark .sky-toggle-btn.is-open {
+		color: #ffd9a0;
+		background: rgba(221, 184, 146, 0.16);
+	}
+
+	/* Mobile adjustments */
+	@media (max-width: 760px) {
+		.sky-toggle-btn {
+			top: 1rem;
+			right: 6.5rem;
+		}
+	}
+</style>

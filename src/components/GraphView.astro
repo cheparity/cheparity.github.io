@@ -1,23 +1,25 @@
 ---
 /**
- * GraphView — Obsidian-style note graph rendered on a canvas with d3-force.
+ * GraphView — the note graph as a full-screen star chart overlay, opened
+ * from the star button in the header (SkyToggle) and dismissed with the
+ * same circular reveal the theme toggle uses. Rendered on the home page
+ * only; the overlay itself is fixed and covers the viewport while open.
  *
  * Data is baked in at build time from src/data/graph.json (emitted by
  * scripts/graph-build.mjs locally, or scripts/publish.py in CI). If that
- * file is absent the section renders nothing rather than an empty frame.
+ * file is absent the overlay and its toggle render nothing.
  *
- * Interactions: nodes sized by degree and tinted by first tag; ghost
+ * Interactions (unchanged from the original graph): nodes sized by degree
+ * and tinted by first tag, drawn as warm stars over stardust; ghost
  * (unpublished) notes render hollow; hover highlights the neighborhood;
  * drag nodes to rearrange; drag the background to pan; scroll/pinch or the
- * corner buttons to zoom; click a published node to navigate. The layout is
- * pre-settled synchronously and auto-fitted to the frame until the user
- * takes over the camera. Re-initializes on View Transition navigations and
- * follows the dark-mode class.
+ * corner buttons to zoom; click a published node to navigate. The layout
+ * is pre-settled synchronously and auto-fitted until the user takes over
+ * the camera. Esc or the close button dismisses. Follows the dark-mode
+ * class; re-initializes on View Transition navigations.
  */
 import { readFileSync, existsSync } from 'node:fs';
 import { resolve } from 'node:path';
-
-const { height = 440, title = 'Note Graph' } = Astro.props;
 
 let graphData: { nodes: any[]; links: any[] } | null = null;
 const dataPath = resolve(process.cwd(), 'src/data/graph.json');
@@ -29,28 +31,23 @@ if (existsSync(dataPath)) {
 	}
 }
 // Escape "<" so a "</script>" inside a title can't terminate the block.
-const graphJson = graphData ? JSON.stringify(graphData).replace(/</g, '\\u003c') : '';
+const graphJson = graphData ? JSON.stringify(graphData).replace(/</g, '\u003c') : '';
 ---
 
 {graphData && graphData.nodes?.length > 0 && (
-	<section class="graphview reveal" style={`--gv-height: ${height}px`}>
-		<div class="gv-head">
-			<h2 class="gv-title">{title}</h2>
-			<span class="gv-sub">drag nodes · drag background to pan · scroll or pinch to zoom · click a node to open</span>
+	<div class="skyfield" hidden>
+		<canvas class="gv-canvas" aria-label="Interactive note graph"></canvas>
+		<div class="gv-zoom">
+			<button class="gv-btn" data-act="in" aria-label="Zoom in" title="Zoom in">+</button>
+			<button class="gv-btn" data-act="out" aria-label="Zoom out" title="Zoom out">−</button>
+			<button class="gv-btn" data-act="fit" aria-label="Fit graph to view" title="Fit to view">⤢</button>
+			<span class="gv-zoom-pct" aria-hidden="true">100%</span>
 		</div>
-		<div class="gv-frame">
-			<canvas class="gv-canvas" aria-label="Interactive note graph"></canvas>
-			<div class="gv-zoom">
-				<button class="gv-btn" data-act="in" aria-label="Zoom in" title="Zoom in">+</button>
-				<button class="gv-btn" data-act="out" aria-label="Zoom out" title="Zoom out">−</button>
-				<button class="gv-btn" data-act="fit" aria-label="Fit graph to view" title="Fit to view">⤢</button>
-				<span class="gv-zoom-pct" aria-hidden="true">100%</span>
-			</div>
-			<div class="gv-tip" hidden></div>
-			<script type="application/json" id="gv-data" set:html={graphJson} />
-			<noscript><p class="gv-fallback">Enable JavaScript to see the note graph.</p></noscript>
-		</div>
-	</section>
+		<button class="sky-close" aria-label="Close star chart" title="Close (Esc)">×</button>
+		<p class="sky-hint">drag a star · drag the sky to pan · scroll or pinch to zoom · click a star to open · esc to close</p>
+		<div class="gv-tip" hidden></div>
+		<script type="application/json" id="gv-data" set:html={graphJson} />
+	</div>
 )}
 
 <script>
@@ -66,40 +63,74 @@ const graphJson = graphData ? JSON.stringify(graphData).replace(/</g, '\\u003c')
 			document.head.appendChild(s);
 		});
 
-	// Warm, muted palette tuned to the parchment theme.
-	const GROUP_COLORS = [
+	// Star palettes tuned to the parchment theme: dark mode reads as a warm
+	// night sky, light mode as an old sepia star chart on paper.
+	const INK_COLORS = [
 		'#b08968', '#8a6d4f', '#a9714b', '#7f5539',
 		'#9c6644', '#6f4e37', '#8d6e63', '#c08552',
 	];
+	const STAR_COLORS = [
+		'#ffd9a0', '#f0b97a', '#e8c89a', '#dda15f',
+		'#f5e0b8', '#e0a870', '#d9b48a', '#ffc98a',
+	];
 
-	function groupColor(group) {
-		if (!group) return '#9a9a9a';
+	function colorIndex(group) {
+		if (!group) return -1;
 		let h = 0;
 		for (let i = 0; i < group.length; i++) h = (h * 31 + group.charCodeAt(i)) | 0;
-		return GROUP_COLORS[Math.abs(h) % GROUP_COLORS.length];
+		return Math.abs(h) % INK_COLORS.length;
 	}
 
 	function themeColors() {
 		const dark = document.documentElement.classList.contains('dark');
-		return {
-			link: dark ? 'rgba(255,255,255,0.16)' : 'rgba(120,100,80,0.22)',
-			linkHi: dark ? 'rgba(230,200,160,0.7)' : 'rgba(140,100,60,0.6)',
-			label: dark ? '#e8e2d5' : '#2b2620',
-			fade: dark ? 0.22 : 0.16,
+		return dark ? {
+			link: 'rgba(232, 210, 176, 0.13)',
+			linkHi: 'rgba(255, 217, 160, 0.72)',
+			label: '#e8e2d5',
+			fade: 0.22,
+			dust: 'rgba(221, 184, 146, 1)',
+			ghost: 'rgba(221, 214, 200, 0.4)',
+			stars: STAR_COLORS,
+			noGroup: '#cfc6b4',
+			core: '#fff6e6',
+			haloA: 0.34,
+		} : {
+			link: 'rgba(120, 100, 80, 0.22)',
+			linkHi: 'rgba(140, 100, 60, 0.6)',
+			label: '#2b2620',
+			fade: 0.16,
+			dust: 'rgba(120, 100, 80, 1)',
+			ghost: 'rgba(140, 130, 115, 0.55)',
+			stars: INK_COLORS,
+			noGroup: '#8d8577',
+			core: null,
+			haloA: 0.16,
 		};
 	}
 
 	function init(signal) {
-		const root = document.querySelector('.graphview');
+		const root = document.querySelector('.skyfield');
 		if (!root) return;
 		const canvas = root.querySelector('.gv-canvas');
 		const tip = root.querySelector('.gv-tip');
 		if (!canvas) return;
 		const ctx = canvas.getContext('2d');
 
+		const dataEl = root.querySelector('#gv-data');
+		let data = null;
+		try { data = JSON.parse(dataEl.textContent); } catch { /* fall through */ }
+		if (!data || !data.nodes?.length) { root.remove(); return; }
+
 		let width = 0, height = 0, dpr = 1;
-		let nodes = [], links = [];
+		const nodes = data.nodes;
+		const links = data.links;
+		for (const n of nodes) {
+			n.ci = colorIndex(n.group);
+			n.twPhase = Math.random() * Math.PI * 2;
+			n.twSpeed = 0.5 + Math.random() * 1.1;
+		}
 		let sim = null;
+		let started = false; // sim built on first open
 		let hoverNode = null;
 		let dragNode = null;
 		let dragged = false;
@@ -110,33 +141,40 @@ const graphJson = graphData ? JSON.stringify(graphData).replace(/</g, '\\u003c')
 		let panning = null; // { startX, startY, camX, camY } while background-dragging
 		const pointers = new Map(); // pointerId -> {cx, cy} for pinch tracking
 		const pinch = { dist: 0, mx: 0, my: 0 };
-		let neighbors = new Map(); // id -> Set(id)
-		let raf = null;
+		const neighbors = new Map(); // id -> Set(id)
+		for (const l of links) {
+			const s = typeof l.source === 'object' ? l.source.id : l.source;
+			const t = typeof l.target === 'object' ? l.target.id : l.target;
+			if (!neighbors.has(s)) neighbors.set(s, new Set());
+			if (!neighbors.has(t)) neighbors.set(t, new Set());
+			neighbors.get(s).add(t);
+			neighbors.get(t).add(s);
+		}
+		let dust = [];
+		let raf = 0, loopOn = false, loopRaf = 0;
+		const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 		const zoomPct = root.querySelector('.gv-zoom-pct');
 		function setCamLabel() {
 			if (zoomPct) zoomPct.textContent = Math.round(cam.k * 100) + '%';
 		}
 
-		const ro = new ResizeObserver(() => resize());
-		ro.observe(root.querySelector('.gv-frame'));
-
 		function resize() {
-			const frame = root.querySelector('.gv-frame');
-			width = frame.clientWidth;
-			height = frame.clientHeight;
+			width = window.innerWidth;
+			height = window.innerHeight;
 			dpr = Math.min(window.devicePixelRatio || 1, 2);
 			canvas.width = width * dpr;
 			canvas.height = height * dpr;
 			canvas.style.width = width + 'px';
 			canvas.style.height = height + 'px';
+			seedDust();
 			if (!touched) fitToView(); // keep everything in view as the frame resizes
 			schedule();
 		}
 
 		function schedule() {
-			if (raf) return;
-			raf = requestAnimationFrame(() => { raf = null; draw(); });
+			if (raf || loopOn) return; // the twinkle loop already paints every frame
+			raf = requestAnimationFrame(() => { raf = 0; draw(performance.now()); });
 		}
 
 		function nodeRadius(n) {
@@ -145,16 +183,85 @@ const graphJson = graphData ? JSON.stringify(graphData).replace(/</g, '\\u003c')
 			return base + Math.sqrt(deg) * 2.2;
 		}
 
-		function draw() {
+		function hexA(a) {
+			return Math.round(Math.min(1, Math.max(0, a)) * 255).toString(16).padStart(2, '0');
+		}
+
+		// Deterministic RNG so the dust field stays put across resizes/theme flips.
+		function mulberry32(seed) {
+			return () => {
+				seed |= 0; seed = (seed + 0x6d2b79f5) | 0;
+				let z = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+				z = (z + Math.imul(z ^ (z >>> 7), 61 | z)) ^ z;
+				return ((z ^ (z >>> 14)) >>> 0) / 4294967296;
+			};
+		}
+
+		function seedDust() {
+			if (!width || !height) return;
+			const rnd = mulberry32(0x5eed);
+			dust = [];
+			const layers = [
+				{ f: 0.12, density: 3200, size: 1.0, alpha: 0.14 },
+				{ f: 0.30, density: 6800, size: 1.7, alpha: 0.26 },
+			];
+			for (const L of layers) {
+				const count = Math.min(420, Math.round((width * height) / L.density));
+				for (let i = 0; i < count; i++) {
+					dust.push({
+						x: rnd() * width, y: rnd() * height,
+						s: 0.4 + rnd() * L.size,
+						a: L.alpha * (0.35 + rnd() * 0.65),
+						f: L.f,
+						ph: rnd() * Math.PI * 2,
+						sp: 0.25 + rnd() * 0.9,
+					});
+				}
+			}
+		}
+
+		// Background stardust in screen space; each layer drifts with a hint of
+		// parallax as the camera pans, wrapping at the viewport edges.
+		function drawDust(c, now) {
+			const t = now / 1000;
+			ctx.fillStyle = c.dust;
+			for (const d of dust) {
+				const x = (((d.x + cam.x * d.f) % width) + width) % width;
+				const y = (((d.y + cam.y * d.f) % height) + height) % height;
+				ctx.globalAlpha = d.a * (reduced ? 1 : 0.7 + 0.3 * Math.sin(d.ph + d.sp * t));
+				ctx.fillRect(x, y, d.s, d.s);
+			}
+			ctx.globalAlpha = 1;
+		}
+
+		// Twinkle loop: runs only while the overlay is open and the tab is
+		// visible; one-shot redraws go through schedule().
+		function setLoop(on) {
+			if (reduced) on = false;
+			if (on === loopOn) return;
+			loopOn = on;
+			if (on) loopRaf = requestAnimationFrame(loop);
+			else cancelAnimationFrame(loopRaf);
+		}
+
+		function loop() {
+			if (!loopOn) return;
+			draw(performance.now());
+			loopRaf = requestAnimationFrame(loop);
+		}
+
+		function draw(now) {
 			ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 			ctx.clearRect(0, 0, width, height);
+			const c = themeColors();
+			drawDust(c, now);
 			ctx.translate(cam.x, cam.y);
 			ctx.scale(cam.k, cam.k);
-			const c = themeColors();
 			const hover = hoverNode || dragNode;
 			const lw = (w) => w / cam.k; // constant screen-width strokes
+			const t = now / 1000;
 
-			// links
+			// links — constellation lines
 			for (const l of links) {
 				const a = l.source, b = l.target;
 				const active = hover && (a.id === hover.id || b.id === hover.id);
@@ -168,31 +275,55 @@ const graphJson = graphData ? JSON.stringify(graphData).replace(/</g, '\\u003c')
 				ctx.stroke();
 			}
 
-			// nodes
+			// nodes — each note is a star: warm halo + bright core, magnitude by degree
 			for (const n of nodes) {
 				const isHover = hover && n.id === hover.id;
 				const isNeighbor = hover && neighbors.get(hover.id)?.has(n.id);
 				const dim = hover && !isHover && !isNeighbor;
-				ctx.globalAlpha = dim ? c.fade : 1;
+				const tw = reduced ? 1 : 0.82 + 0.18 * Math.sin(n.twPhase + n.twSpeed * t);
+				const alpha = dim ? c.fade : 1;
 				const r = Math.max(nodeRadius(n), 2.6 / cam.k); // stay visible when zoomed out
 				if (n.ghost) {
+					ctx.globalAlpha = alpha * tw;
 					ctx.beginPath();
 					ctx.arc(n.x, n.y, r, 0, Math.PI * 2);
-					ctx.fillStyle = 'rgba(150,150,150,0.12)';
-					ctx.fill();
-					ctx.strokeStyle = isHover ? c.linkHi : 'rgba(150,150,150,0.6)';
+					ctx.strokeStyle = isHover ? c.linkHi : c.ghost;
 					ctx.lineWidth = lw(1.2);
 					ctx.stroke();
-				} else {
+					continue;
+				}
+				const col = n.ci < 0 ? c.noGroup : c.stars[n.ci];
+				const rr = r * (isHover ? 1.3 : 1);
+				// halo
+				const glowR = rr * (isHover ? 7 : 4.5);
+				const g = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, glowR);
+				g.addColorStop(0, col + hexA(c.haloA * alpha * tw));
+				g.addColorStop(1, col + '00');
+				ctx.globalAlpha = 1;
+				ctx.fillStyle = g;
+				ctx.beginPath();
+				ctx.arc(n.x, n.y, glowR, 0, Math.PI * 2);
+				ctx.fill();
+				// core
+				ctx.globalAlpha = alpha * (reduced ? 1 : 0.85 + 0.15 * tw);
+				ctx.beginPath();
+				ctx.arc(n.x, n.y, rr, 0, Math.PI * 2);
+				ctx.fillStyle = col;
+				ctx.fill();
+				if (c.core) {
+					ctx.globalAlpha = alpha * (0.5 + 0.4 * tw);
 					ctx.beginPath();
-					ctx.arc(n.x, n.y, r, 0, Math.PI * 2);
-					ctx.fillStyle = groupColor(n.group);
+					ctx.arc(n.x, n.y, rr * 0.45, 0, Math.PI * 2);
+					ctx.fillStyle = c.core;
 					ctx.fill();
-					if (isHover) {
-						ctx.strokeStyle = c.label;
-						ctx.lineWidth = lw(2);
-						ctx.stroke();
-					}
+				}
+				if (isHover) {
+					ctx.globalAlpha = 1;
+					ctx.strokeStyle = c.label;
+					ctx.lineWidth = lw(2);
+					ctx.beginPath();
+					ctx.arc(n.x, n.y, rr, 0, Math.PI * 2);
+					ctx.stroke();
 				}
 			}
 			ctx.globalAlpha = 1;
@@ -232,7 +363,7 @@ const graphJson = graphData ? JSON.stringify(graphData).replace(/</g, '\\u003c')
 			schedule();
 		}
 
-		// Scale + translate so every node fits the frame with padding.
+		// Scale + translate so every node fits the viewport with padding.
 		function fitToView(maxK = 1.5) {
 			if (!nodes.length || !width || !height) return;
 			const k0 = Number.isFinite(cam.k) && cam.k > 0 ? cam.k : 1;
@@ -263,11 +394,68 @@ const graphJson = graphData ? JSON.stringify(graphData).replace(/</g, '\\u003c')
 			if (!n) { tip.hidden = true; return; }
 			tip.textContent = n.title;
 			tip.hidden = false;
-			const frame = root.querySelector('.gv-frame').getBoundingClientRect();
-			const x = e.clientX - frame.left, y = e.clientY - frame.top;
-			tip.style.left = Math.min(x + 12, width - 10) + 'px';
-			tip.style.top = Math.max(y - 12, 8) + 'px';
+			tip.style.left = Math.min(e.clientX + 12, width - 10) + 'px';
+			tip.style.top = Math.max(e.clientY - 12, 8) + 'px';
 		}
+
+		// --- open / close with the theme toggle's circular reveal -----------
+
+		// Same mechanic as ThemeToggle: arm --vt-clip to a point before the
+		// snapshot, then animate ::view-transition-new(root) open from the
+		// star button. Hard swap when view transitions or motion are absent.
+		function reveal(mutate) {
+			const html = document.documentElement;
+			const btn = document.getElementById('sky-toggle');
+			const rect = btn?.getBoundingClientRect();
+			const x = rect ? rect.left + rect.width / 2 : window.innerWidth - 40;
+			const y = rect ? rect.top + rect.height / 2 : 40;
+			const radius = Math.hypot(Math.max(x, window.innerWidth - x), Math.max(y, window.innerHeight - y));
+			const clip = (r) => `circle(${r}px at ${x}px ${y}px)`;
+			if (!document.startViewTransition || reduced) { mutate(); return; }
+			html.style.setProperty('--vt-clip', clip(0));
+			const vt = document.startViewTransition(mutate);
+			vt.ready.then(() => {
+				html.animate(
+					{ clipPath: [clip(0), clip(radius)] },
+					{ duration: 500, easing: 'ease-in-out', pseudoElement: '::view-transition-new(root)', fill: 'forwards' },
+				);
+			}).catch(() => {});
+			vt.finished.finally(() => html.style.removeProperty('--vt-clip'));
+		}
+
+		function isOpen() { return !root.hidden; }
+
+		function openSky() {
+			start();
+			reveal(() => {
+				root.hidden = false;
+				document.documentElement.classList.add('sky-open');
+				document.body.style.overflow = 'hidden';
+				fitToView();
+			});
+			setLoop(!document.hidden);
+			document.dispatchEvent(new CustomEvent('sky:change', { detail: { open: true } }));
+		}
+
+		function closeSky() {
+			reveal(() => {
+				root.hidden = true;
+				document.documentElement.classList.remove('sky-open');
+				document.body.style.overflow = '';
+				tip.hidden = true;
+			});
+			setLoop(false);
+			document.dispatchEvent(new CustomEvent('sky:change', { detail: { open: false } }));
+		}
+
+		document.addEventListener('sky:toggle', () => { isOpen() ? closeSky() : openSky(); }, { signal });
+		root.querySelector('.sky-close').addEventListener('click', closeSky, { signal });
+		document.addEventListener('keydown', (e) => {
+			if (e.key === 'Escape' && isOpen()) closeSky();
+		}, { signal });
+		document.addEventListener('visibilitychange', () => setLoop(isOpen() && !document.hidden), { signal });
+
+		// --- interactions ----------------------------------------------------
 
 		canvas.addEventListener('pointermove', (e) => {
 			// two-finger pinch zoom (touch)
@@ -391,39 +579,30 @@ const graphJson = graphData ? JSON.stringify(graphData).replace(/</g, '\\u003c')
 		const mo = new MutationObserver(() => schedule());
 		mo.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
 
-		const dataEl = root.querySelector('#gv-data');
-		let data = null;
-		try { data = JSON.parse(dataEl.textContent); } catch { /* fall through */ }
-		if (!data || !data.nodes?.length) { root.style.display = 'none'; return; }
-		nodes = data.nodes;
-		links = data.links;
-		// neighbor map from raw id pairs (before d3 resolves them to objects)
-		for (const l of links) {
-			const s = typeof l.source === 'object' ? l.source.id : l.source;
-			const t = typeof l.target === 'object' ? l.target.id : l.target;
-			if (!neighbors.has(s)) neighbors.set(s, new Set());
-			if (!neighbors.has(t)) neighbors.set(t, new Set());
-			neighbors.get(s).add(t);
-			neighbors.get(t).add(s);
+		// Build the simulation lazily on first open so hidden pages pay nothing.
+		function start() {
+			if (started) return;
+			started = true;
+			resize();
+			window.addEventListener('resize', resize, { signal });
+			sim = window.d3.forceSimulation(nodes)
+				.force('link', window.d3.forceLink(links).id((d) => d.id).distance(40).strength(0.5))
+				.force('charge', window.d3.forceManyBody().strength(-80))
+				.force('center', window.d3.forceCenter(width / 2, height / 2))
+				.force('collide', window.d3.forceCollide((d) => nodeRadius(d) + 3))
+				.stop();
+			// Pre-settle the layout synchronously so the reveal already shows
+			// the final arrangement, fitted inside the viewport.
+			sim.tick(300);
+			fitToView();
+			sim.on('tick', schedule);
+			sim.on('end', () => { if (!touched) fitToView(); });
+			sim.alpha(0.15).restart();
 		}
-		resize();
-		sim = window.d3.forceSimulation(nodes)
-			.force('link', window.d3.forceLink(links).id((d) => d.id).distance(40).strength(0.5))
-			.force('charge', window.d3.forceManyBody().strength(-80))
-			.force('center', window.d3.forceCenter(width / 2, height / 2))
-			.force('collide', window.d3.forceCollide((d) => nodeRadius(d) + 3))
-			.stop();
-		// Pre-settle the layout synchronously so the very first paint already
-		// shows the final arrangement, fitted inside the frame.
-		sim.tick(300);
-		fitToView();
-		sim.on('tick', schedule);
-		sim.on('end', () => { if (!touched) fitToView(); });
-		sim.alpha(0.15).restart();
 
 		signal.addEventListener('abort', () => {
-			ro.disconnect();
 			mo.disconnect();
+			setLoop(false);
 			sim?.stop();
 			if (raf) cancelAnimationFrame(raf);
 		});
@@ -435,84 +614,49 @@ const graphJson = graphData ? JSON.stringify(graphData).replace(/</g, '\\u003c')
 </script>
 
 <style is:global>
-	.graphview {
-		margin-top: 2.4rem;
+	/* Full-viewport star chart overlay. Sits below the fixed header chrome
+	   (z 100) so the nav, search, theme and star buttons stay usable while
+	   the sky is open. */
+	.skyfield {
+		position: fixed;
+		inset: 0;
+		z-index: 90;
+		background:
+			radial-gradient(ellipse at 28% 24%, rgba(210, 200, 170, 0.14) 0%, transparent 55%),
+			radial-gradient(ellipse at 76% 78%, rgba(200, 190, 160, 0.10) 0%, transparent 50%),
+			radial-gradient(circle at center, transparent 58%, rgba(180, 170, 150, 0.10) 100%),
+			#fffdf6;
+	}
+	html.dark .skyfield {
+		background:
+			radial-gradient(ellipse at 28% 22%, rgba(221, 184, 146, 0.05) 0%, transparent 55%),
+			radial-gradient(ellipse at 78% 78%, rgba(176, 137, 104, 0.045) 0%, transparent 50%),
+			radial-gradient(circle at center, transparent 55%, rgba(0, 0, 0, 0.4) 100%),
+			#0f0e0c;
+	}
+	.skyfield[hidden] {
+		display: none;
 	}
 
-	.gv-head {
-		display: flex;
-		align-items: baseline;
-		gap: 0.9rem;
-		flex-wrap: wrap;
-	}
-
-	.gv-title {
-		position: relative;
-		padding-left: 1.6rem;
-		font-family: 'et-book', serif;
-		font-size: 1.8rem;
-		font-weight: normal;
-		font-style: normal;
-		font-variant: small-caps;
-		letter-spacing: 0.05em;
-		color: #666;
-		line-height: 1;
-		margin: 0;
-	}
-	html.dark .gv-title { color: #a89f8d; }
-
-	.gv-title::before {
-		content: '';
+	.skyfield .gv-canvas {
 		position: absolute;
-		left: 0;
-		top: 0.12em;
-		bottom: 0.12em;
-		width: 2px;
-		background: currentColor;
-		opacity: 0.5;
-	}
-
-	.gv-sub {
-		font-family: 'Source Sans 3', sans-serif;
-		font-size: 0.95rem;
-		color: #9a938a;
-		letter-spacing: 0.01em;
-	}
-
-	.gv-frame {
-		position: relative;
-		width: 100%;
-		height: var(--gv-height, 440px);
-		margin-top: 1.2rem;
-		border: 1px solid rgba(176, 137, 104, 0.22);
-		border-radius: 8px;
-		overflow: hidden;
-		background: rgba(176, 137, 104, 0.03);
-	}
-	html.dark .gv-frame {
-		border-color: rgba(221, 184, 146, 0.16);
-		background: rgba(255, 255, 255, 0.02);
-	}
-
-	.gv-canvas {
+		inset: 0;
 		display: block;
-		width: 100%;
-		height: 100%;
 		touch-action: none;
 		cursor: grab;
 	}
 
-	.gv-zoom {
+	.skyfield .gv-zoom {
 		position: absolute;
-		top: 10px;
-		right: 10px;
+		top: 1rem;
+		left: 1rem;
 		display: flex;
 		align-items: center;
 		gap: 4px;
 		z-index: 2;
 	}
 
-	.gv-btn {
+	.skyfield .gv-btn {
 		width: 28px;
 		height: 28px;
 		display: flex;
@@ -529,19 +673,19 @@ const graphJson = graphData ? JSON.stringify(graphData).replace(/</g, '\\u003c')
 		cursor: pointer;
 		transition: background-color 0.15s ease;
 	}
-	.gv-btn:hover {
+	.skyfield .gv-btn:hover {
 		background: rgba(238, 228, 208, 0.95);
 	}
-	html.dark .gv-btn {
+	html.dark .skyfield .gv-btn {
 		background: rgba(30, 27, 23, 0.85);
 		border-color: rgba(221, 184, 146, 0.25);
 		color: #d8cfbf;
 	}
-	html.dark .gv-btn:hover {
+	html.dark .skyfield .gv-btn:hover {
 		background: rgba(48, 42, 35, 0.95);
 	}
 
-	.gv-zoom-pct {
+	.skyfield .gv-zoom-pct {
 		min-width: 4ch;
 		margin-left: 3px;
 		font-family: 'Source Sans 3', sans-serif;
@@ -549,8 +693,63 @@ const graphJson = graphData ? JSON.stringify(graphData).replace(/</g, '\\u003c')
 		color: #9a938a;
 		text-align: right;
 	}
+	html.dark .skyfield .gv-zoom-pct {
+		color: #a89f8d;
+	}
 
-	.gv-tip {
+	/* close button joins the fixed header row: theme 1.5rem, search 4.5rem,
+	   star 7.5rem, close 10.5rem from the right */
+	.sky-close {
+		position: fixed;
+		top: 1.5rem;
+		right: 10.5rem;
+		z-index: 100;
+		width: 2.4rem;
+		height: 2.4rem;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		padding: 0;
+		background: transparent;
+		border: none;
+		border-radius: 0.375rem;
+		cursor: pointer;
+		color: #374151;
+		font-family: 'Source Sans 3', sans-serif;
+		font-size: 1.6rem;
+		line-height: 1;
+		transition: background-color 0.15s ease;
+	}
+	.sky-close:hover {
+		background: rgba(128, 128, 128, 0.2);
+	}
+	.sky-close:focus-visible {
+		outline: 2px solid rgba(128, 128, 128, 0.4);
+		outline-offset: 2px;
+	}
+	html.dark .sky-close {
+		color: #d1d5db;
+	}
+
+	.sky-hint {
+		position: absolute;
+		left: 0;
+		right: 0;
+		bottom: 1rem;
+		margin: 0;
+		text-align: center;
+		font-family: 'Source Sans 3', sans-serif;
+		font-size: 0.9rem;
+		font-style: italic;
+		color: #9a938a;
+		letter-spacing: 0.01em;
+		pointer-events: none;
+	}
+	html.dark .sky-hint {
+		color: #a89f8d;
+	}
+
+	.skyfield .gv-tip {
 		position: absolute;
 		pointer-events: none;
 		transform: translate(-50%, -110%);
@@ -566,20 +765,17 @@ const graphJson = graphData ? JSON.stringify(graphData).replace(/</g, '\\u003c')
 		white-space: nowrap;
 		z-index: 2;
 	}
-	html.dark .gv-tip {
+	html.dark .skyfield .gv-tip {
 		color: #ece6d9;
 		background: rgba(30, 27, 23, 0.96);
 		border-color: rgba(221, 184, 146, 0.3);
 		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
 	}
 
-	.gv-fallback {
-		padding: 1rem;
-		color: #9a938a;
-	}
-
 	@media (max-width: 760px) {
-		.graphview { margin-top: 2rem; }
-		.gv-frame { height: 320px; }
+		.sky-close {
+			top: 1rem;
+			right: 8.5rem;
+		}
 	}
 </style>
