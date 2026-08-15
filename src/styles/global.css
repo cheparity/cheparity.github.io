@@ -162,7 +162,7 @@
   dl,
   ol,
   ul {
-    @apply text-[1.4rem] leading-[2.2rem];
+    @apply text-[1.2rem] leading-[2.4rem];
   }
 
   p {
@@ -179,7 +179,7 @@
   }
 
   blockquote {
-    @apply text-[1.4rem] ml-0 mr-10;
+    @apply text-[1.2rem] ml-0 mr-10;
   }
 
   blockquote p {
@@ -274,9 +274,12 @@
 
   /* Article body prose — Source Sans 3 for sustained reading. Everything
      outside .prose (header nav, hero, cards, sidenotes, footer) keeps
-     et-book via body inheritance — the Tufte chrome. */
+     et-book via body inheritance — the Tufte chrome.
+     The reading size lives HERE so every child (p, ul, display math,
+     callout titles, bare divs) inherits it; KaTeX's 1.21em then matches
+     inline and display formulas alike. */
   .prose {
-    @apply font-sans;
+    @apply font-sans text-[1.2rem];
     position: relative;
   }
 
@@ -400,7 +403,7 @@
   }
 
   table {
-    @apply w-[60%] border-collapse text-[1.4rem];
+    @apply w-[60%] border-collapse text-[1.2rem];
   }
 
   th,
@@ -560,11 +563,22 @@
 }
 
 
-/* KaTeX display math: constrain to Tufte text column, scroll if wider */
-section > .katex-display {
-  width: 60%;
+/* KaTeX display math: constrain to Tufte text column.
+   Soft-wrap first: KaTeX boxes are atomic inline-blocks, so a formula
+   longer than the column breaks between boxes instead of clipping.
+   A box too wide to ever fit (tall matrix) falls back to scroll. */
+.katex .katex-html,
+.katex-display > .katex .katex-html {
+  white-space: normal;
+  overflow-wrap: break-word;
+}
+.katex-display {
+  max-width: 100%;
   overflow-x: auto;
   overflow-y: hidden;
+}
+section > .katex-display {
+  width: 60%;
 }
 
 /* Link margin cards — float into right margin like sidenotes */
