@@ -36,5 +36,18 @@
 			// Fallback to system preference
 			applyTheme(getSystemTheme());
 		}
+
+		// View-transition navigation swaps the root's class attribute to the
+		// incoming page's server-rendered state (always light), wiping the
+		// applied theme. Re-apply after every page load — initial and each
+		// navigation — once the new DOM is in place. Guarded so re-runs of
+		// this inline script cannot stack listeners.
+		if (!window.__themeScriptWired) {
+			window.__themeScriptWired = true;
+			document.addEventListener('astro:page-load', () => {
+				const stored = getStoredTheme();
+				applyTheme(stored === 'light' || stored === 'dark' ? stored : getSystemTheme());
+			});
+		}
 	})();
 </script>

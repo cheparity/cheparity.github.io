@@ -12,7 +12,7 @@ const isDark = false; // Default state, client-side will update immediately
 	type="button"
 	aria-label="Toggle theme"
 	title="Toggle theme"
-	transition:name="theme-toggle"
+	transition:persist
 >
 	<!-- Sun icon (shown in dark mode) -->
 	<svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 256 256">
@@ -107,6 +107,17 @@ const isDark = false; // Default state, client-side will update immediately
 			vt.finished.finally(() => html.style.removeProperty('--vt-clip'));
 		}
 
+		// Wire the button's click handler. The button is persisted across
+		// view-transition navigations (transition:persist), but this inline
+		// script re-runs on every page load — guard so the listener is
+		// attached exactly once per button element.
+		function wireButton() {
+			const btn = document.getElementById('theme-toggle');
+			if (!btn || btn.dataset.toggleWired) return;
+			btn.dataset.toggleWired = '1';
+			btn.addEventListener('click', toggleTheme);
+		}
+
 		// Initialize immediately (before DOM is fully parsed)
 		const storedTheme = getStoredTheme();
 		const initialTheme = (storedTheme === 'light' || storedTheme === 'dark')
@@ -116,31 +127,15 @@ const isDark = false; // Default state, client-side will update immediately
 		// Apply theme immediately
 		applyTheme(initialTheme);
 
-		// Attach click handler and sync when DOM is ready
-		function onDOMReady() {
-			const btn = document.getElementById('theme-toggle');
-			if (!btn) return;
-
-			// Sync button state (in case server-side state was wrong)
-			const html = document.documentElement;
-			const currentTheme = html.classList.contains('dark') ? 'dark' : 'light';
-			const buttonState = btn.classList.contains('is-dark') ? 'dark' : 'light';
-
-			// Only apply if out of sync (prevents flicker)
-			if (currentTheme !== buttonState) {
-				applyTheme(currentTheme);
-			}
-
-			// Attach click handler
-			btn.addEventListener('click', toggleTheme);
-		}
-
-		// Initialize
+		// Attach the handler once the button exists — on first load and after
+		// every view-transition navigation (astro:page-load fires once the
+		// new DOM is in place).
 		if (document.readyState === 'loading') {
-			document.addEventListener('DOMContentLoaded', onDOMReady);
+			document.addEventListener('DOMContentLoaded', wireButton);
 		} else {
-			onDOMReady();
+			wireButton();
 		}
+		document.addEventListener('astro:page-load', wireButton);
 	})();
 </script>
 
