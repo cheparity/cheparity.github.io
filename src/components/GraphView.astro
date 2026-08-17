@@ -10,7 +10,7 @@
  * file is absent the overlay and its toggle render nothing.
  *
  * Interactions (unchanged from the original graph): nodes sized by degree
- * and tinted by first tag. Dark mode draws them as warm stars over
+ * and tinted by first tag. Dark mode draws them as tokyo-night stars over
  * sepia towns with place-name labels and ink roads, framed by a fixed
  * screen-space plate (double frame + compass rose) that never moves while
  * the map pans and zooms underneath it; anything outside the frame is
@@ -68,15 +68,16 @@ const graphJson = graphData ? JSON.stringify(graphData).replace(/</g, '\u003c') 
 			document.head.appendChild(s);
 		});
 
-	// Dark mode reads as a warm night sky; light mode trades the sky for an
+	// Dark mode reads as a tokyo-night sky; light mode trades the sky for an
 	// antique atlas page — sepia towns, ink roads and a framed plate on parchment.
 	const INK_COLORS = [
 		'#b08968', '#8a6d4f', '#a9714b', '#7f5539',
 		'#9c6644', '#6f4e37', '#8d6e63', '#c08552',
 	];
+	// Tokyo Night accent stars: blue, cyan, purple, red, orange, yellow, green.
 	const STAR_COLORS = [
-		'#ffd9a0', '#f0b97a', '#e8c89a', '#dda15f',
-		'#f5e0b8', '#e0a870', '#d9b48a', '#ffc98a',
+		'#7aa2f7', '#7dcfff', '#bb9af7', '#f7768e',
+		'#ff9e64', '#e0af68', '#9ece6a', '#c0caf5',
 	];
 
 	function colorIndex(group) {
@@ -89,15 +90,15 @@ const graphJson = graphData ? JSON.stringify(graphData).replace(/</g, '\u003c') 
 	function themeColors() {
 		const dark = document.documentElement.classList.contains('dark');
 		return dark ? {
-			link: 'rgba(232, 210, 176, 0.13)',
-			linkHi: 'rgba(255, 217, 160, 0.72)',
-			label: '#e8e2d5',
+			link: 'rgba(122, 162, 247, 0.16)',
+			linkHi: 'rgba(125, 207, 255, 0.8)',
+			label: '#c0caf5',
 			fade: 0.22,
-			dust: 'rgba(221, 184, 146, 1)',
-			ghost: 'rgba(221, 214, 200, 0.4)',
+			dust: 'rgba(192, 202, 245, 1)',
+			ghost: 'rgba(169, 177, 214, 0.4)',
 			stars: STAR_COLORS,
-			noGroup: '#cfc6b4',
-			core: '#fff6e6',
+			noGroup: '#565f89',
+			core: '#c0caf5',
 			haloA: 0.34,
 			map: false,
 		} : {
@@ -980,10 +981,10 @@ const graphJson = graphData ? JSON.stringify(graphData).replace(/</g, '\u003c') 
 	}
 	html.dark .skyfield {
 		background:
-			radial-gradient(ellipse at 28% 22%, rgba(221, 184, 146, 0.05) 0%, transparent 55%),
-			radial-gradient(ellipse at 78% 78%, rgba(176, 137, 104, 0.045) 0%, transparent 50%),
-			radial-gradient(circle at center, transparent 55%, rgba(0, 0, 0, 0.4) 100%),
-			#0f0e0c;
+			radial-gradient(ellipse at 28% 22%, rgba(122, 162, 247, 0.06) 0%, transparent 55%),
+			radial-gradient(ellipse at 78% 78%, rgba(187, 154, 247, 0.05) 0%, transparent 50%),
+			radial-gradient(circle at center, transparent 55%, rgba(0, 0, 0, 0.35) 100%),
+			#0b0b0e;
 	}
 	.skyfield[hidden] {
 		display: none;
@@ -1028,12 +1029,12 @@ const graphJson = graphData ? JSON.stringify(graphData).replace(/</g, '\u003c') 
 		background: rgba(238, 228, 208, 0.95);
 	}
 	html.dark .skyfield .gv-btn {
-		background: rgba(30, 27, 23, 0.85);
-		border-color: rgba(221, 184, 146, 0.25);
-		color: #d8cfbf;
+		background: rgba(22, 22, 30, 0.85);
+		border-color: rgba(65, 72, 104, 0.6);
+		color: #c0caf5;
 	}
 	html.dark .skyfield .gv-btn:hover {
-		background: rgba(48, 42, 35, 0.95);
+		background: rgba(41, 46, 66, 0.95);
 	}
 
 	.skyfield .gv-zoom-pct {
@@ -1045,7 +1046,7 @@ const graphJson = graphData ? JSON.stringify(graphData).replace(/</g, '\u003c') 
 		text-align: right;
 	}
 	html.dark .skyfield .gv-zoom-pct {
-		color: #a89f8d;
+		color: #565f89;
 	}
 
 	/* close button joins the fixed header row: theme 1.5rem, search 4.5rem,
@@ -1079,7 +1080,7 @@ const graphJson = graphData ? JSON.stringify(graphData).replace(/</g, '\u003c') 
 		outline-offset: 2px;
 	}
 	html.dark .sky-close {
-		color: #d1d5db;
+		color: #a9b1d6;
 	}
 
 	.sky-hint {
@@ -1097,7 +1098,7 @@ const graphJson = graphData ? JSON.stringify(graphData).replace(/</g, '\u003c') 
 		pointer-events: none;
 	}
 	html.dark .sky-hint {
-		color: #a89f8d;
+		color: #565f89;
 	}
 
 	.skyfield .gv-tip {
@@ -1117,9 +1118,9 @@ const graphJson = graphData ? JSON.stringify(graphData).replace(/</g, '\u003c') 
 		z-index: 2;
 	}
 	html.dark .skyfield .gv-tip {
-		color: #ece6d9;
-		background: rgba(30, 27, 23, 0.96);
-		border-color: rgba(221, 184, 146, 0.3);
+		color: #c0caf5;
+		background: rgba(22, 22, 30, 0.96);
+		border-color: rgba(65, 72, 104, 0.6);
 		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
 	}
 
