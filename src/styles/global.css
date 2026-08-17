@@ -114,14 +114,14 @@
   html.dark body {
     background-color: #0b0b0e;
     background-image:
-      repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(65, 72, 104, 0.05) 2px, rgba(65, 72, 104, 0.05) 4px),
-      repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(65, 72, 104, 0.05) 2px, rgba(65, 72, 104, 0.05) 4px),
-      repeating-linear-gradient(90deg, transparent, transparent 8px, rgba(86, 95, 137, 0.04) 8px, rgba(86, 95, 137, 0.04) 16px),
-      repeating-linear-gradient(0deg, transparent, transparent 8px, rgba(86, 95, 137, 0.04) 8px, rgba(86, 95, 137, 0.04) 16px),
-      radial-gradient(ellipse at 20% 30%, rgba(122, 162, 247, 0.07) 0%, transparent 50%),
-      radial-gradient(ellipse at 80% 70%, rgba(187, 154, 247, 0.06) 0%, transparent 50%),
-      radial-gradient(ellipse at 50% 50%, rgba(122, 162, 247, 0.04) 0%, transparent 70%),
-      radial-gradient(circle at center, transparent 50%, rgba(0, 0, 0, 0.3) 100%);
+      repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(70, 65, 60, 0.04) 2px, rgba(70, 65, 60, 0.04) 4px),
+      repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(70, 65, 60, 0.04) 2px, rgba(70, 65, 60, 0.04) 4px),
+      repeating-linear-gradient(90deg, transparent, transparent 8px, rgba(60, 55, 50, 0.03) 8px, rgba(60, 55, 50, 0.03) 16px),
+      repeating-linear-gradient(0deg, transparent, transparent 8px, rgba(60, 55, 50, 0.03) 8px, rgba(60, 55, 50, 0.03) 16px),
+      radial-gradient(ellipse at 20% 30%, rgba(80, 70, 60, 0.07) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 70%, rgba(80, 70, 60, 0.05) 0%, transparent 50%),
+      radial-gradient(ellipse at 50% 50%, rgba(70, 60, 50, 0.04) 0%, transparent 70%),
+      radial-gradient(circle at center, transparent 50%, rgba(0, 0, 0, 0.25) 100%);
     background-blend-mode: normal;
     color: #ddd;
     background-attachment: fixed;
@@ -864,7 +864,7 @@ html.dark .tag-pill:hover {
   color: #e8d9c5;
 }
 
-/* Dark mode: soften hairlines that read too bright on #0b0b0e */
+/* Dark mode: soften hairlines that read too bright on #151515 */
 html.dark hr {
   border-top-color: rgba(221, 221, 221, 0.22);
 }
