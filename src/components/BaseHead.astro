@@ -36,10 +36,86 @@ const { title, description, image = FallbackImage } = Astro.props;
 <ViewTransitions />
 <meta name="generator" content={Astro.generator} />
 
-<!-- Font preloads -->
-<link rel="preload" href="/fonts/et-book-roman.woff" as="font" type="font/woff" crossorigin />
-<link rel="preload" href="/fonts/et-book-italic.woff" as="font" type="font/woff" crossorigin />
-<link rel="preload" href="/fonts/et-book-bold.woff" as="font" type="font/woff" crossorigin />
+<!-- Font preloads (persisted like the faces below, so navigations don't
+     re-fetch them) -->
+<link rel="preload" href="/fonts/et-book-roman.woff" as="font" type="font/woff" crossorigin data-astro-transition-persist="et-book-roman" />
+<link rel="preload" href="/fonts/et-book-italic.woff" as="font" type="font/woff" crossorigin data-astro-transition-persist="et-book-italic" />
+<link rel="preload" href="/fonts/et-book-bold.woff" as="font" type="font/woff" crossorigin data-astro-transition-persist="et-book-bold" />
+
+<!-- Font faces. Kept in a data-astro-transition-persist element: view-transition
+     navigation swaps the rest of <head>, which would otherwise evict these
+     @font-face rules from the document's font set and flash text back to
+     system fonts mid-navigation. Persisting the element keeps every face
+     registered across navigations, so text never falls back. -->
+<style is:inline data-astro-transition-persist="site-fonts">
+	@font-face {
+		font-family: "et-book";
+		src: url("/fonts/et-book-roman.woff") format("woff");
+		font-weight: normal;
+		font-style: normal;
+		font-display: swap;
+	}
+	@font-face {
+		font-family: "et-book";
+		src: url("/fonts/et-book-italic.woff") format("woff");
+		font-weight: normal;
+		font-style: italic;
+		font-display: swap;
+	}
+	@font-face {
+		font-family: "et-book";
+		src: url("/fonts/et-book-bold.woff") format("woff");
+		font-weight: bold;
+		font-style: normal;
+		font-display: swap;
+	}
+	@font-face {
+		font-family: "Source Sans 3";
+		src: url("/fonts/source-sans-3-latin-wght-normal.woff2") format("woff2");
+		font-weight: 200 900;
+		font-style: normal;
+		font-display: swap;
+		unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+	}
+	@font-face {
+		font-family: "Source Sans 3";
+		src: url("/fonts/source-sans-3-latin-ext-wght-normal.woff2") format("woff2");
+		font-weight: 200 900;
+		font-style: normal;
+		font-display: swap;
+		unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1EFF, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+	}
+	@font-face {
+		font-family: "Source Sans 3";
+		src: url("/fonts/source-sans-3-latin-wght-italic.woff2") format("woff2");
+		font-weight: 200 900;
+		font-style: italic;
+		font-display: swap;
+		unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+	}
+	@font-face {
+		font-family: "Source Sans 3";
+		src: url("/fonts/source-sans-3-latin-ext-wght-italic.woff2") format("woff2");
+		font-weight: 200 900;
+		font-style: italic;
+		font-display: swap;
+		unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1EFF, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+	}
+	@font-face {
+		font-family: "Go Mono";
+		src: url("/fonts/go-mono.ttf") format("truetype");
+		font-weight: 400;
+		font-style: normal;
+		font-display: swap;
+	}
+	@font-face {
+		font-family: "Go Mono";
+		src: url("/fonts/go-mono-it.ttf") format("truetype");
+		font-weight: 400;
+		font-style: italic;
+		font-display: swap;
+	}
+</style>
 
 <!-- KaTeX math rendering (self-hosted, see frontmatter) -->
 <script defer src="/scripts/katex.min.js"></script>
