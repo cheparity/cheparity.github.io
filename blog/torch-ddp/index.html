@@ -1,0 +1,348 @@
+<!DOCTYPE html><html lang="en" data-astro-cid-bvzihdzo> <head><!-- Global Metadata --><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" type="image/svg+xml" href="/favicon.svg"><link rel="icon" href="/favicon.ico"><link rel="sitemap" href="/sitemap-index.xml"><link rel="alternate" type="application/rss+xml" title="Niyuta's Blog" href="https://niyuta.eu.org/rss.xml"><meta name="astro-view-transitions-enabled" content="true"><meta name="astro-view-transitions-fallback" content="animate"><script type="module" src="/_astro/ClientRouter.astro_astro_type_script_index_0_lang.CDGfc0hd.js"></script><meta name="generator" content="Astro v5.17.1"><!-- Font preloads (persisted like the faces below, so navigations don't
+     re-fetch them) --><link rel="preload" href="/fonts/et-book-roman.woff" as="font" type="font/woff" crossorigin data-astro-transition-persist="et-book-roman"><link rel="preload" href="/fonts/et-book-italic.woff" as="font" type="font/woff" crossorigin data-astro-transition-persist="et-book-italic"><link rel="preload" href="/fonts/et-book-bold.woff" as="font" type="font/woff" crossorigin data-astro-transition-persist="et-book-bold"><!-- Font faces. Kept in a data-astro-transition-persist element: view-transition
+     navigation swaps the rest of <head>, which would otherwise evict these
+     @font-face rules from the document's font set and flash text back to
+     system fonts mid-navigation. Persisting the element keeps every face
+     registered across navigations, so text never falls back. --><style data-astro-transition-persist="site-fonts">
+	@font-face {
+		font-family: "et-book";
+		src: url("/fonts/et-book-roman.woff") format("woff");
+		font-weight: normal;
+		font-style: normal;
+		font-display: swap;
+	}
+	@font-face {
+		font-family: "et-book";
+		src: url("/fonts/et-book-italic.woff") format("woff");
+		font-weight: normal;
+		font-style: italic;
+		font-display: swap;
+	}
+	@font-face {
+		font-family: "et-book";
+		src: url("/fonts/et-book-bold.woff") format("woff");
+		font-weight: bold;
+		font-style: normal;
+		font-display: swap;
+	}
+	@font-face {
+		font-family: "Source Sans 3";
+		src: url("/fonts/source-sans-3-latin-wght-normal.woff2") format("woff2");
+		font-weight: 200 900;
+		font-style: normal;
+		font-display: swap;
+		unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+	}
+	@font-face {
+		font-family: "Source Sans 3";
+		src: url("/fonts/source-sans-3-latin-ext-wght-normal.woff2") format("woff2");
+		font-weight: 200 900;
+		font-style: normal;
+		font-display: swap;
+		unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1EFF, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+	}
+	@font-face {
+		font-family: "Source Sans 3";
+		src: url("/fonts/source-sans-3-latin-wght-italic.woff2") format("woff2");
+		font-weight: 200 900;
+		font-style: italic;
+		font-display: swap;
+		unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+	}
+	@font-face {
+		font-family: "Source Sans 3";
+		src: url("/fonts/source-sans-3-latin-ext-wght-italic.woff2") format("woff2");
+		font-weight: 200 900;
+		font-style: italic;
+		font-display: swap;
+		unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1EFF, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+	}
+	@font-face {
+		font-family: "Go Mono";
+		src: url("/fonts/go-mono.ttf") format("truetype");
+		font-weight: 400;
+		font-style: normal;
+		font-display: swap;
+	}
+	@font-face {
+		font-family: "Go Mono";
+		src: url("/fonts/go-mono-it.ttf") format("truetype");
+		font-weight: 400;
+		font-style: italic;
+		font-display: swap;
+	}
+</style><!-- KaTeX math rendering (self-hosted, see frontmatter) --><script defer src="/scripts/katex.min.js"></script><script defer src="/scripts/auto-render.min.js"></script><script>
+function initMath() {
+  if (typeof renderMathInElement === "function") {
+    renderMathInElement(document.body, {
+      delimiters: [
+        {left: "$$", right: "$$", display: true},
+        {left: "$", right: "$", display: false}
+      ],
+      throwOnError: false,
+      strict: false
+    });
+  }
+}
+document.addEventListener("astro:page-load", initMath);
+</script><!-- Canonical URL --><link rel="canonical" href="https://niyuta.eu.org/blog/torch-ddp/"><!-- Primary Meta Tags --><title>Torch DDP</title><meta name="title" content="Torch DDP"><meta name="description" content="首先是要搞清楚 `DataParallel` vs `DistributedDataParallel`。"><!-- Open Graph / Facebook --><meta property="og:type" content="website"><meta property="og:url" content="https://niyuta.eu.org/blog/torch-ddp/"><meta property="og:title" content="Torch DDP"><meta property="og:description" content="首先是要搞清楚 `DataParallel` vs `DistributedDataParallel`。"><meta property="og:image" content="https://niyuta.eu.org/_astro/blog-placeholder-1.Bx0Zcyzv.jpg"><!-- Twitter --><meta property="twitter:card" content="summary_large_image"><meta property="twitter:url" content="https://niyuta.eu.org/blog/torch-ddp/"><meta property="twitter:title" content="Torch DDP"><meta property="twitter:description" content="首先是要搞清楚 `DataParallel` vs `DistributedDataParallel`。"><meta property="twitter:image" content="https://niyuta.eu.org/_astro/blog-placeholder-1.Bx0Zcyzv.jpg"><!-- Inline script to prevent FOUC and set initial theme --><script>(function(){const defaultTheme = "system";
+
+	(function() {
+		const STORAGE_KEY = 'theme-preference';
+
+		// Get stored theme or use default
+		function getStoredTheme() {
+			if (typeof localStorage === 'undefined') return null;
+			try {
+				return localStorage.getItem(STORAGE_KEY);
+			} catch (e) {
+				return null;
+			}
+		}
+
+		// Get system theme preference
+		function getSystemTheme() {
+			return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+		}
+
+		// Apply theme to html element only (button is managed by ThemeToggle)
+		function applyTheme(theme) {
+			const html = document.documentElement;
+			if (theme === 'dark') {
+				html.classList.add('dark');
+			} else {
+				html.classList.remove('dark');
+			}
+		}
+
+		// Initialize immediately
+		const storedTheme = getStoredTheme();
+		if (storedTheme === 'light' || storedTheme === 'dark') {
+			applyTheme(storedTheme);
+		} else {
+			// Fallback to system preference
+			applyTheme(getSystemTheme());
+		}
+
+		// View-transition navigation swaps the root's class attribute to the
+		// incoming page's server-rendered state (always light), wiping the
+		// applied theme. Re-apply after every page load — initial and each
+		// navigation — once the new DOM is in place. Guarded so re-runs of
+		// this inline script cannot stack listeners.
+		if (!window.__themeScriptWired) {
+			window.__themeScriptWired = true;
+			document.addEventListener('astro:page-load', () => {
+				const stored = getStoredTheme();
+				applyTheme(stored === 'light' || stored === 'dark' ? stored : getSystemTheme());
+			});
+		}
+	})();
+})();</script><link rel="stylesheet" href="/_astro/about.C0qNVe78.css">
+<link rel="stylesheet" href="/_astro/_slug_.BWqGtehz.css">
+<link rel="stylesheet" href="/_astro/_slug_.gIWVl3dk.css"></head> <body data-astro-cid-bvzihdzo> <!--
+  Thin reading-progress bar pinned to the top of the viewport.
+  Fills left→right as the reader scrolls through <article>.
+  Only rendered inside BlogPost layout.
+--><div class="reading-progress" aria-hidden="true"> <div class="reading-progress-bar" id="reading-progress-bar"></div> </div> <script type="module" src="/_astro/ProgressBar.astro_astro_type_script_index_0_lang.7dInffcX.js"></script>  <header class="site-header"> <nav class="site-nav"> <a href="/"> Home </a> <a href="/blog" class="active"> Blog </a> <a href="/tags"> Tags </a> <a href="/about"> About </a> <!-- Star chart toggle: a star button aligned with the theme toggle in the
+     top-right corner. Dispatches sky:toggle; GraphView's script performs the
+     open/close with the theme toggle's circular reveal. --><button id="sky-toggle" class="sky-toggle-btn" type="button" aria-label="Open star chart" title="Star chart" data-astro-cid-yxpnclb5 data-astro-transition-persist="astro-4ghsfyqt-1"> <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 256 256" data-astro-cid-yxpnclb5> <path d="M234.81,156.55a8,8,0,0,0-9.1-2.67l-55.65,20.47-44.73-77.43a8,8,0,0,0-13.86,0L66.74,174.35,11.09,153.88a8,8,0,0,0-9.63,11.28l32,68a8,8,0,0,0,7.24,4.61H215.3a8,8,0,0,0,7.24-4.61l32-68A8,8,0,0,0,234.81,156.55ZM118.4,116.93l33.51,57.93-22.19,8.17a8,8,0,0,0,5.54,15l37.13-13.67,30.31,13.41H45.8l-24.6-52.4,46.32,17.05a8,8,0,0,0,9.7-3.6Z" data-astro-cid-yxpnclb5></path> <path d="M120.62,60.62a8,8,0,0,0,14.76,0l6.13-14.81,14.81-6.13a8,8,0,0,0,0-14.77l-14.81-6.12-6.13-14.81a8,8,0,0,0-14.76,0l-6.13,14.81-14.81,6.12a8,8,0,0,0,0,14.77l14.81,6.13Z" data-astro-cid-yxpnclb5></path> </svg> </button> <script type="module">document.getElementById("sky-toggle")?.addEventListener("click",()=>{document.dispatchEvent(new CustomEvent("sky:toggle"))});document.addEventListener("sky:change",n=>{const e=document.getElementById("sky-toggle");if(!e)return;const t=n.detail?.open;e.classList.toggle("is-open",!!t),e.setAttribute("aria-label",t?"Close star chart":"Open star chart")});</script>  <!-- Theme Toggle Button --><button id="theme-toggle" class="theme-toggle-btn" type="button" aria-label="Toggle theme" title="Toggle theme" data-astro-cid-x3pjskd3 data-astro-transition-persist="astro-c2up6wv4-2"> <!-- Sun icon (shown in dark mode) --> <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 256 256" data-astro-cid-x3pjskd3> <path d="M120,40V16a8,8,0,0,1,16,0V40a8,8,0,0,1-16,0Zm8,24a64,64,0,1,0,64,64A64.07,64.07,0,0,0,128,64ZM58.34,69.66A8,8,0,0,0,69.66,58.34l-16-16A8,8,0,0,0,42.34,53.66Zm0,116.68-16,16a8,8,0,0,0,11.32,11.32l16-16a8,8,0,0,0-11.32-11.32ZM192,72a8,8,0,0,0,5.66-2.34l16-16a8,8,0,0,0-11.32-11.32l-16,16A8,8,0,0,0,192,72Zm5.66,114.34a8,8,0,0,0-11.32,11.32l16,16a8,8,0,0,0,11.32-11.32ZM48,128a8,8,0,0,0-8-8H16a8,8,0,0,0,0,16H40A8,8,0,0,0,48,128Zm80,80a8,8,0,0,0-8,8v24a8,8,0,0,0,16,0V216A8,8,0,0,0,128,208Zm112-88H216a8,8,0,0,0,0,16h24a8,8,0,0,0,0-16Z" data-astro-cid-x3pjskd3></path> </svg> <!-- Moon icon (shown in light mode) --> <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 256 256" data-astro-cid-x3pjskd3> <path d="M235.54,150.21a104.84,104.84,0,0,1-37,52.91A104,104,0,0,1,32,120,103.09,103.09,0,0,1,52.88,57.48a104.84,104.84,0,0,1,52.91-37,8,8,0,0,1,10,10,88.08,88.08,0,0,0,109.8,109.8,8,8,0,0,1,10,10Z" data-astro-cid-x3pjskd3></path> </svg> </button> <script>
+	(function() {
+		const STORAGE_KEY = 'theme-preference';
+
+		// Get stored theme
+		function getStoredTheme() {
+			if (typeof localStorage === 'undefined') return null;
+			try {
+				return localStorage.getItem(STORAGE_KEY);
+			} catch (e) {
+				return null;
+			}
+		}
+
+		// Get system theme preference
+		function getSystemTheme() {
+			return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+		}
+
+		// Save theme preference
+		function setStoredTheme(theme) {
+			if (typeof localStorage === 'undefined') return;
+			try {
+				localStorage.setItem(STORAGE_KEY, theme);
+			} catch (e) {
+				// localStorage not available
+			}
+		}
+
+		// Apply theme to document
+		function applyTheme(theme) {
+			const html = document.documentElement;
+			const btn = document.getElementById('theme-toggle');
+
+			if (theme === 'dark') {
+				html.classList.add('dark');
+				if (btn) btn.classList.add('is-dark');
+			} else {
+				html.classList.remove('dark');
+				if (btn) btn.classList.remove('is-dark');
+			}
+		}
+
+		// Toggle theme — a circular reveal expanding from the button when the
+		// browser supports view transitions, hard swap otherwise.
+		function toggleTheme() {
+			const html = document.documentElement;
+			const newTheme = html.classList.contains('dark') ? 'light' : 'dark';
+			setStoredTheme(newTheme);
+
+			const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+			if (!document.startViewTransition || reduceMotion) {
+				applyTheme(newTheme);
+				return;
+			}
+
+			const btn = document.getElementById('theme-toggle');
+			const rect = btn ? btn.getBoundingClientRect() : null;
+			const x = rect ? rect.left + rect.width / 2 : window.innerWidth - 40;
+			const y = rect ? rect.top + rect.height / 2 : 40;
+			const radius = Math.hypot(Math.max(x, window.innerWidth - x), Math.max(y, window.innerHeight - y));
+			const clip = (r) => `circle(${r}px at ${x}px ${y}px)`;
+
+			// Armed before the snapshot so ::view-transition-new(root) starts
+			// clipped to a point; cleared afterwards so plain navigations are
+			// unaffected.
+			html.style.setProperty('--vt-clip', clip(0));
+			const vt = document.startViewTransition(() => applyTheme(newTheme));
+			vt.ready.then(() => {
+				html.animate(
+					{ clipPath: [clip(0), clip(radius)] },
+					{
+						duration: 500,
+						easing: 'ease-in-out',
+						pseudoElement: '::view-transition-new(root)',
+						fill: 'forwards',
+					},
+				);
+			}).catch(() => {});
+			vt.finished.finally(() => html.style.removeProperty('--vt-clip'));
+		}
+
+		// Wire the button's click handler. The button is persisted across
+		// view-transition navigations (transition:persist), but this inline
+		// script re-runs on every page load — guard so the listener is
+		// attached exactly once per button element.
+		function wireButton() {
+			const btn = document.getElementById('theme-toggle');
+			if (!btn || btn.dataset.toggleWired) return;
+			btn.dataset.toggleWired = '1';
+			btn.addEventListener('click', toggleTheme);
+		}
+
+		// Initialize immediately (before DOM is fully parsed)
+		const storedTheme = getStoredTheme();
+		const initialTheme = (storedTheme === 'light' || storedTheme === 'dark')
+			? storedTheme
+			: getSystemTheme();
+
+		// Apply theme immediately
+		applyTheme(initialTheme);
+
+		// Attach the handler once the button exists — on first load and after
+		// every view-transition navigation (astro:page-load fires once the
+		// new DOM is in place).
+		if (document.readyState === 'loading') {
+			document.addEventListener('DOMContentLoaded', wireButton);
+		} else {
+			wireButton();
+		}
+		document.addEventListener('astro:page-load', wireButton);
+	})();
+</script>  </nav> </header> <!-- Search Toggle Button --><button id="search-toggle" class="search-toggle-btn" type="button" aria-label="Open search" title="Search" data-astro-cid-oaulsmxm data-astro-transition-persist="astro-oqc4id4r-3"> <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 256 256" data-astro-cid-oaulsmxm> <path d="M229.66,218.34l-50.07-50.06a88.11,88.11,0,1,0-11.31,11.31l50.06,50.07a8,8,0,0,0,11.32-11.32ZM40,112a72,72,0,1,1,72,72A72.08,72.08,0,0,1,40,112Z" data-astro-cid-oaulsmxm></path> </svg> </button>  <!-- Search modal — styled as a card-catalog index card. Persisted across
+     ViewTransitions so the script's element references survive SPA navigation. --><div id="search-modal" class="search-modal" aria-hidden="true" data-astro-cid-qk3db3zz data-astro-transition-persist="astro-zvgwayiy-4"> <div class="search-modal-backdrop" id="search-modal-backdrop" data-astro-cid-qk3db3zz></div> <div class="search-modal-content" role="dialog" aria-modal="true" aria-label="Search" data-astro-cid-qk3db3zz> <!-- Header: drop-cap mark, display title, input, shortcut chip --> <header class="sm-head" data-astro-cid-qk3db3zz> <span class="sm-mark" aria-hidden="true" data-astro-cid-qk3db3zz>§</span> <h2 class="sm-title" data-astro-cid-qk3db3zz>Search the notes</h2> <div class="sm-input-wrap" data-astro-cid-qk3db3zz> <input id="search-input" type="text" placeholder="Try “SVD”, “flow matching”, “假设检验”…" autocomplete="off" spellcheck="false" aria-label="Search" data-astro-cid-qk3db3zz> <kbd class="sm-kbd-chip" data-astro-cid-qk3db3zz>esc</kbd> </div> </header> <!-- Results / states --> <div id="search-results" class="sm-results" data-astro-cid-qk3db3zz> <div class="sm-state" id="search-loading" hidden data-astro-cid-qk3db3zz> <span class="sm-state-glyph" aria-hidden="true" data-astro-cid-qk3db3zz>✳</span> <p class="sm-state-text" data-astro-cid-qk3db3zz>Opening the card catalog…</p> </div> <div class="sm-state" id="search-empty" hidden data-astro-cid-qk3db3zz> <span class="sm-state-glyph" aria-hidden="true" data-astro-cid-qk3db3zz>∅</span> <p class="sm-state-text" data-astro-cid-qk3db3zz>
+Nothing filed under <em id="search-empty-query" data-astro-cid-qk3db3zz></em>.
+</p> <p class="sm-state-hint" data-astro-cid-qk3db3zz>Try a shorter phrase, or browse the drawers below.</p> </div> <div class="sm-state" id="search-failed" hidden data-astro-cid-qk3db3zz> <span class="sm-state-glyph" aria-hidden="true" data-astro-cid-qk3db3zz>✕</span> <p class="sm-state-text" data-astro-cid-qk3db3zz>The index failed to load.</p> <p class="sm-state-hint" data-astro-cid-qk3db3zz>Refresh the page and try again.</p> </div> <div class="sm-idle" id="search-idle" data-tags="[{&#34;tag&#34;:&#34;statistics&#34;,&#34;count&#34;:7},{&#34;tag&#34;:&#34;eai&#34;,&#34;count&#34;:5},{&#34;tag&#34;:&#34;robotics&#34;,&#34;count&#34;:5},{&#34;tag&#34;:&#34;cornerstone&#34;,&#34;count&#34;:4},{&#34;tag&#34;:&#34;cv&#34;,&#34;count&#34;:4},{&#34;tag&#34;:&#34;estimation&#34;,&#34;count&#34;:3},{&#34;tag&#34;:&#34;hypothesis-testing&#34;,&#34;count&#34;:3},{&#34;tag&#34;:&#34;infra&#34;,&#34;count&#34;:2},{&#34;tag&#34;:&#34;DDPM&#34;,&#34;count&#34;:1},{&#34;tag&#34;:&#34;decomposition&#34;,&#34;count&#34;:1},{&#34;tag&#34;:&#34;dev&#34;,&#34;count&#34;:1},{&#34;tag&#34;:&#34;flow&#34;,&#34;count&#34;:1},{&#34;tag&#34;:&#34;Langevin&#34;,&#34;count&#34;:1},{&#34;tag&#34;:&#34;matrix&#34;,&#34;count&#34;:1},{&#34;tag&#34;:&#34;MCMC&#34;,&#34;count&#34;:1},{&#34;tag&#34;:&#34;RL&#34;,&#34;count&#34;:1}]" data-astro-cid-qk3db3zz> <p class="sm-idle-label" data-astro-cid-qk3db3zz>Browse the drawers</p> <div class="sm-tags" id="search-idle-tags" data-astro-cid-qk3db3zz></div> </div> <ol id="search-results-list" class="sm-list" data-astro-cid-qk3db3zz></ol> </div> <!-- Footer: keyboard hints + live result count --> <footer class="sm-foot" data-astro-cid-qk3db3zz> <span class="sm-hints" data-astro-cid-qk3db3zz> <kbd data-astro-cid-qk3db3zz>↑</kbd><kbd data-astro-cid-qk3db3zz>↓</kbd> navigate
+<span class="sm-hint-sep" aria-hidden="true" data-astro-cid-qk3db3zz>·</span> <kbd data-astro-cid-qk3db3zz>↵</kbd> open
+<span class="sm-hint-sep" aria-hidden="true" data-astro-cid-qk3db3zz>·</span> <kbd data-astro-cid-qk3db3zz>esc</kbd> close
+</span> <span class="sm-count" id="search-count" aria-live="polite" data-astro-cid-qk3db3zz></span> </footer> </div> </div> <script type="module" src="/_astro/SearchModal.astro_astro_type_script_index_0_lang.DWzPSZ-8.js"></script>  <main data-astro-cid-bvzihdzo> <article data-astro-cid-bvzihdzo>  <section data-astro-cid-bvzihdzo> <div class="date" data-pub-date="2025-11-24" data-read-time="3 min read" data-pagefind-meta="date[data-pub-date], read_time[data-read-time]" data-astro-cid-bvzihdzo> <time datetime="2025-11-24T16:20:02.000Z"> Nov 24, 2025 </time> <span class="last-updated-on" data-astro-cid-bvzihdzo>
+Updated <time datetime="2025-12-10T06:27:26.000Z"> Dec 10, 2025 </time> </span> <span class="read-time" data-astro-cid-bvzihdzo> · 3 min read</span> </div> <div class="post-tags" data-tags="infra" data-pagefind-meta="tags[data-tags]" data-pagefind-filter-tags="infra" data-astro-cid-bvzihdzo> <a href="/tags/infra/" class="tag-pill tag-pill--sm" data-astro-cid-bvzihdzo> infra </a> </div> <h1 data-astro-cid-bvzihdzo>Torch DDP</h1> <hr data-astro-cid-bvzihdzo> </section> <section class="prose" data-astro-cid-bvzihdzo>  <p>记一下分布式训练的要点。</p>
+<h2 id="dataparallel"><code>DataParallel</code></h2>
+<p>首先是要搞清楚 <code>DataParallel</code> vs <code>DistributedDataParallel</code>。</p>
+<div data-callout="" data-callout-type="tldr">
+<div data-callout-title="">Tldr</div>
+<div data-callout-body="">
+<p><code>DP</code> 是最简单的多卡方式，但是会一卡猛干，多卡围观，只有一个卡的利用率能到 100%；<code>DDP</code> 所有卡利用率都能拉满。能 <code>DDP</code> 就别 <code>DP</code>。</p>
+</div>
+</div>
+<p>这俩首先导入方式不同：</p>
+<div class="expressive-code"><link rel="stylesheet" href="/_astro/ec.raoin.css"><script type="module" src="/_astro/ec.0vx5m.js"></script><figure class="frame"><figcaption class="header"></figcaption><pre data-language="python"><code><div class="ec-line"><div class="code"><span style="--0:#F97583">from</span><span style="--0:#E1E4E8"> torch.nn </span><span style="--0:#F97583">import</span><span style="--0:#E1E4E8"> DataParallel </span><span style="--0:#F97583">as</span><span style="--0:#E1E4E8"> </span><span style="--0:#79B8FF">DP</span></div></div><div class="ec-line"><div class="code"><span style="--0:#F97583">from</span><span style="--0:#E1E4E8"> torch.nn.parallel </span><span style="--0:#F97583">import</span><span style="--0:#E1E4E8"> DistributedDataParallel </span><span style="--0:#F97583">as</span><span style="--0:#E1E4E8"> </span><span style="--0:#79B8FF">DDP</span></div></div></code></pre><div class="copy"><div aria-live="polite"></div><button title="Copy to clipboard" data-copied="Copied!" data-code="from torch.nn import DataParallel as DPfrom torch.nn.parallel import DistributedDataParallel as DDP"><div></div></button></div></figure></div>
+<p><code>torch</code> 官方说要我们尽可能使用 <code>DistributedDataParallel</code> <a href="https://docs.pytorch.org/tutorials/intermediate/ddp_tutorial.html#comparison-between-dataparallel-and-distributeddataparallel">Getting Started with Distributed Data Parallel — PyTorch Tutorials 2.9.0+cu128 documentation</a><a class="link-card link-card--external" href="https://docs.pytorch.org/tutorials/intermediate/ddp_tutorial.html#comparison-between-dataparallel-and-distributeddataparallel" target="_blank" rel="noopener noreferrer"><img class="link-card-favicon" src="https://www.google.com/s2/favicons?domain=docs.pytorch.org&#x26;sz=32" alt="" width="16" height="16" loading="lazy" decoding="async"><span class="link-card-body"><span class="link-card-title">Getting Started with Distributed Data Parallel — PyTorch Tutorials 2.9.0+cu128 documentation</span><span class="link-card-subtitle">docs.pytorch.org</span></span></a></p>
+<p>大意是，DP 是单进程多线程的单机运行，而 DDP 是多进程，支持单机和多机运行。由于 GIL 的存在，线程间通信需要花费额外开销，所以在单机上 DP 也没有 DDP 快。</p>
+<p>除此之外，DP 是 data parallel，每个 GPU 各自用一个完整模型副本跑平均分过的 batch 数据，只在最后把梯度聚合。而 DDP 是 model parallel，会把同一个前向/反向图切开，让模型不同权重切片跑在不同 GPU 上，所以更快。</p>
+<p>但是 <code>DataParallel</code> 它好写啊！基本上啥也不用改，只需要：</p>
+<div class="expressive-code"><figure class="frame"><figcaption class="header"></figcaption><pre data-language="python"><code><div class="ec-line"><div class="code"><span style="--0:#E1E4E8">num_gpus </span><span style="--0:#F97583">=</span><span style="--0:#E1E4E8"> torch.cuda.device_count()</span></div></div><div class="ec-line"><div class="code"><span style="--0:#F97583">if</span><span style="--0:#E1E4E8"> num_gpus </span><span style="--0:#F97583">></span><span style="--0:#E1E4E8"> </span><span style="--0:#79B8FF">1</span><span style="--0:#E1E4E8">:</span></div></div><div class="ec-line"><div class="code"><span class="indent">    </span><span style="--0:#79B8FF">print</span><span style="--0:#E1E4E8">(</span><span style="--0:#F97583">f</span><span style="--0:#9ECBFF">"🖥️ Using </span><span style="--0:#79B8FF">{</span><span style="--0:#E1E4E8">num_gpus</span><span style="--0:#79B8FF">}</span><span style="--0:#9ECBFF"> GPUs with DataParallel"</span><span style="--0:#E1E4E8">)</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#E1E4E8">    </span></span><span style="--0:#E1E4E8">model </span><span style="--0:#F97583">=</span><span style="--0:#E1E4E8"> nn.DataParallel(model)</span></div></div><div class="ec-line"><div class="code"><span style="--0:#E1E4E8">model </span><span style="--0:#F97583">=</span><span style="--0:#E1E4E8"> model.to(</span><span style="--0:#79B8FF">DEVICE</span><span style="--0:#E1E4E8">) </span><span style="--0:#99A0A6"># 原先是cuda:0的话，现在依然是。这个是指主模型的位置</span></div></div></code></pre><div class="copy"><div aria-live="polite"></div><button title="Copy to clipboard" data-copied="Copied!" data-code="num_gpus = torch.cuda.device_count()if num_gpus > 1:    print(f&#x22;🖥️ Using {num_gpus} GPUs with DataParallel&#x22;)    model = nn.DataParallel(model)model = model.to(DEVICE) # 原先是cuda:0的话，现在依然是。这个是指主模型的位置"><div></div></button></div></figure></div>
+<h2 id="distributeddataparallel-写法">DistributedDataParallel 写法</h2>
+<p>记录了一个比较好的 Single-GPU to DDP 回答。但是！！你都写 <code>DDP</code> 的逻辑了，就不要再写 <code>DP</code> 了。<code>DDP</code> 是肯定优于 <code>DP</code> 的。</p>
+<p>所以重新整理一下。这个初始化顺序还是挺麻烦的。</p>
+<div class="expressive-code"><figure class="frame"><figcaption class="header"></figcaption><pre data-language="python"><code><div class="ec-line"><div class="code"><span style="--0:#F97583">import</span><span style="--0:#E1E4E8"> os, torch, torch.distributed </span><span style="--0:#F97583">as</span><span style="--0:#E1E4E8"> dist</span></div></div><div class="ec-line"><div class="code"><span style="--0:#F97583">from</span><span style="--0:#E1E4E8"> torch.nn.parallel </span><span style="--0:#F97583">import</span><span style="--0:#E1E4E8"> DistributedDataParallel </span><span style="--0:#F97583">as</span><span style="--0:#E1E4E8"> </span><span style="--0:#79B8FF">DDP</span></div></div><div class="ec-line"><div class="code">
+</div></div><div class="ec-line"><div class="code"><span style="--0:#99A0A6"># 1. 先读环境变量</span></div></div><div class="ec-line"><div class="code"><span style="--0:#79B8FF">LOCAL_RANK</span><span style="--0:#E1E4E8"> </span><span style="--0:#F97583">=</span><span style="--0:#E1E4E8"> </span><span style="--0:#79B8FF">int</span><span style="--0:#E1E4E8">(os.environ.get(</span><span style="--0:#9ECBFF">"LOCAL_RANK"</span><span style="--0:#E1E4E8">, </span><span style="--0:#79B8FF">0</span><span style="--0:#E1E4E8">))</span></div></div><div class="ec-line"><div class="code"><span style="--0:#79B8FF">WORLD_SIZE</span><span style="--0:#E1E4E8"> </span><span style="--0:#F97583">=</span><span style="--0:#E1E4E8"> </span><span style="--0:#79B8FF">int</span><span style="--0:#E1E4E8">(os.environ.get(</span><span style="--0:#9ECBFF">"WORLD_SIZE"</span><span style="--0:#E1E4E8">, </span><span style="--0:#79B8FF">1</span><span style="--0:#E1E4E8">))</span></div></div><div class="ec-line"><div class="code"><span style="--0:#79B8FF">IS_DDP</span><span style="--0:#E1E4E8">     </span><span style="--0:#F97583">=</span><span style="--0:#E1E4E8"> </span><span style="--0:#79B8FF">WORLD_SIZE</span><span style="--0:#E1E4E8"> </span><span style="--0:#F97583">></span><span style="--0:#E1E4E8"> </span><span style="--0:#79B8FF">1</span></div></div><div class="ec-line"><div class="code">
+</div></div><div class="ec-line"><div class="code"><span style="--0:#99A0A6"># 2. 初始化进程组（init DDP 必须最先做）</span></div></div><div class="ec-line"><div class="code"><span style="--0:#F97583">if</span><span style="--0:#E1E4E8"> torch.cuda.is_available():</span></div></div><div class="ec-line"><div class="code"><span class="indent">    </span><span style="--0:#F97583">if</span><span style="--0:#E1E4E8"> </span><span style="--0:#F97583">is</span><span style="--0:#E1E4E8"> </span><span style="--0:#79B8FF">DDP</span><span style="--0:#E1E4E8"> </span><span style="--0:#F97583">and</span><span style="--0:#E1E4E8"> </span><span style="--0:#F97583">not</span><span style="--0:#E1E4E8"> dist.is_initialized():</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#E1E4E8">        </span></span><span style="--0:#E1E4E8">dist.init_process_group(</span><span style="--0:#FFAB70">backend</span><span style="--0:#F97583">=</span><span style="--0:#9ECBFF">"nccl"</span><span style="--0:#E1E4E8">)</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#E1E4E8">    </span></span><span style="--0:#E1E4E8">torch.cuda.set_device(</span><span style="--0:#79B8FF">LOCAL_RANK</span><span style="--0:#E1E4E8">)      </span><span style="--0:#99A0A6"># 让当前进程只看对应卡</span></div></div><div class="ec-line"><div class="code"><span class="indent">    </span><span style="--0:#79B8FF">DEVICE</span><span style="--0:#E1E4E8"> </span><span style="--0:#F97583">=</span><span style="--0:#E1E4E8"> torch.device(</span><span style="--0:#F97583">f</span><span style="--0:#9ECBFF">"cuda:</span><span style="--0:#79B8FF">{LOCAL_RANK}</span><span style="--0:#9ECBFF">"</span><span style="--0:#E1E4E8">)</span></div></div><div class="ec-line"><div class="code"><span style="--0:#F97583">elif</span><span style="--0:#E1E4E8"> torch.backends.mps.is_available():</span></div></div><div class="ec-line"><div class="code"><span class="indent">  </span><span style="--0:#79B8FF">DEVICE</span><span style="--0:#E1E4E8"> </span><span style="--0:#F97583">=</span><span style="--0:#E1E4E8"> torch.device(</span><span style="--0:#9ECBFF">"mps"</span><span style="--0:#E1E4E8">)</span></div></div><div class="ec-line"><div class="code"><span style="--0:#F97583">else</span><span style="--0:#E1E4E8">:</span></div></div><div class="ec-line"><div class="code"><span class="indent">  </span><span style="--0:#79B8FF">DEVICE</span><span style="--0:#E1E4E8"> </span><span style="--0:#F97583">=</span><span style="--0:#E1E4E8"> torch.device(</span><span style="--0:#9ECBFF">"cpu"</span><span style="--0:#E1E4E8">)</span></div></div><div class="ec-line"><div class="code">
+</div></div><div class="ec-line"><div class="code"><span style="--0:#79B8FF">print</span><span style="--0:#E1E4E8">(</span><span style="--0:#F97583">f</span><span style="--0:#9ECBFF">"🖥️ Using device: </span><span style="--0:#79B8FF">{DEVICE}</span><span style="--0:#9ECBFF">, DDP: </span><span style="--0:#79B8FF">{IS_DDP}</span><span style="--0:#9ECBFF">, Local Rank: </span><span style="--0:#79B8FF">{LOCAL_RANK}</span><span style="--0:#9ECBFF">, World Size: </span><span style="--0:#79B8FF">{WORLD_SIZE}</span><span style="--0:#9ECBFF">"</span><span style="--0:#E1E4E8">)</span></div></div><div class="ec-line"><div class="code">
+</div></div><div class="ec-line"><div class="code"><span style="--0:#99A0A6"># 3. 建模型 → 送到正确设备</span></div></div><div class="ec-line"><div class="code"><span style="--0:#99A0A6"># 一定要先建模型，然后把模型放到GPU，最后再用DDP包裹</span></div></div><div class="ec-line"><div class="code"><span style="--0:#99A0A6"># 否则会出一个经典bug，说模型参数在CPU上</span></div></div><div class="ec-line"><div class="code"><span style="--0:#E1E4E8">model </span><span style="--0:#F97583">=</span><span style="--0:#E1E4E8"> MyNetwork()</span></div></div><div class="ec-line"><div class="code"><span style="--0:#E1E4E8">model </span><span style="--0:#F97583">=</span><span style="--0:#E1E4E8"> model.to(</span><span style="--0:#79B8FF">DEVICE</span><span style="--0:#E1E4E8">)</span></div></div><div class="ec-line"><div class="code">
+</div></div><div class="ec-line"><div class="code"><span style="--0:#99A0A6"># 4. 再包 DDP（仅 DDP 时）</span></div></div><div class="ec-line"><div class="code"><span style="--0:#F97583">if</span><span style="--0:#E1E4E8"> </span><span style="--0:#79B8FF">IS_DDP</span><span style="--0:#E1E4E8">:</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#E1E4E8">    </span></span><span style="--0:#E1E4E8">model </span><span style="--0:#F97583">=</span><span style="--0:#E1E4E8"> DDP(model, </span><span style="--0:#FFAB70">device_ids</span><span style="--0:#F97583">=</span><span style="--0:#E1E4E8">[</span><span style="--0:#79B8FF">LOCAL_RANK</span><span style="--0:#E1E4E8">], </span><span style="--0:#FFAB70">output_device</span><span style="--0:#F97583">=</span><span style="--0:#79B8FF">LOCAL_RANK</span><span style="--0:#E1E4E8">)</span></div></div></code></pre><div class="copy"><div aria-live="polite"></div><button title="Copy to clipboard" data-copied="Copied!" data-code="import os, torch, torch.distributed as distfrom torch.nn.parallel import DistributedDataParallel as DDP# 1. 先读环境变量LOCAL_RANK = int(os.environ.get(&#x22;LOCAL_RANK&#x22;, 0))WORLD_SIZE = int(os.environ.get(&#x22;WORLD_SIZE&#x22;, 1))IS_DDP     = WORLD_SIZE > 1# 2. 初始化进程组（init DDP 必须最先做）if torch.cuda.is_available():    if is DDP and not dist.is_initialized():        dist.init_process_group(backend=&#x22;nccl&#x22;)    torch.cuda.set_device(LOCAL_RANK)      # 让当前进程只看对应卡    DEVICE = torch.device(f&#x22;cuda:{LOCAL_RANK}&#x22;)elif torch.backends.mps.is_available():  DEVICE = torch.device(&#x22;mps&#x22;)else:  DEVICE = torch.device(&#x22;cpu&#x22;)print(f&#x22;🖥️ Using device: {DEVICE}, DDP: {IS_DDP}, Local Rank: {LOCAL_RANK}, World Size: {WORLD_SIZE}&#x22;)# 3. 建模型 → 送到正确设备# 一定要先建模型，然后把模型放到GPU，最后再用DDP包裹# 否则会出一个经典bug，说模型参数在CPU上model = MyNetwork()model = model.to(DEVICE)# 4. 再包 DDP（仅 DDP 时）if IS_DDP:    model = DDP(model, device_ids=[LOCAL_RANK], output_device=LOCAL_RANK)"><div></div></button></div></figure></div>
+<p>这里坑很多。下面说了一个坑，模型经过 <code>DP</code> 或 <code>DDP</code> 包裹后，会被放进 <code>model.module</code> 里。</p>
+<p>如果写的顺序弄反成先包 <code>DDP</code> 再 <code>model.to(DEVICE)</code>，那么两张卡上的进程都把模型先放到了 <code>cuda:0</code>，然后才试图把它挪到 <code>cuda:1</code>，会触发 <code>ValueError: device_ids [1] but got module parameters on cpu / cuda:0</code></p>
+<p>为什么要把 <code>elif torch.cuda.is_available()</code> 分出来写 <code>cuda</code>，而不是统一写成 <code>cuda:0</code> 也是有讲究的。单卡训练时写 <code>cuda</code> 可以自动适配空闲 GPU，万一主机的 <code>cuda:0</code> 忙碌，就可以自动向后顺延分配。而硬编码会报错。</p>
+<p>最后要调整 <code>DataLoader</code></p>
+<div class="expressive-code"><figure class="frame"><figcaption class="header"></figcaption><pre data-language="python"><code><div class="ec-line"><div class="code"><span style="--0:#E1E4E8">train_ds </span><span style="--0:#F97583">=</span><span style="--0:#E1E4E8"> YourDataset()</span></div></div><div class="ec-line"><div class="code">
+</div></div><div class="ec-line"><div class="code"><span style="--0:#F97583">if</span><span style="--0:#E1E4E8"> </span><span style="--0:#79B8FF">IS_DDP</span><span style="--0:#E1E4E8">:</span></div></div><div class="ec-line"><div class="code"><span class="indent">  </span><span style="--0:#99A0A6"># num_replicas=WORLD_SIZE, rank=LOCAL_RANK， DistributedSampler 会默认读，不需要再传</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#E1E4E8">    </span></span><span style="--0:#E1E4E8">train_sampler </span><span style="--0:#F97583">=</span><span style="--0:#E1E4E8"> torch.utils.data.distributed.DistributedSampler(</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#E1E4E8">        </span></span><span style="--0:#E1E4E8">train_ds,</span></div></div><div class="ec-line"><div class="code"><span class="indent">        </span><span style="--0:#FFAB70">shuffle</span><span style="--0:#F97583">=</span><span style="--0:#79B8FF">True</span><span style="--0:#E1E4E8">,</span></div></div><div class="ec-line"><div class="code"><span class="indent">        </span><span style="--0:#FFAB70">drop_last</span><span style="--0:#F97583">=</span><span style="--0:#79B8FF">True</span><span style="--0:#E1E4E8"> </span><span style="--0:#99A0A6"># 可避免总 batch 数不一致</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#E1E4E8">    </span></span><span style="--0:#E1E4E8">)</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#E1E4E8">    </span></span><span style="--0:#E1E4E8">train_loader </span><span style="--0:#F97583">=</span><span style="--0:#E1E4E8"> DataLoader(</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#E1E4E8">        </span></span><span style="--0:#E1E4E8">train_ds,</span></div></div><div class="ec-line"><div class="code"><span class="indent">        </span><span style="--0:#FFAB70">batch_size</span><span style="--0:#F97583">=</span><span style="--0:#79B8FF">BATCH_SIZE</span><span style="--0:#E1E4E8">, </span><span style="--0:#99A0A6"># DDP 时总 batch = per_gpu_batchsize * WORLD_SIZE</span></div></div><div class="ec-line"><div class="code"><span class="indent">        </span><span style="--0:#FFAB70">sampler</span><span style="--0:#F97583">=</span><span style="--0:#E1E4E8">train_sampler,</span></div></div><div class="ec-line"><div class="code"><span class="indent">        </span><span style="--0:#FFAB70">num_workers</span><span style="--0:#F97583">=</span><span style="--0:#79B8FF">4</span><span style="--0:#E1E4E8">,</span></div></div><div class="ec-line"><div class="code"><span class="indent">        </span><span style="--0:#FFAB70">pin_memory</span><span style="--0:#F97583">=</span><span style="--0:#79B8FF">True</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#E1E4E8">    </span></span><span style="--0:#E1E4E8">)</span></div></div><div class="ec-line"><div class="code"><span style="--0:#F97583">else</span><span style="--0:#E1E4E8">:</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#E1E4E8">    </span></span><span style="--0:#E1E4E8">train_loader </span><span style="--0:#F97583">=</span><span style="--0:#E1E4E8"> DataLoader(</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#E1E4E8">        </span></span><span style="--0:#E1E4E8">train_ds,</span></div></div><div class="ec-line"><div class="code"><span class="indent">        </span><span style="--0:#FFAB70">batch_size</span><span style="--0:#F97583">=</span><span style="--0:#79B8FF">BATCH_SIZE</span><span style="--0:#E1E4E8">,</span></div></div><div class="ec-line"><div class="code"><span class="indent">        </span><span style="--0:#FFAB70">shuffle</span><span style="--0:#F97583">=</span><span style="--0:#79B8FF">True</span><span style="--0:#E1E4E8">,</span></div></div><div class="ec-line"><div class="code"><span class="indent">        </span><span style="--0:#FFAB70">num_workers</span><span style="--0:#F97583">=</span><span style="--0:#79B8FF">4</span><span style="--0:#E1E4E8">,</span></div></div><div class="ec-line"><div class="code"><span class="indent">        </span><span style="--0:#FFAB70">pin_memory</span><span style="--0:#F97583">=</span><span style="--0:#79B8FF">True</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#E1E4E8">    </span></span><span style="--0:#E1E4E8">)</span></div></div><div class="ec-line"><div class="code">
+</div></div><div class="ec-line"><div class="code"><span style="--0:#99A0A6"># 训练循环里要 set_epoch</span></div></div><div class="ec-line"><div class="code"><span style="--0:#F97583">def</span><span style="--0:#E1E4E8"> </span><span style="--0:#B392F0">run_training</span><span style="--0:#E1E4E8">():</span></div></div><div class="ec-line"><div class="code"><span class="indent">  </span><span style="--0:#F97583">for</span><span style="--0:#E1E4E8"> epoch </span><span style="--0:#F97583">in</span><span style="--0:#E1E4E8"> </span><span style="--0:#79B8FF">range</span><span style="--0:#E1E4E8">(start_epoch, total_epochs):</span></div></div><div class="ec-line"><div class="code"><span class="indent">      </span><span style="--0:#F97583">if</span><span style="--0:#E1E4E8"> </span><span style="--0:#79B8FF">IS_DDP</span><span style="--0:#E1E4E8">:</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#E1E4E8">          </span></span><span style="--0:#E1E4E8">train_loader.sampler.set_epoch(epoch)   </span><span style="--0:#99A0A6"># 保证不同 epoch 打乱顺序不同</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#E1E4E8">      </span></span><span style="--0:#E1E4E8">model.train()</span></div></div><div class="ec-line"><div class="code"><span class="indent">  </span><span style="--0:#79B8FF">...</span></div></div><div class="ec-line"><div class="code">
+</div></div><div class="ec-line"><div class="code"><span style="--0:#F97583">try</span><span style="--0:#E1E4E8">:</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#E1E4E8">  </span></span><span style="--0:#E1E4E8">run_training()</span></div></div><div class="ec-line"><div class="code"><span style="--0:#F97583">finally</span><span style="--0:#E1E4E8">:</span></div></div><div class="ec-line"><div class="code"><span class="indent">  </span><span style="--0:#F97583">if</span><span style="--0:#E1E4E8"> </span><span style="--0:#79B8FF">IS_DDP</span><span style="--0:#E1E4E8">:</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#E1E4E8">    </span></span><span style="--0:#E1E4E8">dist.destroy_process_group()</span></div></div></code></pre><div class="copy"><div aria-live="polite"></div><button title="Copy to clipboard" data-copied="Copied!" data-code="train_ds = YourDataset()if IS_DDP:  # num_replicas=WORLD_SIZE, rank=LOCAL_RANK， DistributedSampler 会默认读，不需要再传    train_sampler = torch.utils.data.distributed.DistributedSampler(        train_ds,        shuffle=True,        drop_last=True # 可避免总 batch 数不一致    )    train_loader = DataLoader(        train_ds,        batch_size=BATCH_SIZE, # DDP 时总 batch = per_gpu_batchsize * WORLD_SIZE        sampler=train_sampler,        num_workers=4,        pin_memory=True    )else:    train_loader = DataLoader(        train_ds,        batch_size=BATCH_SIZE,        shuffle=True,        num_workers=4,        pin_memory=True    )# 训练循环里要 set_epochdef run_training():  for epoch in range(start_epoch, total_epochs):      if IS_DDP:          train_loader.sampler.set_epoch(epoch)   # 保证不同 epoch 打乱顺序不同      model.train()  ...try:  run_training()finally:  if IS_DDP:    dist.destroy_process_group()"><div></div></button></div></figure></div>
+<p>另外，代码中的其他逻辑（比如 <code>print</code>，保存模型，等等）会在每个 GPU 上执行一遍。应该限制在 <code>LOCAL_RANK==0</code> 的机子上执行</p>
+<div class="expressive-code"><figure class="frame"><figcaption class="header"></figcaption><pre data-language="python"><code><div class="ec-line"><div class="code"><span style="--0:#F97583">if</span><span style="--0:#E1E4E8"> </span><span style="--0:#F97583">not</span><span style="--0:#E1E4E8"> </span><span style="--0:#79B8FF">IS_DDP</span><span style="--0:#E1E4E8"> </span><span style="--0:#F97583">or</span><span style="--0:#E1E4E8"> </span><span style="--0:#79B8FF">LOCAL_RANK</span><span style="--0:#E1E4E8"> </span><span style="--0:#F97583">==</span><span style="--0:#E1E4E8"> </span><span style="--0:#79B8FF">0</span><span style="--0:#E1E4E8">:</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#E1E4E8">    </span></span><span style="--0:#E1E4E8">torch.save(module.state_dict(), </span><span style="--0:#79B8FF">MODEL_SAVE_PATH</span><span style="--0:#E1E4E8">) </span><span style="--0:#99A0A6">#</span></div></div><div class="ec-line"><div class="code"><span class="indent">    </span><span style="--0:#79B8FF">print</span><span style="--0:#E1E4E8">(</span><span style="--0:#F97583">f</span><span style="--0:#9ECBFF">"💾 Model weights saved to </span><span style="--0:#79B8FF">{MODEL_SAVE_PATH}</span><span style="--0:#9ECBFF">"</span><span style="--0:#E1E4E8">)</span></div></div></code></pre><div class="copy"><div aria-live="polite"></div><button title="Copy to clipboard" data-copied="Copied!" data-code="if not IS_DDP or LOCAL_RANK == 0:    torch.save(module.state_dict(), MODEL_SAVE_PATH) #    print(f&#x22;💾 Model weights saved to {MODEL_SAVE_PATH}&#x22;)"><div></div></button></div></figure></div>
+<p>以及比如模型保存之前、解冻参数继续训练等关键同步部分一定要用 <code>dist.barrier()</code> 进行同步！！</p>
+<h2 id="概念解析">概念解析</h2>
+<h3 id="world-size">World Size</h3>
+<p>整个分布式训练集群里进程 Process 的总数。通常 GPU 和进程一一对应。例如，4 台机子，每个机子 8 卡，World Size 就是 32。</p>
+<h3 id="rank">Rank</h3>
+<p>进程标识符。分为两种。</p>
+<p>第一种 <code>Global Rank</code> 范围从 0 到 World Size - 1。它是整个分布式训练环境中的绝对唯一 ID。这是最常说的 Rank。</p>
+<p>第二种 <code>Local Rank</code> 范围从 0 到 某台机器上的 GPU 数量 - 1。它是当前机器（节点）内的相对 ID。它用于识别当前进程使用的是本机器上的哪一块 GPU。例如，本地 Rank 0 总是使用机器上的第一块 GPU。</p>
+<h2 id="踩坑记">😵‍💫踩坑记</h2>
+<h3 id="model-找不到模块">Model 找不到模块</h3>
+<p>比如在模型中定义了一个子模块：</p>
+<div class="expressive-code"><figure class="frame"><figcaption class="header"></figcaption><pre data-language="python"><code><div class="ec-line"><div class="code"><span style="--0:#F97583">class</span><span style="--0:#E1E4E8"> </span><span style="--0:#B392F0">Network</span><span style="--0:#E1E4E8">(</span><span style="--0:#B392F0">nn</span><span style="--0:#E1E4E8">.</span><span style="--0:#B392F0">Module</span><span style="--0:#E1E4E8">):</span></div></div><div class="ec-line"><div class="code"><span class="indent">    </span><span style="--0:#F97583">def</span><span style="--0:#E1E4E8"> </span><span style="--0:#79B8FF">__init__</span><span style="--0:#E1E4E8">(self):</span></div></div><div class="ec-line"><div class="code"><span class="indent">        </span><span style="--0:#79B8FF">super</span><span style="--0:#E1E4E8">().</span><span style="--0:#79B8FF">__init__</span><span style="--0:#E1E4E8">()</span></div></div><div class="ec-line"><div class="code"><span class="indent">        </span><span style="--0:#79B8FF">self</span><span style="--0:#E1E4E8">.sub_det </span><span style="--0:#F97583">=</span><span style="--0:#E1E4E8"> SimiDetBranch(</span><span style="--0:#FFAB70">nb_pools</span><span style="--0:#F97583">=</span><span style="--0:#E1E4E8">nb_pools)</span></div></div></code></pre><div class="copy"><div aria-live="polite"></div><button title="Copy to clipboard" data-copied="Copied!" data-code="class Network(nn.Module):    def __init__(self):        super().__init__()        self.sub_det = SimiDetBranch(nb_pools=nb_pools)"><div></div></button></div></figure></div>
+<p>然后在训练/推理的时候：</p>
+<div class="expressive-code"><figure class="frame"><figcaption class="header"></figcaption><pre data-language="python"><code><div class="ec-line"><div class="code"><span style="--0:#F97583">def</span><span style="--0:#E1E4E8"> </span><span style="--0:#B392F0">set_requires_grad</span><span style="--0:#E1E4E8">(module, requires_grad):</span></div></div><div class="ec-line"><div class="code"><span class="indent">    </span><span style="--0:#9ECBFF">"""Set requires_grad attribute for all parameters in a module."""</span></div></div><div class="ec-line"><div class="code"><span class="indent">    </span><span style="--0:#99A0A6"># model will move to model.module after DDP</span></div></div><div class="ec-line"><div class="code"><span class="indent">    </span><span style="--0:#F97583">for</span><span style="--0:#E1E4E8"> param </span><span style="--0:#F97583">in</span><span style="--0:#E1E4E8"> module.parameters():</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#E1E4E8">        </span></span><span style="--0:#E1E4E8">param.requires_grad </span><span style="--0:#F97583">=</span><span style="--0:#E1E4E8"> requires_grad</span></div></div><div class="ec-line"><div class="code">
+</div></div><div class="ec-line"><div class="code"><span style="--0:#E1E4E8">model </span><span style="--0:#F97583">=</span><span style="--0:#E1E4E8"> Network()</span></div></div><div class="ec-line"><div class="code"><span style="--0:#E1E4E8">model </span><span style="--0:#F97583">=</span><span style="--0:#E1E4E8"> DDP(model)</span></div></div><div class="ec-line"><div class="code"><span style="--0:#E1E4E8">set_requires_grad(model.sub_det, </span><span style="--0:#79B8FF">True</span><span style="--0:#E1E4E8">) </span><span style="--0:#99A0A6"># ERROR</span></div></div><div class="ec-line"><div class="code">
+</div></div><div class="ec-line"><div class="code"><span style="--0:#99A0A6"># 或者在推理时</span></div></div><div class="ec-line"><div class="code"><span style="--0:#E1E4E8">output </span><span style="--0:#F97583">=</span><span style="--0:#E1E4E8"> model.sub_det(x) </span><span style="--0:#99A0A6"># ERROR</span></div></div><div class="ec-line"><div class="code">
+</div></div><div class="ec-line"><div class="code"><span style="--0:#99A0A6"># 或者在保存时</span></div></div><div class="ec-line"><div class="code"><span style="--0:#E1E4E8">torch.save(model.state_dict()) </span><span style="--0:#99A0A6"># ERROR</span></div></div></code></pre><div class="copy"><div aria-live="polite"></div><button title="Copy to clipboard" data-copied="Copied!" data-code="def set_requires_grad(module, requires_grad):    &#x22;&#x22;&#x22;Set requires_grad attribute for all parameters in a module.&#x22;&#x22;&#x22;    # model will move to model.module after DDP    for param in module.parameters():        param.requires_grad = requires_gradmodel = Network()model = DDP(model)set_requires_grad(model.sub_det, True) # ERROR# 或者在推理时output = model.sub_det(x) # ERROR# 或者在保存时torch.save(model.state_dict()) # ERROR"><div></div></button></div></figure></div>
+<p>会报错找不到 <code>sub_det</code>。</p>
+<p>这是因为 <code>DP</code> 和 <code>DDP</code> 之后，<code>model</code> 的网络结构会被移动到 <code>model.module</code> 里，所以应该 <code>model.module.sub_det</code>。或者写一个 <code>unwrap_model</code> 函数，在上面的场景中替换为 <code>unwrap_model(model)</code></p>
+<div class="expressive-code"><figure class="frame"><figcaption class="header"></figcaption><pre data-language="python"><code><div class="ec-line"><div class="code"><span style="--0:#F97583">def</span><span style="--0:#E1E4E8"> </span><span style="--0:#B392F0">unwrap_model</span><span style="--0:#E1E4E8">(model):</span></div></div><div class="ec-line"><div class="code"><span class="indent">    </span><span style="--0:#F97583">return</span><span style="--0:#E1E4E8"> model.module </span><span style="--0:#F97583">if</span><span style="--0:#E1E4E8"> </span><span style="--0:#79B8FF">isinstance</span><span style="--0:#E1E4E8">(model, (</span><span style="--0:#79B8FF">DP</span><span style="--0:#E1E4E8">, </span><span style="--0:#79B8FF">DDP</span><span style="--0:#E1E4E8">)) </span><span style="--0:#F97583">else</span><span style="--0:#E1E4E8"> model</span></div></div></code></pre><div class="copy"><div aria-live="polite"></div><button title="Copy to clipboard" data-copied="Copied!" data-code="def unwrap_model(model):    return model.module if isinstance(model, (DP, DDP)) else model"><div></div></button></div></figure></div>  </section> <nav class="post-nav" aria-label="Post navigation" data-astro-cid-bvzihdzo> <a href="/blog/贝叶斯网络/" class="post-nav-link post-nav-prev" data-astro-cid-bvzihdzo> <span class="post-nav-dir" data-astro-cid-bvzihdzo>← Previous</span> <span class="post-nav-title" data-astro-cid-bvzihdzo>贝叶斯网络</span> </a> <a href="/blog/singular-value-decomposition/" class="post-nav-link post-nav-next" data-astro-cid-bvzihdzo> <span class="post-nav-dir" data-astro-cid-bvzihdzo>Next →</span> <span class="post-nav-title" data-astro-cid-bvzihdzo>Singular Value Decomposition</span> </a> </nav> <nav class="related" aria-label="Related posts" data-astro-cid-bvzihdzo> <span class="related-label" data-astro-cid-bvzihdzo>Related</span> <ul class="related-list" data-astro-cid-bvzihdzo> <li data-astro-cid-bvzihdzo> <a href="/blog/训练常用命令/" class="related-link" data-astro-cid-bvzihdzo> <span class="related-title" data-astro-cid-bvzihdzo>训练常用命令</span> <span class="related-tags" data-astro-cid-bvzihdzo> <span class="related-tag" data-astro-cid-bvzihdzo>#infra</span> </span> </a> </li> </ul> </nav> </article> </main> <!--
+  Notion-style outline / table-of-contents sidebar — the "ladder" variant.
+
+  At rest it is a thin vertical strip of horizontal bars with NO text: each
+  bar's *length* encodes the heading level (long = top-level, short = deep),
+  and the current section's bar darkens as you scroll.  On hover (or keyboard
+  focus) the strip blooms open into the full textual outline — the bars stay
+  as a level glyph to the left of each title.  Fixed to the right edge;
+  hidden on narrow viewports where the Tufte margin notes collapse.
+--><aside id="outline" class="outline" aria-label="Table of contents"> <div class="outline-rail" aria-hidden="true"> <div class="outline-rail-fill" id="outline-rail-fill"></div> </div> <div class="outline-dot" id="outline-dot" aria-hidden="true"></div> <span class="outline-title">Contents</span> <nav class="outline-nav" id="outline-nav"> <!-- populated by script --> </nav> </aside> <script type="module" src="/_astro/Outline.astro_astro_type_script_index_0_lang.Bozuw1ok.js"></script>  <footer class="site-footer" data-astro-cid-sz7xmlte> <div class="footer-inner" data-astro-cid-sz7xmlte> <p class="footer-copy" data-astro-cid-sz7xmlte>&copy; 2026 Niyuta</p> <nav class="footer-links" aria-label="Footer links" data-astro-cid-sz7xmlte> <a href="https://github.com/cheparity" class="footer-link" target="_blank" rel="noopener noreferrer" aria-label="GitHub" title="GitHub" data-astro-cid-sz7xmlte> <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" data-astro-cid-sz7xmlte> <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22" data-astro-cid-sz7xmlte></path> </svg> </a> <a href="mailto:cheparity@gmail.com" class="footer-link" aria-label="Email" title="Email" data-astro-cid-sz7xmlte> <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" data-astro-cid-sz7xmlte> <rect width="20" height="16" x="2" y="4" rx="2" data-astro-cid-sz7xmlte></rect> <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" data-astro-cid-sz7xmlte></path> </svg> </a> <a href="/rss.xml" class="footer-link" aria-label="RSS feed" title="RSS" data-astro-cid-sz7xmlte> <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" data-astro-cid-sz7xmlte> <path d="M4 11a9 9 0 0 1 9 9" data-astro-cid-sz7xmlte></path> <path d="M4 4a16 16 0 0 1 16 16" data-astro-cid-sz7xmlte></path> <circle cx="5" cy="19" r="1" data-astro-cid-sz7xmlte></circle> </svg> </a> </nav> </div> <p class="footer-credit" data-astro-cid-sz7xmlte>
+Typeset in <em data-astro-cid-sz7xmlte>et-book</em> · Inspired by
+<a href="https://edwardtufte.github.io/tufte-css/" target="_blank" rel="noopener noreferrer" data-astro-cid-sz7xmlte>Tufte CSS</a>
+· Built with
+<a href="https://astro.build" target="_blank" rel="noopener noreferrer" data-astro-cid-sz7xmlte>Astro</a> </p> </footer>  <!--
+  Zero-dependency image lightbox.
+  Click any <img> inside <article> to open a fullscreen overlay.
+  Escape or click anywhere to dismiss.
+--><div class="lightbox-overlay" id="lightbox-overlay" aria-hidden="true"> <img class="lightbox-img" id="lightbox-img" alt=""> </div> <script type="module" src="/_astro/Lightbox.astro_astro_type_script_index_0_lang.D3OL8kKH.js"></script>  <!--
+  LinkCardLayout — pins margin link-cards to their anchor's vertical position
+  in a single shared column, with collision avoidance, and draws dashed
+  connector lines from each anchor to its card. Connectors stay hidden at
+  rest and fade in while hovering (or keyboard-focusing) an anchor or its
+  card.
+
+  Runs after each page load (including View Transitions) and on resize.
+  Skips cards inside [data-callout] (those stay inline) and bails on narrow
+  viewports where the margin collapses.
+--><script type="module" src="/_astro/LinkCardLayout.astro_astro_type_script_index_0_lang.5Sb8MgQr.js"></script> </body></html>
