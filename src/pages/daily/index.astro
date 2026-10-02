@@ -1,0 +1,104 @@
+---
+import { getCollection } from 'astro:content';
+import BaseHead from '../../components/BaseHead.astro';
+import Footer from '../../components/Footer.astro';
+import Header from '../../components/Header.astro';
+import ThemeScript from '../../components/ThemeScript.astro';
+import Reveal from '../../components/Reveal.astro';
+import FormattedDate from '../../components/FormattedDate.astro';
+import DailyCalendar from '../../components/DailyCalendar.astro';
+import { SITE_DESCRIPTION, SITE_TITLE } from '../../consts';
+
+const entries = (await getCollection('daily')).sort(
+	(a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf(),
+);
+const years: [number, typeof entries][] = [];
+for (const entry of entries) {
+	const year = entry.data.pubDate.getFullYear();
+	const last = years[years.length - 1];
+	if (last && last[0] === year) last[1].push(entry);
+	else years.push([year, [entry]]);
+}
+---
+
+<html lang="en">
+	<head>
+		<BaseHead title={`${SITE_TITLE} - Daily`} description={SITE_DESCRIPTION} />
+		<ThemeScript />
+	</head>
+	<body>
+		<Header />
+		<main>
+			<article>
+				<div class="daily-layout">
+					<section class="intro">
+						<h1>Daily</h1>
+						<p>A chronological archive of daily notes.</p>
+						<p class="entry-count">{entries.length} notes</p>
+					</section>
+					<DailyCalendar dates={entries.map((entry) => entry.id)} />
+					<section class="archive">
+						{years.map(([year, yearEntries]) => (
+							<div class="archive-year">
+								<h2 class="year-heading reveal">{year}</h2>
+								<ul class="daily-list">
+									{yearEntries.map((entry) => (
+										<li>
+											<a href={`/daily/${entry.id}/`}>
+												<time datetime={entry.data.pubDate.toISOString()}><FormattedDate date={entry.data.pubDate} /></time>
+												<span>{entry.data.title}</span>
+											</a>
+										</li>
+									))}
+								</ul>
+							</div>
+						))}
+					</section>
+				</div>
+			</article>
+		</main>
+		<Footer />
+		<Reveal />
+	</body>
+</html>
+
+<style>
+	.daily-layout {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) minmax(0, 21rem);
+		column-gap: clamp(2rem, 5vw, 5rem);
+	}
+	.intro { grid-column: 1; grid-row: 1; }
+	:global(.daily-calendar) { grid-column: 2; grid-row: 2; }
+	.archive { grid-column: 1; grid-row: 2; margin-top: 4rem; padding-top: 0; }
+	.entry-count { color: #777; font-size: 0.95rem; }
+	.year-heading {
+		margin: 2.7rem 0 0.5rem;
+		font-family: 'et-book', serif;
+		font-size: 1.9rem;
+		font-weight: normal;
+		font-variant-numeric: oldstyle-nums;
+		color: #666;
+	}
+	.archive-year:first-child .year-heading { margin-top: 0; }
+	.daily-list { list-style: none; padding: 0; margin: 0; }
+	.daily-list li { border-bottom: 1px solid rgba(128, 128, 128, 0.2); }
+	.daily-list a {
+		display: grid;
+		grid-template-columns: 9rem 1fr;
+		gap: 1rem;
+		padding: 0.8rem 0;
+		color: inherit;
+		text-decoration: none;
+	}
+	.daily-list a:hover span { text-decoration: underline; text-underline-offset: 0.15em; }
+	.daily-list time { color: #888; font-variant-numeric: tabular-nums; }
+	html.dark .year-heading { color: #999; }
+	@media (max-width: 900px) {
+		.daily-layout { display: flex; flex-direction: column; }
+		.archive { margin-top: 1rem; }
+	}
+	@media (max-width: 560px) {
+		.daily-list a { grid-template-columns: 1fr; gap: 0.2rem; }
+	}
+</style>

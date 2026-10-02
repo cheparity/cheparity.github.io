@@ -5,6 +5,7 @@ on:
     branches:
       - master
       - astro
+      - dev
   workflow_dispatch:
 
 concurrency:

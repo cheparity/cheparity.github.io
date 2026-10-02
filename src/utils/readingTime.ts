@@ -24,8 +24,8 @@ function minutesFromSource(text: string): number {
 
 // Resolve a post's source file by slug and estimate reading time. Runs at
 // build time only. Falls back to 1 minute if the file can't be read.
-export function readingMinutes(slug: string): number {
-	const base = join(process.cwd(), 'src', 'content', 'blog', slug);
+export function readingMinutes(slug: string, collection: 'blog' | 'daily' = 'blog'): number {
+	const base = join(process.cwd(), 'src', 'content', collection, slug);
 	for (const ext of ['.mdx', '.md', '.markdown']) {
 		try {
 			return minutesFromSource(readFileSync(base + ext, 'utf8'));

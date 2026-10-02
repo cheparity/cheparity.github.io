@@ -1,0 +1,47 @@
+---
+import FormattedDate from './FormattedDate.astro';
+
+interface Props {
+	pubDate: Date;
+	updatedDate?: Date;
+	tags?: string[];
+	readMins: number;
+}
+
+const { pubDate, updatedDate, tags, readMins } = Astro.props;
+---
+
+<div class="date" data-pub-date={pubDate.toISOString().slice(0, 10)} data-read-time={`${readMins} min read`} data-pagefind-meta="date[data-pub-date], read_time[data-read-time]">
+	<FormattedDate date={pubDate} />
+	{updatedDate && (
+		<span class="last-updated-on">
+			Updated <FormattedDate date={updatedDate} />
+		</span>
+	)}
+	<span class="read-time"> · {readMins} min read</span>
+</div>
+{tags && tags.length > 0 && (
+	<div class="post-tags" data-tags={tags.join(',')} data-pagefind-meta="tags[data-tags]" data-pagefind-filter-tags={tags.join(',')}>
+		{tags.map((tag) => (
+			<a href={`/tags/${encodeURIComponent(tag)}/`} class="tag-pill tag-pill--sm">
+				{tag}
+			</a>
+		))}
+	</div>
+)}
+
+<style>
+	.read-time {
+		color: #666;
+		font-style: italic;
+	}
+	html.dark .read-time {
+		color: #999;
+	}
+	.post-tags {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.4rem;
+		margin-top: 0.9rem;
+	}
+</style>

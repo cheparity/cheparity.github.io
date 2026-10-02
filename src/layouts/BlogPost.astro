@@ -3,9 +3,10 @@ import { Image } from 'astro:assets';
 import type { CollectionEntry } from 'astro:content';
 import BaseHead from '../components/BaseHead.astro';
 import Footer from '../components/Footer.astro';
-import FormattedDate from '../components/FormattedDate.astro';
+import PostMeta from '../components/PostMeta.astro';
 import Header from '../components/Header.astro';
 import ThemeScript from '../components/ThemeScript.astro';
+import PostNavigation from '../components/PostNavigation.astro';
 import Outline from '../components/Outline.astro';
 import ProgressBar from '../components/ProgressBar.astro';
 import Lightbox from '../components/Lightbox.astro';
@@ -44,50 +45,14 @@ const readMins = readingMinutes(slug);
 					</figure>
 				)}
 				<section>
-				<div class="date" data-pub-date={pubDate.toISOString().slice(0, 10)} data-read-time={`${readMins} min read`} data-pagefind-meta="date[data-pub-date], read_time[data-read-time]">
-					<FormattedDate date={pubDate} />
-					{updatedDate && (
-						<span class="last-updated-on">
-							Updated <FormattedDate date={updatedDate} />
-						</span>
-					)}
-					<span class="read-time"> · {readMins} min read</span>
-				</div>
-					{tags && tags.length > 0 && (
-						<div class="post-tags" data-tags={tags.join(',')} data-pagefind-meta="tags[data-tags]" data-pagefind-filter-tags={tags.join(',')}>
-							{tags.map((tag) => (
-								<a href={`/tags/${encodeURIComponent(tag)}/`} class="tag-pill tag-pill--sm">
-									{tag}
-								</a>
-							))}
-						</div>
-					)}
+					<PostMeta pubDate={pubDate} updatedDate={updatedDate} tags={tags} readMins={readMins} />
 					<h1>{title}</h1>
 					<hr />
 				</section>
 				<section class="prose">
 					<slot />
 				</section>
-				{(prevPost || nextPost) && (
-					<nav class="post-nav" aria-label="Post navigation">
-						{prevPost ? (
-							<a href={`/blog/${prevPost.id}/`} class="post-nav-link post-nav-prev">
-								<span class="post-nav-dir">← Previous</span>
-								<span class="post-nav-title">{prevPost.title}</span>
-							</a>
-						) : (
-							<span />
-						)}
-						{nextPost ? (
-							<a href={`/blog/${nextPost.id}/`} class="post-nav-link post-nav-next">
-								<span class="post-nav-dir">Next →</span>
-								<span class="post-nav-title">{nextPost.title}</span>
-							</a>
-						) : (
-							<span />
-						)}
-					</nav>
-				)}
+				<PostNavigation previous={prevPost} next={nextPost} hrefBase="/blog" />
 				{relatedPosts && relatedPosts.length > 0 && (
 					<nav class="related" aria-label="Related posts">
 						<span class="related-label">Related</span>
@@ -117,72 +82,6 @@ const readMins = readingMinutes(slug);
 </html>
 
 <style>
-	.read-time {
-		color: #666;
-		font-style: italic;
-	}
-	html.dark .read-time {
-		color: #999;
-	}
-
-	.post-tags {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 0.4rem;
-		margin-top: 0.9rem;
-	}
-
-	.post-nav {
-		width: 60%;
-		margin-top: 3rem;
-		padding-top: 1.5rem;
-		border-top: 1px solid #ccc;
-		display: grid;
-		grid-template-columns: 1fr 1fr;
-		gap: 2rem;
-		font-family: 'et-book', serif;
-	}
-	html.dark .post-nav {
-		border-top-color: rgba(221, 221, 221, 0.3);
-	}
-
-	.post-nav-link {
-		display: flex;
-		flex-direction: column;
-		gap: 0.3rem;
-		text-decoration: none;
-		color: inherit;
-		transition: transform 0.2s ease;
-	}
-	.post-nav-next {
-		text-align: right;
-		align-items: flex-end;
-	}
-	.post-nav-link:hover {
-		transform: translateY(-2px);
-	}
-
-	.post-nav-dir {
-		font-family: 'Gill Sans', 'Gill Sans MT', Calibri, sans-serif;
-		font-size: 0.75rem;
-		letter-spacing: 0.08em;
-		text-transform: uppercase;
-		color: #999;
-	}
-
-	.post-nav-title {
-		font-size: 1.3rem;
-		font-style: italic;
-		line-height: 1.3;
-		text-decoration: underline;
-		text-decoration-color: transparent;
-		text-underline-offset: 0.15em;
-		transition: text-decoration-color 0.2s ease;
-	}
-	.post-nav-link:hover .post-nav-title {
-		text-decoration-color: currentColor;
-	}
-
 	/* Related posts — small-caps label in the Tufte chrome voice, then a
 	   column of italic titles with their shared tags alongside. */
 	.related {
@@ -270,14 +169,5 @@ const readMins = readingMinutes(slug);
 	}
 
 	@media (max-width: 760px) {
-		.post-nav {
-			width: 100%;
-			grid-template-columns: 1fr;
-			gap: 1.25rem;
-		}
-		.post-nav-next {
-			text-align: left;
-			align-items: flex-start;
-		}
 	}
 </style>

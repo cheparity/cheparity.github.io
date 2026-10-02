@@ -1,0 +1,237 @@
+---
+import 'flatpickr/dist/flatpickr.min.css';
+
+interface Props {
+	dates: string[];
+}
+
+const { dates } = Astro.props;
+---
+
+<aside class="daily-calendar" data-note-dates={JSON.stringify(dates)} aria-label="Daily notes calendar">
+	<div class="daily-calendar__toolbar">
+		<span>Calendar</span>
+		<button type="button" class="daily-calendar__today">Today</button>
+	</div>
+	<div class="daily-calendar__mount">
+		<input type="text" class="daily-calendar__input" aria-label="Choose a daily note date" readonly />
+	</div>
+	<p class="daily-calendar__hint"><span aria-hidden="true"></span> Dates with notes</p>
+</aside>
+
+<script>
+	import flatpickr from 'flatpickr';
+
+	function mountCalendars() {
+		for (const panel of document.querySelectorAll<HTMLElement>('.daily-calendar')) {
+			if (panel.dataset.ready === 'true') continue;
+			const input = panel.querySelector<HTMLInputElement>('.daily-calendar__input');
+			const mount = panel.querySelector<HTMLElement>('.daily-calendar__mount');
+			const todayButton = panel.querySelector<HTMLButtonElement>('.daily-calendar__today');
+			if (!input || !mount) continue;
+
+			const noteDates = new Set<string>(JSON.parse(panel.dataset.noteDates ?? '[]'));
+			const calendar = flatpickr(input, {
+				appendTo: mount,
+				inline: true,
+				disableMobile: true,
+				clickOpens: false,
+				weekNumbers: true,
+				shorthandCurrentMonth: true,
+				monthSelectorType: 'static',
+				dateFormat: 'Y-m-d',
+				locale: { firstDayOfWeek: 1, weekAbbreviation: 'W' },
+				enable: [(date) => noteDates.has(flatpickr.formatDate(date, 'Y-m-d'))],
+				onDayCreate(_selectedDates, _dateString, instance, dayElement) {
+					if (noteDates.has(instance.formatDate(dayElement.dateObj, 'Y-m-d'))) {
+						dayElement.classList.add('has-note');
+					}
+				},
+				onChange(_selectedDates, dateString) {
+					if (noteDates.has(dateString)) window.location.assign(`/daily/${dateString}/`);
+				},
+			});
+			todayButton?.addEventListener('click', () => calendar.jumpToDate(new Date()));
+			panel.dataset.ready = 'true';
+		}
+	}
+
+	document.addEventListener('astro:page-load', mountCalendars);
+	if (document.readyState !== 'loading') mountCalendars();
+</script>
+
+<style is:global>
+	.daily-calendar {
+		--calendar-accent: #6879a3;
+		--calendar-ink: #272722;
+		--calendar-muted: #78766e;
+		--calendar-rule: rgba(54, 50, 42, 0.2);
+		--calendar-paper: #fffff8;
+		width: max-content;
+		max-width: 100%;
+		margin-top: 4rem;
+		padding: 0.85rem 0 0.6rem;
+		border-top: 1px solid var(--calendar-rule);
+		color: var(--calendar-ink);
+		position: sticky;
+		top: 2rem;
+		align-self: start;
+	}
+	html.dark .daily-calendar {
+		--calendar-accent: #9aa9d2;
+		--calendar-ink: #ddd;
+		--calendar-muted: #aaa398;
+		--calendar-rule: rgba(221, 221, 221, 0.28);
+		--calendar-paper: #151515;
+	}
+	.daily-calendar__toolbar {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		margin: 0 0 0.5rem;
+		font-family: 'Gill Sans', 'Gill Sans MT', Calibri, sans-serif;
+		font-size: 0.75rem;
+		letter-spacing: 0.1em;
+		text-transform: uppercase;
+		color: var(--calendar-muted);
+	}
+	.daily-calendar__today {
+		padding: 0.25rem 0.35rem;
+		border: 0;
+		background: transparent;
+		color: inherit;
+		font: inherit;
+		letter-spacing: inherit;
+		text-transform: inherit;
+		cursor: pointer;
+	}
+	.daily-calendar__today:hover,
+	.daily-calendar__today:focus-visible { color: var(--calendar-accent); text-decoration: underline; }
+	.daily-calendar__input {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		opacity: 0;
+		pointer-events: none;
+	}
+	.daily-calendar__input:focus-visible + .flatpickr-calendar {
+		outline: 2px solid var(--calendar-accent);
+		outline-offset: 3px;
+	}
+	.daily-calendar .flatpickr-calendar {
+		background: transparent;
+		box-shadow: none;
+		border-radius: 0;
+		font-family: 'Gill Sans', 'Gill Sans MT', Calibri, sans-serif;
+		color: var(--calendar-ink);
+	}
+	.daily-calendar .dayContainer,
+	.daily-calendar .flatpickr-days {
+		width: 294px;
+		min-width: 294px;
+		max-width: 294px;
+	}
+	.daily-calendar .flatpickr-months .flatpickr-month,
+	.daily-calendar .flatpickr-current-month,
+	.daily-calendar .flatpickr-current-month input.cur-year {
+		color: var(--calendar-ink);
+		fill: var(--calendar-ink);
+	}
+	.daily-calendar .flatpickr-current-month {
+		font-family: 'et-book', serif;
+		font-size: 1.3rem;
+		font-weight: normal;
+	}
+	.daily-calendar .flatpickr-months .flatpickr-prev-month svg,
+	.daily-calendar .flatpickr-months .flatpickr-next-month svg { fill: var(--calendar-muted); }
+	.daily-calendar .flatpickr-months .flatpickr-prev-month:hover svg,
+	.daily-calendar .flatpickr-months .flatpickr-next-month:hover svg { fill: var(--calendar-accent); }
+	.daily-calendar span.flatpickr-weekday,
+	.daily-calendar .flatpickr-weekwrapper .flatpickr-weekday {
+		color: var(--calendar-muted);
+		font-size: 0.65rem;
+		font-weight: normal;
+		letter-spacing: 0.06em;
+		text-transform: uppercase;
+	}
+	.daily-calendar .flatpickr-day {
+		font-size: 0.85rem;
+		color: var(--calendar-ink);
+	}
+	.daily-calendar .flatpickr-day.flatpickr-disabled,
+	.daily-calendar .flatpickr-day.flatpickr-disabled:hover {
+		color: var(--calendar-muted);
+		cursor: default;
+	}
+	.daily-calendar .flatpickr-day.prevMonthDay,
+	.daily-calendar .flatpickr-day.nextMonthDay { opacity: 0.5; }
+	.daily-calendar .flatpickr-day.has-note {
+		font-weight: 700;
+		color: var(--calendar-ink);
+	}
+	.daily-calendar .flatpickr-day.has-note::after {
+		content: '';
+		position: absolute;
+		bottom: 3px;
+		left: calc(50% - 2px);
+		width: 4px;
+		height: 4px;
+		border-radius: 50%;
+		background: var(--calendar-accent);
+	}
+	.daily-calendar .flatpickr-day.today,
+	.daily-calendar .flatpickr-day.today:hover {
+		border-color: var(--calendar-accent);
+		color: var(--calendar-ink);
+		background: transparent;
+	}
+	.daily-calendar .flatpickr-day.selected,
+	.daily-calendar .flatpickr-day.selected:hover {
+		background: var(--calendar-accent);
+		border-color: var(--calendar-accent);
+		color: var(--calendar-paper);
+	}
+	.daily-calendar .flatpickr-day.has-note:hover,
+	.daily-calendar .flatpickr-day.has-note:focus-visible {
+		border-color: var(--calendar-accent);
+		background: color-mix(in srgb, var(--calendar-accent) 11%, transparent);
+	}
+	.daily-calendar .flatpickr-weekwrapper .flatpickr-weeks { box-shadow: 1px 0 0 var(--calendar-rule); }
+	.daily-calendar .flatpickr-weekwrapper span.flatpickr-day { color: var(--calendar-muted); }
+	.daily-calendar__hint {
+		width: auto;
+		margin: 0.65rem 0 0;
+		color: var(--calendar-muted);
+		font-family: 'Gill Sans', 'Gill Sans MT', Calibri, sans-serif;
+		font-size: 0.72rem;
+		line-height: 1.4;
+	}
+	.daily-calendar__hint span {
+		display: inline-block;
+		width: 5px;
+		height: 5px;
+		margin-right: 0.35rem;
+		border-radius: 50%;
+		background: var(--calendar-accent);
+		vertical-align: middle;
+	}
+	@media (max-width: 900px) {
+		.daily-calendar { position: static; margin: 1rem 0 2rem; }
+	}
+	@media (max-width: 560px) {
+		.daily-calendar { width: 100%; }
+		.daily-calendar__mount { overflow-x: auto; }
+		.daily-calendar .dayContainer,
+		.daily-calendar .flatpickr-days {
+			width: 217px;
+			min-width: 217px;
+			max-width: 217px;
+		}
+		.daily-calendar .flatpickr-day {
+			max-width: 31px;
+			height: 31px;
+			line-height: 31px;
+		}
+		.daily-calendar .flatpickr-weekwrapper .flatpickr-weeks { padding: 0 7px; }
+	}
+</style>

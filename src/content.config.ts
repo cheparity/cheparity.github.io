@@ -17,4 +17,14 @@ import { glob } from 'astro/loaders';
 			}),
 	});
 
-export const collections = { blog };
+	const daily = defineCollection({
+		loader: glob({ base: './src/content/daily', pattern: '**/*.md' }),
+		schema: z.object({
+			title: z.string(),
+			pubDate: z.coerce.date(),
+			updatedDate: z.coerce.date().optional(),
+			tags: z.array(z.string()).optional(),
+		}),
+	});
+
+export const collections = { blog, daily };

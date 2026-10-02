@@ -395,11 +395,14 @@ def main():
 
     # Astro output paths
     blog_dir = Path("src/content/blog")
+    daily_dir = Path("src/content/daily")
     assets_dir = Path("public/assets")
 
     # Clean previous generated content
     shutil.rmtree(blog_dir, ignore_errors=True)
     blog_dir.mkdir(parents=True, exist_ok=True)
+    shutil.rmtree(daily_dir, ignore_errors=True)
+    daily_dir.mkdir(parents=True, exist_ok=True)
 
     # Copy attachments → public/assets/
     if (vault / vault_assets).exists():
@@ -494,6 +497,38 @@ def main():
             frontmatter.dump(post, f)
 
         print(f"  → {dst}")
+
+    # --- Publish daily notes as a separate collection ---
+    daily_source = vault / "daily"
+    daily_notes = sorted(daily_source.glob("*.md")) if daily_source.is_dir() else []
+    for item in daily_notes:
+        daily_fm = frontmatter.load(str(item))
+        title, body = extract_title_and_strip_h1(daily_fm.content)
+        title = title or item.stem
+        body = fix_paths(body)
+        body = re.sub(
+            r"\[([^\]]+)\]\((?:(?:\.\./)?daily/)?(\d{4}-\d{2}-\d{2})\.md(?:#[^)]*)?\)",
+            r"[\1](/daily/\2/)",
+            body,
+        )
+        body = re.sub(
+            r"(?<!!)\[\[(\d{4}-\d{2}-\d{2})(?:\|([^\]]+))?\]\]",
+            lambda m: f"[{m.group(2) or m.group(1)}](/daily/{m.group(1)}/)",
+            body,
+        )
+        body = fix_internal_links(body, slug_map, item.parent, vault)
+        daily_meta: dict = {"title": title, "pubDate": item.stem}
+        if daily_fm.get("modified"):
+            daily_meta["updatedDate"] = daily_fm["modified"]
+        tags = daily_fm.get("tags")
+        if tags:
+            if isinstance(tags, str):
+                tags = [tag.strip() for tag in tags.split(",") if tag.strip()]
+            daily_meta["tags"] = tags
+        post = frontmatter.Post(body, **daily_meta)
+        with (daily_dir / item.name).open("w", encoding="utf-8") as f:
+            frontmatter.dump(post, f)
+    print(f"Published {len(daily_notes)} daily note(s)")
 
     # --- Emit posts-manifest.json for rehype-link-cards ---
     data_dir = Path("src/data")
