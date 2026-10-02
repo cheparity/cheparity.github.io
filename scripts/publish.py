@@ -500,9 +500,13 @@ def main():
 
     # --- Publish daily notes as a separate collection ---
     daily_source = vault / "daily"
-    daily_notes = sorted(daily_source.glob("*.md")) if daily_source.is_dir() else []
-    for item in daily_notes:
-        daily_fm = frontmatter.load(str(item))
+    daily_notes = []
+    if daily_source.is_dir():
+        for item in sorted(daily_source.glob("*.md")):
+            daily_fm = frontmatter.load(str(item))
+            if daily_fm.get("post") is True:
+                daily_notes.append((item, daily_fm))
+    for item, daily_fm in daily_notes:
         title, body = extract_title_and_strip_h1(daily_fm.content)
         title = title or item.stem
         body = fix_paths(body)
