@@ -70,7 +70,7 @@ for (const entry of entries) {
   .daily-layout {
     display: grid;
     grid-template-columns: minmax(0, 1.85fr) minmax(0, 1fr);
-    column-gap: clamp(2rem, 5vw, 5rem);
+    column-gap: 3rem;
   }
   .intro {
     grid-column: 1;
@@ -105,6 +105,8 @@ for (const entry of entries) {
     list-style: none;
     padding: 0;
     margin: 0;
+    width: 100%;
+    max-width: 37rem;
   }
   .daily-list li {
     border-bottom: 1px solid rgba(128, 128, 128, 0.2);
