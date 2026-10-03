@@ -37,13 +37,19 @@
 			applyTheme(getSystemTheme());
 		}
 
-		// View-transition navigation swaps the root's class attribute to the
-		// incoming page's server-rendered state (always light), wiping the
-		// applied theme. Re-apply after every page load — initial and each
-		// navigation — once the new DOM is in place. Guarded so re-runs of
-		// this inline script cannot stack listeners.
+		// Astro copies the incoming page's root attributes during the swap.
+		// Give that page the current theme before it becomes visible, so a
+		// dark-to-dark navigation never takes a light snapshot.
 		if (!window.__themeScriptWired) {
 			window.__themeScriptWired = true;
+			document.addEventListener('astro:before-swap', (event) => {
+				event.newDocument.documentElement.classList.toggle(
+					'dark',
+					document.documentElement.classList.contains('dark')
+				);
+			});
+			// Keep the page-load sync for initial loads and theme changes made
+			// outside the toggle (for example, in another tab).
 			document.addEventListener('astro:page-load', () => {
 				const stored = getStoredTheme();
 				applyTheme(stored === 'light' || stored === 'dark' ? stored : getSystemTheme());
