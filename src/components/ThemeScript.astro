@@ -1,5 +1,5 @@
 <!-- Inline script to prevent FOUC and set initial theme -->
-<script is:inline define:vars={{ defaultTheme: 'system' as const }}>
+<script is:inline data-cfasync="false" define:vars={{ defaultTheme: 'system' as const }}>
 	(function() {
 		const STORAGE_KEY = 'theme-preference';
 
