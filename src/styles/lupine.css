@@ -36,10 +36,8 @@ html:not(.dark) .date,
 html:not(.dark) .related-label,
 html:not(.dark) .related-tags,
 html:not(.dark) .post-nav-dir { color: var(--lupine-muted); }
-html:not(.dark) .article-divider,
 html:not(.dark) .related,
 html:not(.dark) .post-nav { border-color: var(--lupine-border); }
-html:not(.dark) .daily-list li,
 html:not(.dark) .related-link { border-color: var(--lupine-border); }
 
 /* Chips, cards, and small controls use Lupine blue instead of parchment brown. */

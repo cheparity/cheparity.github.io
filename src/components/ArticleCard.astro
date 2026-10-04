@@ -81,17 +81,11 @@ const formatDate = (date: Date) => {
       </a>
     )}
   </div>
-
-  <hr class="article-divider" />
 </article>
 
 <style>
   .article-card {
-    padding-top: 2.1rem;
-  }
-
-  .article-card:last-child .article-divider {
-    display: none;
+    padding: 2.1rem 0;
   }
 
   .article-card:first-child {
@@ -102,15 +96,6 @@ const formatDate = (date: Date) => {
     display: flex;
     gap: 2rem;
     align-items: flex-start;
-    margin-bottom: 2.1rem;
-  }
-
-  .article-divider {
-    width: 100%;
-    max-width: 37rem;
-    margin: 0;
-    border: 0;
-    border-top: 1px solid #ccc;
   }
 
   .article-text {

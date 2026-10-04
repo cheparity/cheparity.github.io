@@ -227,7 +227,10 @@ const weeks = Array.from({ length: 6 }, (_, week) => ({
 		--calendar-muted: #78766e;
 		--calendar-rule: rgba(54, 50, 42, 0.2);
 		--calendar-paper: #fffff8;
-		width: max-content;
+		--calendar-width: 294px;
+		--calendar-week-width: 28px;
+		--calendar-days-width: 265px;
+		width: var(--calendar-width);
 		max-width: 100%;
 		margin-top: 0;
 		padding: 0.85rem 0 0.6rem;
@@ -281,10 +284,12 @@ const weeks = Array.from({ length: 6 }, (_, week) => ({
 		outline: 2px solid var(--calendar-accent);
 		outline-offset: 3px;
 	}
+	html.daily-calendar-js .daily-calendar__mount { min-height: 320px; }
+	html.daily-calendar-js .daily-calendar__fallback { visibility: hidden; }
 	.daily-calendar[data-ready="true"] .daily-calendar__fallback { display: none; }
-	.daily-calendar__fallback { width: 294px; max-width: 100%; font-family: 'Gill Sans', 'Gill Sans MT', Calibri, sans-serif; }
+	.daily-calendar__fallback { width: var(--calendar-width); max-width: 100%; font-family: 'Gill Sans', 'Gill Sans MT', Calibri, sans-serif; }
 	.daily-calendar__fallback-month { height: 2.8rem; text-align: center; font-family: 'et-book', serif; font-size: 1.3rem; line-height: 2.8rem; }
-	.daily-calendar__fallback-grid { display: grid; grid-template-columns: 21px repeat(7, minmax(0, 1fr)); align-items: center; text-align: center; }
+	.daily-calendar__fallback-grid { display: grid; grid-template-columns: var(--calendar-week-width) repeat(7, minmax(0, 1fr)); align-items: center; text-align: center; }
 	.daily-calendar__fallback-weekday { color: var(--calendar-muted); font-size: 0.65rem; text-transform: uppercase; }
 	.daily-calendar__fallback-week { color: var(--calendar-muted); font-size: 0.85rem; }
 	.daily-calendar .daily-calendar__fallback-day,
@@ -296,17 +301,25 @@ const weeks = Array.from({ length: 6 }, (_, week) => ({
 	.daily-calendar__fallback-day.has-note::after { content: ''; position: absolute; bottom: 2px; width: 4px; height: 4px; border-radius: 50%; background: var(--calendar-accent); }
 	.daily-calendar__fallback-day.has-note:hover { background: color-mix(in srgb, var(--calendar-accent) 11%, transparent); }
 	.daily-calendar .flatpickr-calendar {
+		width: var(--calendar-width);
 		background: transparent;
 		box-shadow: none;
 		border-radius: 0;
 		font-family: 'Gill Sans', 'Gill Sans MT', Calibri, sans-serif;
 		color: var(--calendar-ink);
 	}
-	.daily-calendar .dayContainer,
+	.daily-calendar .flatpickr-weekwrapper { width: var(--calendar-week-width); }
+	.daily-calendar .flatpickr-weekwrapper .flatpickr-weeks { width: 100%; padding: 0; box-sizing: border-box; }
+	.daily-calendar .dayContainer {
+		width: var(--calendar-days-width);
+		min-width: var(--calendar-days-width);
+		max-width: var(--calendar-days-width);
+	}
 	.daily-calendar .flatpickr-days {
-		width: 294px;
-		min-width: 294px;
-		max-width: 294px;
+		/* Flatpickr adds one pixel to dayContainer when sizing this viewport. */
+		width: calc(var(--calendar-days-width) + 1px);
+		min-width: calc(var(--calendar-days-width) + 1px);
+		max-width: calc(var(--calendar-days-width) + 1px);
 	}
 	.daily-calendar .flatpickr-months .flatpickr-month,
 	.daily-calendar .flatpickr-current-month,
@@ -396,21 +409,19 @@ const weeks = Array.from({ length: 6 }, (_, week) => ({
 		.daily-calendar { position: static; margin: 1rem 0 2rem; }
 	}
 	@media (max-width: 560px) {
-		.daily-calendar { width: 100%; }
-		.daily-calendar__mount { overflow-x: auto; }
-		.daily-calendar__fallback { width: 238px; }
-		.daily-calendar .daily-calendar__fallback-day { height: 31px; }
-		.daily-calendar .dayContainer,
-		.daily-calendar .flatpickr-days {
-			width: 217px;
-			min-width: 217px;
-			max-width: 217px;
+		.daily-calendar {
+			--calendar-width: 238px;
+			--calendar-week-width: 21px;
+			--calendar-days-width: 216px;
+			width: 100%;
 		}
+		html.daily-calendar-js .daily-calendar__mount { min-height: 270px; }
+		.daily-calendar__mount { overflow-x: auto; }
+		.daily-calendar .daily-calendar__fallback-day { height: 31px; }
 		.daily-calendar .flatpickr-day {
 			max-width: 31px;
 			height: 31px;
 			line-height: 31px;
 		}
-		.daily-calendar .flatpickr-weekwrapper .flatpickr-weeks { padding: 0 7px; }
 	}
 </style>
