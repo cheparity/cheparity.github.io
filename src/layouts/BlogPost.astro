@@ -45,6 +45,7 @@ const readMins = readingMinutes(slug);
 					</figure>
 				)}
 				<section>
+					<a class="back-link" href="/blog/">← Blog archive</a>
 					<PostMeta pubDate={pubDate} updatedDate={updatedDate} tags={tags} readMins={readMins} />
 					<h1>{title}</h1>
 					<hr />
@@ -82,6 +83,10 @@ const readMins = readingMinutes(slug);
 </html>
 
 <style>
+	.back-link { color: #777; text-decoration: none; font-size: 0.9rem; }
+	.back-link:hover { text-decoration: underline; }
+	:global(.date) { margin-top: 1.5rem; color: #888; }
+
 	/* Related posts — small-caps label in the Tufte chrome voice, then a
 	   column of italic titles with their shared tags alongside. */
 	.related {

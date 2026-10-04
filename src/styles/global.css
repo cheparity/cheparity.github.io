@@ -21,7 +21,7 @@
     @apply font-serif antialiased;
     @apply leading-[1.6];
     counter-reset: sidenote-counter katexEqnNo mmlEqnNo;
-    background-color: #fffff8;
+    background-color: #faf4ed;
     background-image:
       repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(200, 190, 170, 0.015) 2px, rgba(200, 190, 170, 0.015) 4px),
       repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(200, 190, 170, 0.015) 2px, rgba(200, 190, 170, 0.015) 4px),
