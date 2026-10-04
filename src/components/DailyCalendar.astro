@@ -45,8 +45,8 @@ const weeks = Array.from({ length: 6 }, (_, week) => ({
 				{weeks.map((week) => <>
 					<span class="daily-calendar__fallback-week">{week.number}</span>
 					{week.days.map((day) => day.hasNote
-						? <a class:list={['daily-calendar__fallback-day', { 'is-outside': !day.currentMonth, 'is-today': day.today, 'has-note': day.hasNote }]} href={`/daily/${day.key}/`} aria-label={`Open note from ${day.key}`}>{day.label}</a>
-						: <span class:list={['daily-calendar__fallback-day', { 'is-outside': !day.currentMonth, 'is-today': day.today }]}>{day.label}</span>
+						? <a data-date={day.key} class:list={['daily-calendar__fallback-day', { 'is-outside': !day.currentMonth, 'is-today': day.today, 'has-note': day.hasNote }]} href={`/daily/${day.key}/`} aria-label={`Open note from ${day.key}`}>{day.label}</a>
+						: <span data-date={day.key} class:list={['daily-calendar__fallback-day', { 'is-outside': !day.currentMonth, 'is-today': day.today }]}>{day.label}</span>
 					)}
 				</>)}
 			</div>
@@ -57,6 +57,97 @@ const weeks = Array.from({ length: 6 }, (_, week) => ({
 
 <script>
 	import flatpickr from 'flatpickr';
+	import { onPage } from '../utils/vt';
+
+	const SVG_NS = 'http://www.w3.org/2000/svg';
+	const DESKTOP_BP = 900;
+
+	function connectCalendarToArchive(signal: AbortSignal) {
+		const panel = document.querySelector<HTMLElement>('.daily-calendar');
+		if (!panel) return;
+
+		const svg = document.createElementNS(SVG_NS, 'svg');
+		svg.setAttribute('class', 'daily-calendar-connector');
+		svg.setAttribute('aria-hidden', 'true');
+		const path = document.createElementNS(SVG_NS, 'path');
+		svg.appendChild(path);
+		document.body.appendChild(svg);
+
+		let activeDate: string | null = null;
+		let frame = 0;
+		const clearHighlight = () => {
+			document.querySelector('.daily-list li.is-calendar-linked')?.classList.remove('is-calendar-linked');
+		};
+		const clear = () => {
+			activeDate = null;
+			clearHighlight();
+			svg.classList.remove('is-visible');
+		};
+		const draw = () => {
+			frame = 0;
+			if (!activeDate) return;
+			const row = document.querySelector<HTMLElement>(`.daily-list li[data-daily-date="${activeDate}"]`);
+			const daySelector = panel.dataset.ready === 'true' ? '.flatpickr-day' : '.daily-calendar__fallback-day';
+			const day = panel.querySelector<HTMLElement>(`${daySelector}[data-date="${activeDate}"]`);
+			if (!row || !day) { clear(); return; }
+			clearHighlight();
+			row.classList.add('is-calendar-linked');
+
+			if (window.innerWidth <= DESKTOP_BP) { svg.classList.remove('is-visible'); return; }
+			const rowRect = row.getBoundingClientRect();
+			const dayRect = day.getBoundingClientRect();
+			const inViewport = (rect: DOMRect) => rect.bottom > 0 && rect.top < window.innerHeight && rect.right > 0 && rect.left < window.innerWidth;
+			if (!inViewport(dayRect)) { svg.classList.remove('is-visible'); return; }
+
+			const x1 = dayRect.left + dayRect.width / 2;
+			const y1 = dayRect.top + dayRect.height / 2;
+			const x2 = rowRect.right;
+			const y2 = rowRect.top + rowRect.height / 2;
+			const bend = x2 + (x1 - x2) * 0.52;
+			path.setAttribute('d', `M ${x1} ${y1} C ${bend} ${y1}, ${bend} ${y2}, ${x2} ${y2}`);
+			svg.setAttribute('viewBox', `0 0 ${window.innerWidth} ${window.innerHeight}`);
+			svg.classList.add('is-visible');
+		};
+		const scheduleDraw = () => {
+			if (!frame) frame = requestAnimationFrame(draw);
+		};
+		const dateAt = (target: EventTarget | null) => {
+			if (!(target instanceof Element)) return null;
+			return target.closest<HTMLElement>('.has-note[data-date]');
+		};
+		const activate = (target: EventTarget | null) => {
+			const day = dateAt(target);
+			if (!day) return;
+			activeDate = day.dataset.date ?? null;
+			scheduleDraw();
+		};
+		const deactivate = (event: Event) => {
+			const current = dateAt(event.target);
+			const next = dateAt((event as MouseEvent).relatedTarget);
+			if (current && next === current) return;
+			if (current) clear();
+		};
+		panel.addEventListener('mouseover', (event) => activate(event.target), { signal });
+		panel.addEventListener('mouseout', deactivate, { signal });
+		panel.addEventListener('focusin', (event) => activate(event.target), { signal });
+		panel.addEventListener('focusout', deactivate, { signal });
+		document.addEventListener('scroll', scheduleDraw, { capture: true, passive: true, signal });
+		window.addEventListener('resize', scheduleDraw, { passive: true, signal });
+
+		const mount = panel.querySelector('.daily-calendar__mount');
+		if (mount) {
+			const observer = new MutationObserver(scheduleDraw);
+			observer.observe(mount, { childList: true, subtree: true, attributes: true, attributeFilter: ['class', 'data-date'] });
+			signal.addEventListener('abort', () => observer.disconnect(), { once: true });
+		}
+		signal.addEventListener('abort', () => {
+			cancelAnimationFrame(frame);
+			clearHighlight();
+			svg.remove();
+		}, { once: true });
+	}
+
+	onPage((signal) => connectCalendarToArchive(signal));
 
 	function mountCalendars() {
 		for (const panel of document.querySelectorAll<HTMLElement>('.daily-calendar')) {
@@ -79,7 +170,9 @@ const weeks = Array.from({ length: 6 }, (_, week) => ({
 				locale: { firstDayOfWeek: 1, weekAbbreviation: 'W' },
 				enable: [(date) => noteDates.has(flatpickr.formatDate(date, 'Y-m-d'))],
 				onDayCreate(_selectedDates, _dateString, instance, dayElement) {
-					if (noteDates.has(instance.formatDate(dayElement.dateObj, 'Y-m-d'))) {
+					const key = instance.formatDate(dayElement.dateObj, 'Y-m-d');
+					dayElement.dataset.date = key;
+					if (noteDates.has(key)) {
 						dayElement.classList.add('has-note');
 					}
 				},
@@ -106,6 +199,28 @@ const weeks = Array.from({ length: 6 }, (_, week) => ({
 </script>
 
 <style is:global>
+	.daily-calendar-connector {
+		position: fixed;
+		inset: 0;
+		z-index: 30;
+		width: 100vw;
+		height: 100vh;
+		overflow: hidden;
+		color: #6879a3;
+		pointer-events: none;
+		opacity: 0;
+		transition: opacity 140ms ease;
+	}
+	.daily-calendar-connector.is-visible { opacity: 1; }
+	.daily-calendar-connector path {
+		fill: none;
+		stroke: currentColor;
+		stroke-width: 1;
+		stroke-dasharray: 5 5;
+		vector-effect: non-scaling-stroke;
+	}
+	html:not(.dark) .daily-calendar-connector { color: var(--lupine-accent); }
+	html.dark .daily-calendar-connector { color: #9aa9d2; }
 	.daily-calendar {
 		--calendar-accent: #6879a3;
 		--calendar-ink: #272722;
@@ -114,12 +229,13 @@ const weeks = Array.from({ length: 6 }, (_, week) => ({
 		--calendar-paper: #fffff8;
 		width: max-content;
 		max-width: 100%;
-		margin-top: 4rem;
+		margin-top: 0;
 		padding: 0.85rem 0 0.6rem;
 		border-top: 1px solid var(--calendar-rule);
 		color: var(--calendar-ink);
 		position: sticky;
-		top: 2rem;
+		/* Keep the calendar around the viewport's vertical center while scrolling. */
+		top: max(2rem, calc((100vh - 28rem) / 2));
 		align-self: start;
 	}
 	html.dark .daily-calendar {

@@ -5,8 +5,7 @@ export const SITE_CONFIG = {
     "And coser 📷"
   ],
   tagline: "<strong>Flow</strong> like Life, Fall like <strong>Rain</strong>, <strong>Rise</strong> like Dawn.",
-  // "Currently" line under the tagline — update by hand to keep the front
-  // page feeling lived-in. Empty string hides the line.
+  // "Now" note in the home sidebar. Empty string hides it.
   status: "Interning in Alibaba, as Algorithm Engineer.",
   avatar: "/avatar.jpg",
   social: {

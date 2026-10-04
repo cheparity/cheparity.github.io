@@ -36,7 +36,9 @@ for (const entry of entries) {
             <p>A chronological archive of daily notes.</p>
             <p class="entry-count">{entries.length} notes</p>
           </section>
-          <DailyCalendar dates={entries.map((entry) => entry.id)} />
+          <div class="calendar-rail">
+            <DailyCalendar dates={entries.map((entry) => entry.id)} />
+          </div>
           <section class="archive">
             {
               years.map(([year, yearEntries]) => (
@@ -44,7 +46,7 @@ for (const entry of entries) {
                   <h2 class="year-heading reveal">{year}</h2>
                   <ul class="daily-list">
                     {yearEntries.map((entry) => (
-                      <li>
+                      <li data-daily-date={entry.id}>
                         <a href={`/daily/${entry.id}/`}>
                           <time datetime={entry.data.pubDate.toISOString()}>
                             <FormattedDate date={entry.data.pubDate} />
@@ -76,9 +78,11 @@ for (const entry of entries) {
     grid-column: 1;
     grid-row: 1;
   }
-  :global(.daily-calendar) {
+  .calendar-rail {
     grid-column: 2;
     grid-row: 2;
+    align-self: stretch;
+    margin-top: 4rem;
   }
   .archive {
     grid-column: 1;
@@ -110,6 +114,10 @@ for (const entry of entries) {
   }
   .daily-list li {
     border-bottom: 1px solid rgba(128, 128, 128, 0.2);
+    transition: background-color 160ms ease;
+  }
+  .daily-list li.is-calendar-linked {
+    background: color-mix(in srgb, #6879a3 10%, transparent);
   }
   .daily-list a {
     display: grid;
@@ -134,6 +142,9 @@ for (const entry of entries) {
     .daily-layout {
       display: flex;
       flex-direction: column;
+    }
+    .calendar-rail {
+      margin-top: 0;
     }
     .archive {
       margin-top: 1rem;

@@ -1,7 +1,7 @@
 ---
 import { SITE_CONFIG } from "../config";
 
-const { name, bio, tagline, status, avatar, social } = SITE_CONFIG;
+const { name, bio, tagline, avatar, social } = SITE_CONFIG;
 
 // Split the tagline into word chunks (keeping <strong> spans intact) so each
 // word can be inked in with its own delay — the sentence sets itself.
@@ -24,11 +24,6 @@ let inkIndex = 0;
           return <span class="tag-word" style={`--ink-delay: ${delay}ms`} set:html={chunk} />;
         })}
       </p>
-      {status && (
-        <p class="hero-status">
-          <span class="status-mark" aria-hidden="true">✎</span> {status}
-        </p>
-      )}
     </div>
 
     <div class="hero-sidebar">
@@ -259,27 +254,8 @@ let inkIndex = 0;
     to   { opacity: 1; filter: blur(0); transform: none; }
   }
 
-  /* "Currently" line — a quiet hand-written note under the tagline. */
-  .hero-status {
-    margin: 1.1rem 0 0;
-    font-family: 'et-book', serif;
-    font-style: italic;
-    font-size: 1.1rem;
-    color: #888;
-    animation: hero-rise 0.45s cubic-bezier(0.22, 1, 0.36, 1) 0.28s both;
-  }
-
-  .status-mark {
-    font-style: normal;
-    color: rgba(176, 137, 104, 0.8);
-    margin-right: 0.2rem;
-  }
-
   html.dark .hero-tagline strong {
     color: #c9a87c;
-  }
-  html.dark .hero-status {
-    color: #999;
   }
 
   .social-links {
@@ -319,8 +295,7 @@ let inkIndex = 0;
     .hero-sidebar,
     .avatar-wrapper,
     .avatar,
-    .tag-word,
-    .hero-status {
+    .tag-word {
       animation: none !important;
     }
   }
@@ -354,9 +329,6 @@ let inkIndex = 0;
     }
 
 
-    .hero-status {
-      font-size: 1rem;
-    }
     .avatar {
       width: 100px;
       height: 100px;

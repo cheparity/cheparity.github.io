@@ -44,7 +44,7 @@ const posts = (await getCollection('blog'))
 				</section>
 
 				<section class="archive">
-					{posts.map((post, i) => <ArticleCard post={post} index={i} />)}
+					{posts.map((post) => <ArticleCard post={post} />)}
 				</section>
 			</article>
 		</main>

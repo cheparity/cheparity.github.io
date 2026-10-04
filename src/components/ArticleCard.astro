@@ -5,16 +5,12 @@ import { readingMinutes } from '../utils/readingTime';
 
 interface Props {
   post: CollectionEntry<'blog'>;
-  index?: number;
 }
-const { post, index } = Astro.props;
+const { post } = Astro.props;
 
 const { id, data } = post;
 const { title, description, pubDate, updatedDate, heroImage, tags } = data;
 const readMins = readingMinutes(id);
-// Stagger the scroll-reveal so a list of cards cascades in, capped so a long
-// archive doesn't leave the last cards waiting too long.
-const revealDelay = Math.min(index ?? 0, 6) * 45;
 
 /** Render inline markdown (bold, italic, code, links) to HTML; preserve $...$ for KaTeX auto-render. */
 function renderInlineMd(text: string): string {
@@ -42,7 +38,7 @@ const formatDate = (date: Date) => {
 };
 ---
 
-<article class="article-card reveal" style={`--reveal-delay: ${revealDelay}ms`}>
+<article class="article-card">
   <div class="article-content-wrapper">
     <div class="article-text">
       <a href={`/blog/${id}/`} class="article-title-link">

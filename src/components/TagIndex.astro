@@ -1,0 +1,118 @@
+---
+interface Props {
+  counts: [string, number][];
+  limit?: number;
+  sticky?: boolean;
+}
+
+const { counts, limit = counts.length, sticky = true } = Astro.props;
+const maxCount = Math.max(1, ...counts.map(([, count]) => count));
+const visibleCounts = counts.slice(0, limit);
+---
+
+<aside class:list={["tag-index", { "tag-index--static": !sticky }]} aria-label="Blog topics">
+  <div class="tag-index__heading">
+    <span>Topics</span>
+    <span>{counts.length} tags</span>
+  </div>
+  <nav aria-label="Browse posts by tag">
+    <ul class="tag-index__list">
+      {visibleCounts.map(([tag, count]) => (
+        <li>
+          <a href={`/tags/${encodeURIComponent(tag)}/`} aria-label={`${tag}: ${count} ${count === 1 ? 'post' : 'posts'}`}>
+            <span class="tag-index__name">{tag}</span>
+            <span class="tag-index__count">{count}</span>
+            <span class="tag-index__track" aria-hidden="true">
+              <span style={`width: ${(count / maxCount) * 100}%`} />
+            </span>
+          </a>
+        </li>
+      ))}
+    </ul>
+  </nav>
+  <a class="tag-index__all" href="/tags/">All tags <span aria-hidden="true">↗</span></a>
+</aside>
+
+<style>
+  .tag-index {
+    --tag-index-ink: #37352f;
+    --tag-index-muted: #777;
+    --tag-index-rule: #ccc;
+    --tag-index-accent: #8a6d4f;
+    width: 294px;
+    max-width: 100%;
+    padding: 0.85rem 0 0.6rem;
+    border-top: 1px solid var(--tag-index-rule);
+    color: var(--tag-index-ink);
+    position: sticky;
+    top: max(2rem, calc((100vh - 36rem) / 2));
+    font-family: 'Gill Sans', 'Gill Sans MT', Calibri, sans-serif;
+  }
+  .tag-index--static { position: static; }
+  html:not(.dark) .tag-index {
+    --tag-index-ink: var(--lupine-foreground);
+    --tag-index-muted: var(--lupine-muted);
+    --tag-index-rule: var(--lupine-border);
+    --tag-index-accent: var(--lupine-accent);
+  }
+  html.dark .tag-index {
+    --tag-index-ink: #ddd;
+    --tag-index-muted: #aaa398;
+    --tag-index-rule: rgba(221, 221, 221, 0.28);
+    --tag-index-accent: var(--tokyo-accent);
+  }
+  .tag-index__heading {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    color: var(--tag-index-muted);
+    font-size: 0.75rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+  .tag-index__heading span:last-child { letter-spacing: 0; text-transform: none; }
+  .tag-index__list {
+    list-style: none;
+    margin: 0.9rem 0 0;
+    padding: 0;
+  }
+  .tag-index__list li,
+  .tag-index__list li:not(:first-child) { margin: 0; }
+  .tag-index__list a,
+  .tag-index__list a:link,
+  .tag-index__list a:visited {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 2rem;
+    gap: 0 0.6rem;
+    padding: 0.22rem 0;
+    color: inherit;
+    font-size: 0.88rem;
+    line-height: 1.35;
+    text-decoration: none;
+  }
+  .tag-index__list a:hover .tag-index__name,
+  .tag-index__list a:focus-visible .tag-index__name { color: var(--tag-index-accent); }
+  .tag-index__list a:focus-visible,
+  .tag-index__all:focus-visible { outline: 2px solid var(--tag-index-accent); outline-offset: 2px; }
+  .tag-index__name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .tag-index__count { color: var(--tag-index-muted); text-align: right; font-variant-numeric: tabular-nums; }
+  .tag-index__track { grid-column: 1 / -1; height: 2px; margin-top: 0.22rem; background: var(--tag-index-rule); opacity: 0.55; }
+  .tag-index__track span { display: block; height: 100%; background: var(--tag-index-accent); opacity: 0.65; }
+  .tag-index__all,
+  .tag-index__all:link,
+  .tag-index__all:visited {
+    display: inline-block;
+    margin-top: 0.85rem;
+    color: var(--tag-index-muted);
+    font-size: 0.8rem;
+    text-decoration: none;
+  }
+  .tag-index__all:hover { color: var(--tag-index-accent); }
+  @media (max-width: 900px) {
+    .tag-index { position: static; width: 100%; margin: 1rem 0 2rem; }
+    .tag-index__list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 1.5rem; }
+  }
+  @media (max-width: 560px) {
+    .tag-index__list { grid-template-columns: 1fr; }
+  }
+</style>

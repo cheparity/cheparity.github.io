@@ -9,6 +9,7 @@ import Hero from "../components/Hero.astro";
 import ArticleCard from "../components/ArticleCard.astro";
 import Reveal from "../components/Reveal.astro";
 import GraphView from "../components/GraphView.astro";
+import HomeSidebar from "../components/HomeSidebar.astro";
 import { SITE_CONFIG } from "../config";
 
 const allPosts = await getCollection("blog");
@@ -18,6 +19,18 @@ const sortedPosts = allPosts.sort((a, b) => {
 
 const postsToShow = sortedPosts.slice(0, SITE_CONFIG.postsPerPage);
 const hasMorePosts = sortedPosts.length > SITE_CONFIG.postsPerPage;
+const latestDaily = (await getCollection("daily")).sort(
+  (a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf(),
+)[0];
+const tagCounts = new Map<string, number>();
+for (const post of sortedPosts) {
+  for (const tag of new Set(post.data.tags ?? [])) {
+    tagCounts.set(tag, (tagCounts.get(tag) ?? 0) + 1);
+  }
+}
+const sortedTags = [...tagCounts.entries()].sort((a, b) =>
+  b[1] - a[1] || a[0].localeCompare(b[0]),
+);
 ---
 
 <html lang="en">
@@ -36,7 +49,7 @@ const hasMorePosts = sortedPosts.length > SITE_CONFIG.postsPerPage;
         <h2 class="section-title reveal">Recent Posts</h2>
 
         <div class="articles-list">
-          {postsToShow.map((post, i) => <ArticleCard post={post} index={i} />)}
+          {postsToShow.map((post) => <ArticleCard post={post} />)}
         </div>
 
         {
@@ -51,6 +64,10 @@ const hasMorePosts = sortedPosts.length > SITE_CONFIG.postsPerPage;
             </div>
           )
         }
+
+        <div class="home-rail">
+          <HomeSidebar counts={sortedTags} latestDaily={latestDaily} />
+        </div>
       </section>
 
       <GraphView height={460} title="Note Graph" />
@@ -64,7 +81,16 @@ const hasMorePosts = sortedPosts.length > SITE_CONFIG.postsPerPage;
 <style>
   .recent-posts {
     margin-top: 2.1rem;
+    display: grid;
+    grid-template-columns: minmax(0, 1.85fr) minmax(0, 1fr);
+    column-gap: 3rem;
   }
+  .section-title { grid-column: 1; grid-row: 1; }
+  .articles-list { grid-column: 1; grid-row: 2; min-width: 0; }
+  .show-more-wrapper { grid-column: 1; grid-row: 3; }
+  .home-rail { grid-column: 2; grid-row: 2 / 4; align-self: stretch; min-width: 0; margin-top: 1.4rem; }
+  .articles-list :global(.article-text) { flex: 1 1 0; min-width: 0; }
+  .articles-list :global(.article-content-wrapper) { flex-wrap: wrap; }
 
   .section-title {
     position: relative;
@@ -134,6 +160,11 @@ const hasMorePosts = sortedPosts.length > SITE_CONFIG.postsPerPage;
   .show-more-button:focus-visible {
     outline: 2px solid rgba(128, 128, 128, 0.4);
     outline-offset: 4px;
+  }
+
+  @media (max-width: 900px) {
+    .recent-posts { display: flex; flex-direction: column; }
+    .home-rail { margin-top: 0; }
   }
 
   @media (max-width: 768px) {

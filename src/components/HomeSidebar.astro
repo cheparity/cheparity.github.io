@@ -1,0 +1,117 @@
+---
+import type { CollectionEntry } from 'astro:content';
+import FormattedDate from './FormattedDate.astro';
+import TagIndex from './TagIndex.astro';
+import { SITE_CONFIG } from '../config';
+
+interface Props {
+  counts: [string, number][];
+  latestDaily?: CollectionEntry<'daily'>;
+}
+
+const { counts, latestDaily } = Astro.props;
+---
+
+<div class="home-sidebar">
+  {SITE_CONFIG.status && (
+    <section class="home-sidebar__now">
+      <h2 class="home-sidebar__label">Now <span aria-hidden="true">✎</span></h2>
+      <p>{SITE_CONFIG.status}</p>
+    </section>
+  )}
+
+  {counts.length > 0 && <TagIndex counts={counts} limit={6} sticky={false} />}
+
+  {latestDaily && (
+    <section class="home-sidebar__daily">
+      <h2 class="home-sidebar__label">Latest Daily</h2>
+      <a href={`/daily/${latestDaily.id}/`}>
+        <span class="home-sidebar__daily-title">{latestDaily.data.title}</span>
+        <FormattedDate date={latestDaily.data.pubDate} />
+        <span class="home-sidebar__arrow" aria-hidden="true">↗</span>
+      </a>
+    </section>
+  )}
+</div>
+
+<style>
+  .home-sidebar {
+    --home-sidebar-ink: #37352f;
+    --home-sidebar-muted: #777;
+    --home-sidebar-rule: #ccc;
+    --home-sidebar-accent: #8a6d4f;
+    width: 294px;
+    max-width: 100%;
+    position: sticky;
+    top: max(2rem, calc((100vh - 32rem) / 2));
+  }
+  html:not(.dark) .home-sidebar {
+    --home-sidebar-ink: var(--lupine-foreground);
+    --home-sidebar-muted: var(--lupine-muted);
+    --home-sidebar-rule: var(--lupine-border);
+    --home-sidebar-accent: var(--lupine-accent);
+  }
+  html.dark .home-sidebar {
+    --home-sidebar-ink: #ddd;
+    --home-sidebar-muted: #aaa398;
+    --home-sidebar-rule: rgba(221, 221, 221, 0.28);
+    --home-sidebar-accent: var(--tokyo-accent);
+  }
+  .home-sidebar__now,
+  .home-sidebar__daily {
+    padding: 0.85rem 0 0.6rem;
+    border-top: 1px solid var(--home-sidebar-rule);
+  }
+  .home-sidebar__now { margin-bottom: 1.6rem; }
+  .home-sidebar__daily { margin-top: 1.6rem; }
+  .home-sidebar__label {
+    margin: 0 0 0.7rem;
+    color: var(--home-sidebar-muted);
+    font-family: 'Gill Sans', 'Gill Sans MT', Calibri, sans-serif;
+    font-size: 0.75rem;
+    font-style: normal;
+    font-weight: normal;
+    letter-spacing: 0.1em;
+    line-height: 1.4;
+    text-transform: uppercase;
+  }
+  .home-sidebar__label span { color: var(--home-sidebar-accent); font-size: 0.95rem; }
+  .home-sidebar__now p {
+    width: auto;
+    margin: 0;
+    color: var(--home-sidebar-ink);
+    font-family: 'et-book', serif;
+    font-size: 1.1rem;
+    font-style: italic;
+    line-height: 1.4;
+  }
+  .home-sidebar__daily a,
+  .home-sidebar__daily a:link,
+  .home-sidebar__daily a:visited {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: end;
+    gap: 0.3rem;
+    color: var(--home-sidebar-ink);
+    text-decoration: none;
+  }
+  .home-sidebar__daily-title {
+    grid-column: 1 / -1;
+    font-family: 'et-book', serif;
+    font-size: 1.12rem;
+    font-style: italic;
+    line-height: 1.3;
+  }
+  .home-sidebar__daily :global(time) {
+    color: var(--home-sidebar-muted);
+    font-family: 'Gill Sans', 'Gill Sans MT', Calibri, sans-serif;
+    font-size: 0.78rem;
+  }
+  .home-sidebar__arrow { color: var(--home-sidebar-muted); font-size: 0.9rem; }
+  .home-sidebar__daily a:hover .home-sidebar__daily-title,
+  .home-sidebar__daily a:focus-visible .home-sidebar__daily-title { color: var(--home-sidebar-accent); }
+  .home-sidebar__daily a:focus-visible { outline: 2px solid var(--home-sidebar-accent); outline-offset: 3px; }
+  @media (max-width: 900px) {
+    .home-sidebar { position: static; width: 100%; margin: 2rem 0 0; }
+  }
+</style>
