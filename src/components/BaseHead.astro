@@ -2,6 +2,8 @@
 // Import it's global.css file here so that it is included on
 // all pages through the use of the <BaseHead /> component.
 import '../styles/global.css';
+import '../styles/lupine.css';
+import '../styles/tokyo-night.css';
 // Self-hosted KaTeX: CSS through Vite (fonts hashed + bundled), JS from
 // public/scripts. No external CDN — math must survive jsdelivr being blocked.
 import 'katex/dist/katex.min.css';
@@ -157,4 +159,3 @@ document.addEventListener("astro:page-load", initMath);
 <meta property="twitter:title" content={title} />
 {description && <meta property="twitter:description" content={description} />}
 <meta property="twitter:image" content={new URL(image.src, Astro.url)} />
-

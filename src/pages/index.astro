@@ -13,7 +13,7 @@ import { SITE_CONFIG } from "../config";
 
 const allPosts = await getCollection("blog");
 const sortedPosts = allPosts.sort((a, b) => {
-	return b.data.pubDate.valueOf() - a.data.pubDate.valueOf();
+  return b.data.pubDate.valueOf() - a.data.pubDate.valueOf();
 });
 
 const postsToShow = sortedPosts.slice(0, SITE_CONFIG.postsPerPage);
@@ -21,126 +21,129 @@ const hasMorePosts = sortedPosts.length > SITE_CONFIG.postsPerPage;
 ---
 
 <html lang="en">
-	<head>
-		<BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} />
-		<ThemeScript />
-	</head>
+  <head>
+    <BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} />
+    <ThemeScript />
+  </head>
 
-	<body>
-		<Header />
+  <body>
+    <Header />
 
-		<main>
-			<Hero />
+    <main>
+      <Hero />
 
-			<section class="recent-posts">
-				<h2 class="section-title reveal">Recent Posts</h2>
+      <section class="recent-posts">
+        <h2 class="section-title reveal">Recent Posts</h2>
 
-				<div class="articles-list">
-					{postsToShow.map((post, i) => <ArticleCard post={post} index={i} />)}
-				</div>
+        <div class="articles-list">
+          {postsToShow.map((post, i) => <ArticleCard post={post} index={i} />)}
+        </div>
 
-				{
-					hasMorePosts && (
-						<div class="show-more-wrapper">
-						<a href="/blog" class="show-more-button">
-							Show all {sortedPosts.length} posts <span class="show-more-arrow" aria-hidden="true">→</span>
-						</a>
-						</div>
-					)
-				}
-			</section>
+        {
+          hasMorePosts && (
+            <div class="show-more-wrapper">
+              <a href="/blog" class="show-more-button">
+                Show all {sortedPosts.length} posts{" "}
+                <span class="show-more-arrow" aria-hidden="true">
+                  →
+                </span>
+              </a>
+            </div>
+          )
+        }
+      </section>
 
-			<GraphView height={460} title="Note Graph" />
-		</main>
+      <GraphView height={460} title="Note Graph" />
+    </main>
 
-		<Footer />
-		<Reveal />
-	</body>
+    <Footer />
+    <Reveal />
+  </body>
 </html>
 
 <style>
-	.recent-posts {
-		margin-top: 2.1rem;
-	}
+  .recent-posts {
+    margin-top: 2.1rem;
+  }
 
-	.section-title {
-		position: relative;
-		padding-left: 1.6rem;
-		font-family: "et-book", serif;
-		font-size: 1.8rem;
-		font-weight: normal;
-		font-style: normal;
-		font-variant: small-caps;
-		letter-spacing: 0.05em;
-		color: #666;
-		line-height: 1;
-		margin-top: 2.1rem;
-		margin-bottom: 1.4rem;
-	}
+  .section-title {
+    position: relative;
+    padding-left: 1.6rem;
+    font-family: "et-book", serif;
+    font-size: 1.8rem;
+    font-weight: normal;
+    font-style: normal;
+    font-variant: small-caps;
+    letter-spacing: 0.05em;
+    color: #666;
+    line-height: 1;
+    margin-top: 2.1rem;
+    margin-bottom: 2.3rem;
+  }
 
-	/* A hairline that grows out of the left edge as the heading reveals. */
-	.section-title::before {
-		content: "";
-		position: absolute;
-		left: 0;
-		top: 0.12em;
-		bottom: 0.12em;
-		width: 2px;
-		background: currentColor;
-		opacity: 0.5;
-		transform: scaleY(0);
-		transform-origin: top;
-		transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1) 0.1s;
-	}
-	.section-title.reveal.in::before {
-		transform: scaleY(1);
-	}
+  /* A hairline that grows out of the left edge as the heading reveals. */
+  .section-title::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0.12em;
+    bottom: 0.12em;
+    width: 2px;
+    background: currentColor;
+    opacity: 0.5;
+    transform: scaleY(0);
+    transform-origin: top;
+    transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1) 0.1s;
+  }
+  .section-title.reveal.in::before {
+    transform: scaleY(1);
+  }
 
-	.articles-list {
-		margin-top: 1.4rem;
-	}
+  .articles-list {
+    margin-top: 1.4rem;
+  }
 
-	.show-more-wrapper {
-		margin-top: 2rem;
-		text-align: left;
-	}
+  .show-more-wrapper {
+    margin-top: 2rem;
+    text-align: left;
+  }
 
-	.show-more-button {
-		font-family: "et-book", serif;
-		font-size: 1.4rem;
-		line-height: 2rem;
-		text-decoration: underline;
-		text-decoration-thickness: 0.05em;
-		text-underline-offset: 0.1em;
-		color: inherit;
-		transition: text-decoration-thickness 0.12s ease;
-	}
+  .show-more-button {
+    font-family: "et-book", serif;
+    font-size: 1.4rem;
+    line-height: 2rem;
+    text-decoration: underline;
+    text-decoration-thickness: 0.05em;
+    text-underline-offset: 0.1em;
+    color: inherit;
+    transition: text-decoration-thickness 0.12s ease;
+  }
 
-	.show-more-button:hover {
-		text-decoration-thickness: 0.15em;
-	}
+  .show-more-button:hover {
+    text-decoration-thickness: 0.15em;
+  }
 
-	.show-more-arrow {
-		display: inline-block;
-		transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1);
-	}
-	.show-more-button:hover .show-more-arrow {
-		transform: translateX(5px);
-	}
+  .show-more-arrow {
+    display: inline-block;
+    transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .show-more-button:hover .show-more-arrow {
+    transform: translateX(5px);
+  }
 
-	.show-more-button:focus-visible {
-		outline: 2px solid rgba(128, 128, 128, 0.4);
-		outline-offset: 4px;
-	}
+  .show-more-button:focus-visible {
+    outline: 2px solid rgba(128, 128, 128, 0.4);
+    outline-offset: 4px;
+  }
 
-	@media (max-width: 768px) {
-		.section-title {
-			font-size: 2rem;
-		}
+  @media (max-width: 768px) {
+    .section-title {
+      font-size: 2rem;
+    }
 
-		.show-more-button {
-			font-size: 1.2rem;
-			line-height: 1.8rem;
-		}
-	}
+    .show-more-button {
+      font-size: 1.2rem;
+      line-height: 1.8rem;
+    }
+  }
 </style>

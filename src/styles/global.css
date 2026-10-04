@@ -4,6 +4,8 @@
  */
 
 @import './callout.css';
+@import '@fontsource-variable/jetbrains-mono/wght.css';
+@import '@fontsource-variable/jetbrains-mono/wght-italic.css';
 
 @tailwind base;
 @tailwind components;
@@ -37,7 +39,7 @@
   }
 
   html.dark body {
-    background-color: #151515;
+    background-color: #13141c;
     background-image:
       repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(70, 65, 60, 0.04) 2px, rgba(70, 65, 60, 0.04) 4px),
       repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(70, 65, 60, 0.04) 2px, rgba(70, 65, 60, 0.04) 4px),
@@ -197,15 +199,18 @@
     @apply py-4 px-0;
   }
 
-  /* Article body prose — Source Sans 3 for sustained reading. Everything
-     outside .prose (header nav, hero, cards, sidenotes, footer) keeps
-     et-book via body inheritance — the Tufte chrome.
-     The reading size lives HERE so every child (p, ul, display math,
-     callout titles, bare divs) inherits it; KaTeX's 1.21em then matches
-     inline and display formulas alike. */
+  /* Blog and Daily article body. JetBrains Mono covers English; the existing
+     sans stack still supplies Chinese glyphs. Headings keep their serif face. */
   .prose {
-    @apply font-sans text-[1.2rem];
+    font-family: "JetBrains Mono Variable", "Source Sans 3", "Helvetica Neue", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "微软雅黑", sans-serif;
+    font-size: 15px;
+    line-height: 1.85;
     position: relative;
+  }
+
+  .prose :is(p, dl, ol, ul, blockquote) {
+    font-size: inherit;
+    line-height: inherit;
   }
 
   /* Site header styling (matching tufted-blog.pages.dev) */

@@ -12,6 +12,7 @@
     "@astrojs/mdx": "^4.3.13",
     "@astrojs/rss": "^4.0.15",
     "@astrojs/sitemap": "^3.7.0",
+    "@fontsource-variable/jetbrains-mono": "^5.3.0",
     "@r4ai/remark-callout": "^0.6.2",
     "astro": "^5.17.1",
     "astro-expressive-code": "^0.41.6",

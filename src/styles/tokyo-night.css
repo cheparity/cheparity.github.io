@@ -1,0 +1,72 @@
+/* Omarchy Tokyo Night accents for the dark theme. The background texture and
+   sky/graph illustration retain their own colors. */
+html.dark {
+  --tokyo-accent: #7aa2f7;
+  --tokyo-accent-rgb: 122 162 247;
+  --tokyo-surface: #1a1b26;
+}
+
+html.dark body .prose a:link,
+html.dark body .prose a:visited { color: var(--tokyo-accent); }
+html.dark body header nav a:hover,
+html.dark body header nav a:focus-visible { background: rgb(var(--tokyo-accent-rgb) / 12%); }
+
+html.dark body code:not(pre code) {
+  background: rgb(var(--tokyo-accent-rgb) / 9%);
+  border-color: rgb(var(--tokyo-accent-rgb) / 22%);
+}
+html.dark body .tag-pill,
+html.dark body .sm-tag,
+html.dark body .sm-tag-btn {
+  background: rgb(var(--tokyo-accent-rgb) / 10%);
+  border-color: rgb(var(--tokyo-accent-rgb) / 26%);
+  color: var(--tokyo-accent);
+}
+html.dark body .tag-pill:hover,
+html.dark body .sm-tag-btn:hover {
+  background: rgb(var(--tokyo-accent-rgb) / 18%);
+  border-color: rgb(var(--tokyo-accent-rgb) / 44%);
+  color: var(--tokyo-accent);
+}
+html.dark body .sm-tag-btn:focus-visible { outline-color: var(--tokyo-accent); }
+
+html.dark body .link-card--internal,
+html.dark body .link-card--internal:hover { border-left-color: var(--tokyo-accent); }
+html.dark body .link-card--internal:hover { background: rgb(var(--tokyo-accent-rgb) / 9%); }
+html.dark body .link-card-icon,
+html.dark body .hero-tagline strong,
+html.dark body .status-mark { color: var(--tokyo-accent); }
+html.dark body .link-card-connectors path { stroke: var(--tokyo-accent); }
+html.dark body .link-card-connectors circle { fill: var(--tokyo-accent); }
+
+html.dark body .daily-calendar {
+  --calendar-accent: var(--tokyo-accent);
+  --calendar-paper: #13141c;
+}
+html.dark body .outline {
+  --bar-active: var(--tokyo-accent);
+  --dot: var(--tokyo-accent);
+  --panel: rgb(26 27 38 / 96%);
+  --accent: rgb(var(--tokyo-accent-rgb) / 10%);
+}
+html.dark body .heading-anchor:hover { color: var(--tokyo-accent); }
+html.dark body .reading-progress-bar { background: var(--tokyo-accent); }
+
+html.dark body .search-modal-content { background: var(--tokyo-surface); }
+html.dark body .sm-mark,
+html.dark body .sm-state-glyph { color: var(--tokyo-accent); }
+html.dark body .sm-input-wrap:focus-within { border-bottom-color: var(--tokyo-accent); }
+html.dark body .sm-link:hover,
+html.dark body .sm-link.is-active {
+  background: rgb(var(--tokyo-accent-rgb) / 12%);
+  border-left-color: var(--tokyo-accent);
+}
+html.dark body .sm-link:hover .sm-folio,
+html.dark body .sm-link.is-active .sm-folio,
+html.dark body .sm-link:hover .sm-item-title,
+html.dark body .sm-link.is-active .sm-item-title,
+html.dark body .sm-arrow { color: var(--tokyo-accent); }
+html.dark body .sm-excerpt mark {
+  background: linear-gradient(transparent 15%, rgb(var(--tokyo-accent-rgb) / 32%) 15%);
+  color: inherit;
+}

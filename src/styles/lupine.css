@@ -1,0 +1,191 @@
+/* Omarchy Lupine light palette. Decorative background layers and the sky/graph
+   illustrations retain their own colors; dark-mode rules are untouched. */
+html:not(.dark) {
+  --lupine-background: #fafafa;
+  --lupine-surface: #f5f5f5;
+  --lupine-foreground: #212121;
+  --lupine-foreground-soft: #424242;
+  --lupine-muted: #757575;
+  --lupine-border: #d0d0d0;
+  --lupine-accent: #3264eb;
+}
+
+html:not(.dark) body {
+  background-color: var(--lupine-background);
+  color: var(--lupine-foreground);
+}
+
+html:not(.dark) ::selection { background: var(--lupine-border); }
+html:not(.dark) hr,
+html:not(.dark) th,
+html:not(.dark) td { border-color: var(--lupine-border); }
+html:not(.dark) header,
+html:not(.dark) footer { color: var(--lupine-muted); }
+html:not(.dark) header nav a:hover,
+html:not(.dark) header nav a:focus-visible { background: rgb(50 100 235 / 9%); }
+
+/* Reading and archive links keep their existing typography and layout. */
+html:not(.dark) .prose a:link,
+html:not(.dark) .prose a:visited { color: var(--lupine-accent); }
+html:not(.dark) .section-title,
+html:not(.dark) .year-heading { color: var(--lupine-foreground-soft); }
+html:not(.dark) .entry-count,
+html:not(.dark) .daily-list time,
+html:not(.dark) .back-link,
+html:not(.dark) .date,
+html:not(.dark) .related-label,
+html:not(.dark) .related-tags,
+html:not(.dark) .post-nav-dir { color: var(--lupine-muted); }
+html:not(.dark) .article-divider,
+html:not(.dark) .related,
+html:not(.dark) .post-nav { border-color: var(--lupine-border); }
+html:not(.dark) .daily-list li,
+html:not(.dark) .related-link { border-color: var(--lupine-border); }
+
+/* Chips, cards, and small controls use Lupine blue instead of parchment brown. */
+html:not(.dark) .tag-pill,
+html:not(.dark) .sm-tag,
+html:not(.dark) .sm-tag-btn {
+  background: rgb(50 100 235 / 8%);
+  border-color: rgb(50 100 235 / 24%);
+  color: var(--lupine-accent);
+}
+html:not(.dark) .tag-pill:hover,
+html:not(.dark) .sm-tag-btn:hover {
+  background: rgb(50 100 235 / 15%);
+  border-color: rgb(50 100 235 / 42%);
+  color: var(--lupine-accent);
+}
+html:not(.dark) code:not(pre code) {
+  background: rgb(50 100 235 / 8%);
+  border-color: rgb(50 100 235 / 22%);
+}
+html:not(.dark) .link-card--internal,
+html:not(.dark) .link-card--internal:hover { border-left-color: var(--lupine-accent); }
+html:not(.dark) .link-card--internal:hover { background: rgb(50 100 235 / 7%); }
+html:not(.dark) .link-card-icon,
+html:not(.dark) .link-card-connectors circle { color: var(--lupine-accent); fill: var(--lupine-accent); }
+html:not(.dark) .link-card-connectors .connector-dash { stroke: var(--lupine-accent); }
+html:not(.dark) .link-card-subtitle { color: var(--lupine-muted); }
+
+html:not(.dark) .hero-tagline strong,
+html:not(.dark) .status-mark { color: var(--lupine-accent); }
+html:not(.dark) .hero-status,
+html:not(.dark) .footer-copy,
+html:not(.dark) .footer-link,
+html:not(.dark) .footer-credit { color: var(--lupine-muted); }
+html:not(.dark) .site-footer { border-top-color: var(--lupine-border); }
+html:not(.dark) .footer-link,
+html:not(.dark) .social-link { background: rgb(50 100 235 / 8%); }
+html:not(.dark) .footer-link:hover,
+html:not(.dark) .social-link:hover { background: rgb(50 100 235 / 15%); }
+html:not(.dark) .theme-toggle-btn,
+html:not(.dark) .search-toggle-btn { color: var(--lupine-foreground-soft); }
+html:not(.dark) .theme-toggle-btn:hover,
+html:not(.dark) .search-toggle-btn:hover { background: rgb(50 100 235 / 9%); }
+html:not(.dark) .theme-toggle-btn:focus-visible,
+html:not(.dark) .search-toggle-btn:focus-visible,
+html:not(.dark) .sm-tag-btn:focus-visible { outline-color: var(--lupine-accent); }
+
+/* Calendar, article outline, and reading progress. */
+html:not(.dark) .daily-calendar {
+  --calendar-accent: var(--lupine-accent);
+  --calendar-ink: var(--lupine-foreground);
+  --calendar-muted: var(--lupine-muted);
+  --calendar-rule: var(--lupine-border);
+  --calendar-paper: var(--lupine-background);
+}
+html:not(.dark) .outline {
+  --bar: rgb(50 100 235 / 40%);
+  --bar-active: var(--lupine-accent);
+  --label: var(--lupine-muted);
+  --label-active: var(--lupine-foreground);
+  --panel: rgb(250 250 250 / 96%);
+  --rail: rgb(50 100 235 / 10%);
+  --rail-fill: rgb(50 100 235 / 38%);
+  --dot: var(--lupine-accent);
+  --accent: rgb(50 100 235 / 8%);
+}
+html:not(.dark) .outline:hover .outline-bar::before,
+html:not(.dark) .outline:focus-within .outline-bar::before { background: rgb(50 100 235 / 20%); }
+html:not(.dark) .outline:hover .outline-link.is-active .outline-bar::before,
+html:not(.dark) .outline:focus-within .outline-link.is-active .outline-bar::before { background: var(--lupine-accent); }
+html:not(.dark) .heading-anchor { color: var(--lupine-muted); }
+html:not(.dark) .heading-anchor:hover { color: var(--lupine-accent); }
+html:not(.dark) .reading-progress-bar { background: var(--lupine-accent); }
+
+/* Search follows the same light palette; its existing dark treatment stays. */
+html:not(.dark) .search-modal-backdrop { background: rgb(33 33 33 / 45%); }
+html:not(.dark) .search-modal-content {
+  background: var(--lupine-background);
+  border-color: var(--lupine-border);
+  outline-color: var(--lupine-border);
+}
+html:not(.dark) .sm-head,
+html:not(.dark) .sm-foot { border-color: var(--lupine-border); }
+html:not(.dark) .sm-foot { background: var(--lupine-surface); }
+html:not(.dark) .sm-mark,
+html:not(.dark) .sm-arrow { color: var(--lupine-accent); }
+html:not(.dark) .sm-title,
+html:not(.dark) .sm-item-title,
+html:not(.dark) .sm-input-wrap input { color: var(--lupine-foreground); }
+html:not(.dark) .sm-input-wrap,
+html:not(.dark) .sm-kbd-chip,
+html:not(.dark) .sm-hints kbd { border-color: var(--lupine-border); }
+html:not(.dark) .sm-input-wrap:focus-within { border-bottom-color: var(--lupine-accent); }
+html:not(.dark) .sm-input-wrap input::placeholder,
+html:not(.dark) .sm-excerpt,
+html:not(.dark) .sm-meta,
+html:not(.dark) .sm-state-hint,
+html:not(.dark) .sm-idle-label,
+html:not(.dark) .sm-hints,
+html:not(.dark) .sm-count,
+html:not(.dark) .sm-folio { color: var(--lupine-muted); }
+html:not(.dark) .sm-kbd-chip,
+html:not(.dark) .sm-hints kbd { background: var(--lupine-surface); color: var(--lupine-foreground-soft); }
+html:not(.dark) .sm-link:hover,
+html:not(.dark) .sm-link.is-active { background: rgb(50 100 235 / 9%); border-left-color: var(--lupine-accent); }
+html:not(.dark) .sm-link:hover .sm-item-title,
+html:not(.dark) .sm-link.is-active .sm-item-title,
+html:not(.dark) .sm-link:hover .sm-folio,
+html:not(.dark) .sm-link.is-active .sm-folio { color: var(--lupine-accent); }
+html:not(.dark) .sm-excerpt mark { background: linear-gradient(transparent 15%, rgb(50 100 235 / 24%) 15%); }
+html:not(.dark) .sm-state-glyph { color: var(--lupine-accent); }
+html:not(.dark) .sm-state-text { color: var(--lupine-foreground-soft); }
+html:not(.dark) .sm-results::-webkit-scrollbar-thumb { background: rgb(50 100 235 / 35%); }
+
+/* About keeps its established fonts and layout. */
+html:not(.dark) .about-kicker,
+html:not(.dark) .about-figure figcaption,
+html:not(.dark) .threads-kicker,
+html:not(.dark) .connect-kicker { color: var(--lupine-muted); }
+html:not(.dark) .about-lead,
+html:not(.dark) .thread-body { color: var(--lupine-foreground-soft); }
+html:not(.dark) .thread,
+html:not(.dark) .thread:last-child,
+html:not(.dark) .connect-link { border-color: var(--lupine-border); }
+html:not(.dark) .thread-num { color: var(--lupine-muted); }
+html:not(.dark) .thread:hover .thread-num { color: var(--lupine-accent); }
+html:not(.dark) .connect-link:hover { background: rgb(50 100 235 / 9%); border-color: var(--lupine-accent); }
+
+/* Callout categories retain their meaning using Lupine's named colors. */
+html:not(.dark) [data-callout] { background: rgb(50 100 235 / 10%); border-color: rgb(50 100 235 / 24%); }
+html:not(.dark) [data-callout] > [data-callout-title] { color: var(--lupine-accent); }
+html:not(.dark) [data-callout-type="abstract"],
+html:not(.dark) [data-callout-type="summary"],
+html:not(.dark) [data-callout-type="tldr"],
+html:not(.dark) [data-callout-type="tip"],
+html:not(.dark) [data-callout-type="hint"],
+html:not(.dark) [data-callout-type="important"] { background: rgb(12 103 222 / 10%); border-color: rgb(12 103 222 / 24%); }
+html:not(.dark) [data-callout-type="abstract"] > [data-callout-title],
+html:not(.dark) [data-callout-type="summary"] > [data-callout-title],
+html:not(.dark) [data-callout-type="tldr"] > [data-callout-title],
+html:not(.dark) [data-callout-type="tip"] > [data-callout-title],
+html:not(.dark) [data-callout-type="hint"] > [data-callout-title],
+html:not(.dark) [data-callout-type="important"] > [data-callout-title] { color: #0c67de; }
+html:not(.dark) [data-callout-type="success"],
+html:not(.dark) [data-callout-type="check"],
+html:not(.dark) [data-callout-type="done"] { background: rgb(74 47 208 / 10%); border-color: rgb(74 47 208 / 24%); }
+html:not(.dark) [data-callout-type="success"] > [data-callout-title],
+html:not(.dark) [data-callout-type="check"] > [data-callout-title],
+html:not(.dark) [data-callout-type="done"] > [data-callout-title] { color: #4a2fd0; }

@@ -1,12 +1,7 @@
 ---
 import { getCollection, render } from 'astro:content';
-import BaseHead from '../../components/BaseHead.astro';
-import Footer from '../../components/Footer.astro';
-import Header from '../../components/Header.astro';
-import ThemeScript from '../../components/ThemeScript.astro';
-import PostMeta from '../../components/PostMeta.astro';
-import PostNavigation from '../../components/PostNavigation.astro';
-import { readingMinutes } from '../../utils/readingTime';
+import PostLayout from '../../layouts/PostLayout.astro';
+import { relatedPostsFor } from '../../utils/relatedPosts';
 
 export async function getStaticPaths() {
 	const entries = (await getCollection('daily')).sort(
@@ -24,34 +19,9 @@ export async function getStaticPaths() {
 
 const { entry, previous, next } = Astro.props;
 const { Content } = await render(entry);
-const readMins = readingMinutes(entry.id, 'daily');
+const relatedPosts = relatedPostsFor(entry, await getCollection('daily'));
 ---
 
-<html lang="en">
-	<head>
-		<BaseHead title={`${entry.data.title} - Daily`} description={`${entry.data.title} · Daily note`} />
-		<ThemeScript />
-	</head>
-	<body>
-		<Header />
-		<main>
-			<article>
-				<section>
-					<a class="back-link" href="/daily/">← Daily archive</a>
-					<PostMeta pubDate={entry.data.pubDate} updatedDate={entry.data.updatedDate} tags={entry.data.tags} readMins={readMins} />
-					<h1>{entry.data.title}</h1>
-					<hr />
-				</section>
-				<section class="prose"><Content /></section>
-				<PostNavigation previous={previous} next={next} hrefBase="/daily" />
-			</article>
-		</main>
-		<Footer />
-	</body>
-</html>
-
-<style>
-	.back-link { color: #777; text-decoration: none; font-size: 0.9rem; }
-	.back-link:hover { text-decoration: underline; }
-	:global(.date) { margin-top: 1.5rem; color: #888; }
-</style>
+<PostLayout collection="daily" {...entry.data} slug={entry.id} prevPost={previous} nextPost={next} relatedPosts={relatedPosts}>
+	<Content />
+</PostLayout>

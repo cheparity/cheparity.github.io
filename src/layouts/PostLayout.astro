@@ -1,6 +1,6 @@
 ---
 import { Image } from 'astro:assets';
-import type { CollectionEntry } from 'astro:content';
+import type { ImageMetadata } from 'astro';
 import BaseHead from '../components/BaseHead.astro';
 import Footer from '../components/Footer.astro';
 import PostMeta from '../components/PostMeta.astro';
@@ -12,24 +12,32 @@ import ProgressBar from '../components/ProgressBar.astro';
 import Lightbox from '../components/Lightbox.astro';
 import LinkCardLayout from '../components/LinkCardLayout.astro';
 import { readingMinutes } from '../utils/readingTime';
-import { SITE_TITLE } from '../consts';
 
 type PostLink = { title: string; id: string };
 type RelatedPost = { title: string; id: string; tags: string[] };
-type Props = CollectionEntry<'blog'>['data'] & {
+type Props = {
+	collection: 'blog' | 'daily';
+	title: string;
+	description?: string;
+	pubDate: Date;
+	updatedDate?: Date;
+	tags?: string[];
+	heroImage?: ImageMetadata;
 	slug: string;
 	prevPost?: PostLink;
 	nextPost?: PostLink;
 	relatedPosts?: RelatedPost[];
 };
 
-const { title, description, pubDate, updatedDate, heroImage, tags, slug, prevPost, nextPost, relatedPosts } = Astro.props;
-const readMins = readingMinutes(slug);
+const { collection, title, description, pubDate, updatedDate, heroImage, tags, slug, prevPost, nextPost, relatedPosts } = Astro.props;
+const readMins = readingMinutes(slug, collection);
+const archiveLabel = collection === 'daily' ? 'Daily' : 'Blog';
+const hrefBase = `/${collection}` as '/blog' | '/daily';
 ---
 
 <html lang="en">
 	<head>
-		<BaseHead title={title} description={description} />
+		<BaseHead title={collection === 'daily' ? `${title} - Daily` : title} description={description ?? (collection === 'daily' ? `${title} · Daily note` : undefined)} />
 		<ThemeScript />
 	</head>
 
@@ -45,7 +53,7 @@ const readMins = readingMinutes(slug);
 					</figure>
 				)}
 				<section>
-					<a class="back-link" href="/blog/">← Blog archive</a>
+					<a class="back-link" href={`${hrefBase}/`}>← {archiveLabel} archive</a>
 					<PostMeta pubDate={pubDate} updatedDate={updatedDate} tags={tags} readMins={readMins} />
 					<h1>{title}</h1>
 					<hr />
@@ -53,14 +61,14 @@ const readMins = readingMinutes(slug);
 				<section class="prose">
 					<slot />
 				</section>
-				<PostNavigation previous={prevPost} next={nextPost} hrefBase="/blog" />
+				<PostNavigation previous={prevPost} next={nextPost} hrefBase={hrefBase} />
 				{relatedPosts && relatedPosts.length > 0 && (
 					<nav class="related" aria-label="Related posts">
 						<span class="related-label">Related</span>
 						<ul class="related-list">
 							{relatedPosts.map((rel) => (
 								<li>
-									<a href={`/blog/${rel.id}/`} class="related-link">
+									<a href={`${hrefBase}/${rel.id}/`} class="related-link">
 										<span class="related-title">{rel.title}</span>
 										<span class="related-tags">
 											{rel.tags.map((tag) => (
@@ -173,6 +181,4 @@ const readMins = readingMinutes(slug);
 		}
 	}
 
-	@media (max-width: 760px) {
-	}
 </style>
