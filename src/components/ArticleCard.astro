@@ -99,8 +99,8 @@ const formatDate = (date: Date) => {
   }
 
   .article-text {
-    flex: 0 0 38rem;
-    max-width: 38rem;
+    flex: 1 1 0;
+    min-width: 0;
   }
 
   .article-title-link {
@@ -110,10 +110,10 @@ const formatDate = (date: Date) => {
 
   .article-title {
     font-family: "et-book", serif;
-    font-size: 2rem;
+    font-size: 1.7rem;
     font-weight: normal;
     font-style: italic;
-    line-height: 1;
+    line-height: 1.25;
     margin: 0 0 1rem 0;
     cursor: pointer;
   }
@@ -126,8 +126,8 @@ const formatDate = (date: Date) => {
 
   .article-description {
     font-family: "et-book", serif;
-    font-size: 1.2rem;
-    line-height: 1.85;
+    font-size: var(--reading-font-size);
+    line-height: var(--reading-line-height);
     margin: 1rem 0;
     cursor: default;
   }
@@ -162,7 +162,7 @@ const formatDate = (date: Date) => {
   .article-image-link {
     text-decoration: none;
     color: inherit;
-    flex: 0 0 22rem;
+    flex: 0 0 28%;
     max-width: 22rem;
     margin-top: 0.5rem;
   }
@@ -206,12 +206,9 @@ const formatDate = (date: Date) => {
     }
 
     .article-title {
-      font-size: 1.7rem;
+      font-size: 1.5rem;
     }
 
-    .article-description {
-      font-size: 1.1rem;
-    }
 
     .article-meta {
       font-size: 1rem;

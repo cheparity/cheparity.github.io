@@ -1,0 +1,266 @@
+/* Warm paper and terracotta, with a charcoal companion palette. */
+html:not(.dark) {
+  --site-background: #f8f5ef;
+  --site-surface: #efe9e0;
+  --site-foreground: #302b28;
+  --site-foreground-soft: #514842;
+  --site-muted: #7b7067;
+  --site-border: #d8cec3;
+  --site-accent: #a04f3f;
+  --site-accent-rgb: 160 79 63;
+  color-scheme: light;
+}
+
+html:not(.dark) body {
+  background-color: var(--site-background);
+  color: var(--site-foreground);
+}
+
+html:not(.dark) ::selection { background: var(--site-border); }
+html:not(.dark) hr,
+html:not(.dark) th,
+html:not(.dark) td { border-color: var(--site-border); }
+html:not(.dark) header,
+html:not(.dark) footer { color: var(--site-muted); }
+html:not(.dark) header nav a:hover,
+html:not(.dark) header nav a:focus-visible { background: rgb(var(--site-accent-rgb) / 9%); }
+
+/* Reading and archive links keep their existing typography and layout. */
+html:not(.dark) .prose a:link,
+html:not(.dark) .prose a:visited { color: var(--site-accent); }
+html:not(.dark) .section-title,
+html:not(.dark) .year-heading { color: var(--site-foreground-soft); }
+html:not(.dark) .entry-count,
+html:not(.dark) .daily-list time,
+html:not(.dark) .back-link,
+html:not(.dark) .date,
+html:not(.dark) .related-label,
+html:not(.dark) .related-tags,
+html:not(.dark) .post-nav-dir { color: var(--site-muted); }
+html:not(.dark) .related,
+html:not(.dark) .post-nav { border-color: var(--site-border); }
+html:not(.dark) .related-link { border-color: var(--site-border); }
+
+/* Chips, cards, and small controls use the shared terracotta accent. */
+html:not(.dark) .tag-pill,
+html:not(.dark) .sm-tag,
+html:not(.dark) .sm-tag-btn {
+  background: rgb(var(--site-accent-rgb) / 8%);
+  border-color: rgb(var(--site-accent-rgb) / 24%);
+  color: var(--site-accent);
+}
+html:not(.dark) .tag-pill:hover,
+html:not(.dark) .sm-tag-btn:hover {
+  background: rgb(var(--site-accent-rgb) / 15%);
+  border-color: rgb(var(--site-accent-rgb) / 42%);
+  color: var(--site-accent);
+}
+html:not(.dark) code:not(pre code) {
+  background: rgb(var(--site-accent-rgb) / 8%);
+  border-color: rgb(var(--site-accent-rgb) / 22%);
+}
+html:not(.dark) .link-card--internal,
+html:not(.dark) .link-card--internal:hover { border-left-color: var(--site-accent); }
+html:not(.dark) .link-card--internal:hover { background: rgb(var(--site-accent-rgb) / 7%); }
+html:not(.dark) .link-card-icon,
+html:not(.dark) .link-card-connectors circle { color: var(--site-accent); fill: var(--site-accent); }
+html:not(.dark) .link-card-connectors .connector-dash { stroke: var(--site-accent); }
+html:not(.dark) .link-card-subtitle { color: var(--site-muted); }
+
+html:not(.dark) .hero-tagline strong,
+html:not(.dark) .status-mark { color: var(--site-accent); }
+html:not(.dark) .hero-status,
+html:not(.dark) .footer-copy,
+html:not(.dark) .footer-link,
+html:not(.dark) .footer-credit { color: var(--site-muted); }
+html:not(.dark) .site-footer { border-top-color: var(--site-border); }
+html:not(.dark) .footer-link,
+html:not(.dark) .social-link { background: rgb(var(--site-accent-rgb) / 8%); }
+html:not(.dark) .footer-link:hover,
+html:not(.dark) .social-link:hover { background: rgb(var(--site-accent-rgb) / 15%); }
+html:not(.dark) .theme-toggle-btn,
+html:not(.dark) .search-toggle-btn { color: var(--site-foreground-soft); }
+html:not(.dark) .theme-toggle-btn:hover,
+html:not(.dark) .search-toggle-btn:hover { background: rgb(var(--site-accent-rgb) / 9%); }
+html:not(.dark) .theme-toggle-btn:focus-visible,
+html:not(.dark) .search-toggle-btn:focus-visible,
+html:not(.dark) .sm-tag-btn:focus-visible { outline-color: var(--site-accent); }
+
+/* Calendar, article outline, and reading progress. */
+html:not(.dark) .daily-calendar {
+  --calendar-accent: var(--site-accent);
+  --calendar-ink: var(--site-foreground);
+  --calendar-muted: var(--site-muted);
+  --calendar-rule: var(--site-border);
+  --calendar-paper: var(--site-background);
+}
+html:not(.dark) .heading-anchor { color: var(--site-muted); }
+html:not(.dark) .heading-anchor:hover { color: var(--site-accent); }
+html:not(.dark) .reading-progress-bar { background: var(--site-accent); }
+
+/* Search follows the same light palette; its existing dark treatment stays. */
+html:not(.dark) .search-modal-backdrop { background: rgb(33 33 33 / 45%); }
+html:not(.dark) .search-modal-content {
+  background: var(--site-background);
+  border-color: var(--site-border);
+  outline-color: var(--site-border);
+}
+html:not(.dark) .sm-head,
+html:not(.dark) .sm-foot { border-color: var(--site-border); }
+html:not(.dark) .sm-foot { background: var(--site-surface); }
+html:not(.dark) .sm-mark,
+html:not(.dark) .sm-arrow { color: var(--site-accent); }
+html:not(.dark) .sm-title,
+html:not(.dark) .sm-item-title,
+html:not(.dark) .sm-input-wrap input { color: var(--site-foreground); }
+html:not(.dark) .sm-input-wrap,
+html:not(.dark) .sm-kbd-chip,
+html:not(.dark) .sm-hints kbd { border-color: var(--site-border); }
+html:not(.dark) .sm-input-wrap:focus-within { border-bottom-color: var(--site-accent); }
+html:not(.dark) .sm-input-wrap input::placeholder,
+html:not(.dark) .sm-excerpt,
+html:not(.dark) .sm-meta,
+html:not(.dark) .sm-state-hint,
+html:not(.dark) .sm-idle-label,
+html:not(.dark) .sm-hints,
+html:not(.dark) .sm-count,
+html:not(.dark) .sm-folio { color: var(--site-muted); }
+html:not(.dark) .sm-kbd-chip,
+html:not(.dark) .sm-hints kbd { background: var(--site-surface); color: var(--site-foreground-soft); }
+html:not(.dark) .sm-link:hover,
+html:not(.dark) .sm-link.is-active { background: rgb(var(--site-accent-rgb) / 9%); border-left-color: var(--site-accent); }
+html:not(.dark) .sm-link:hover .sm-item-title,
+html:not(.dark) .sm-link.is-active .sm-item-title,
+html:not(.dark) .sm-link:hover .sm-folio,
+html:not(.dark) .sm-link.is-active .sm-folio { color: var(--site-accent); }
+html:not(.dark) .sm-excerpt mark { background: linear-gradient(transparent 15%, rgb(var(--site-accent-rgb) / 24%) 15%); }
+html:not(.dark) .sm-state-glyph { color: var(--site-accent); }
+html:not(.dark) .sm-state-text { color: var(--site-foreground-soft); }
+html:not(.dark) .sm-results::-webkit-scrollbar-thumb { background: rgb(var(--site-accent-rgb) / 35%); }
+
+/* About keeps its established fonts and layout. */
+html:not(.dark) .about-kicker,
+html:not(.dark) .about-figure figcaption,
+html:not(.dark) .threads-kicker,
+html:not(.dark) .connect-kicker { color: var(--site-muted); }
+html:not(.dark) .about-lead,
+html:not(.dark) .thread-body { color: var(--site-foreground-soft); }
+html:not(.dark) .thread,
+html:not(.dark) .thread:last-child,
+html:not(.dark) .connect-link { border-color: var(--site-border); }
+html:not(.dark) .thread-num { color: var(--site-muted); }
+html:not(.dark) .thread:hover .thread-num { color: var(--site-accent); }
+html:not(.dark) .connect-link:hover { background: rgb(var(--site-accent-rgb) / 9%); border-color: var(--site-accent); }
+
+
+/* Dark mode uses the same warm hue, lifted for contrast. */
+html.dark {
+  --site-background: #211e1c;
+  --site-foreground: #e5ddd3;
+  --site-foreground-soft: #c7bcb1;
+  --site-muted: #b2a397;
+  --site-border: #4b413a;
+  color-scheme: dark;
+  --site-accent: #df9b83;
+  --site-accent-rgb: 223 155 131;
+  --site-surface: #292521;
+}
+
+html.dark body .prose a:link,
+html.dark body .prose a:visited { color: var(--site-accent); }
+html.dark body header nav a:hover,
+html.dark body header nav a:focus-visible { background: rgb(var(--site-accent-rgb) / 12%); }
+
+html.dark body code:not(pre code) {
+  background: rgb(var(--site-accent-rgb) / 9%);
+  border-color: rgb(var(--site-accent-rgb) / 22%);
+}
+html.dark body .tag-pill,
+html.dark body .sm-tag,
+html.dark body .sm-tag-btn {
+  background: rgb(var(--site-accent-rgb) / 10%);
+  border-color: rgb(var(--site-accent-rgb) / 26%);
+  color: var(--site-accent);
+}
+html.dark body .tag-pill:hover,
+html.dark body .sm-tag-btn:hover {
+  background: rgb(var(--site-accent-rgb) / 18%);
+  border-color: rgb(var(--site-accent-rgb) / 44%);
+  color: var(--site-accent);
+}
+html.dark body .sm-tag-btn:focus-visible { outline-color: var(--site-accent); }
+
+html.dark body .link-card--internal,
+html.dark body .link-card--internal:hover { border-left-color: var(--site-accent); }
+html.dark body .link-card--internal:hover { background: rgb(var(--site-accent-rgb) / 9%); }
+html.dark body .link-card-icon,
+html.dark body .hero-tagline strong,
+html.dark body .status-mark { color: var(--site-accent); }
+html.dark body .link-card-connectors path { stroke: var(--site-accent); }
+html.dark body .link-card-connectors circle { fill: var(--site-accent); }
+
+html.dark body .daily-calendar {
+  --calendar-accent: var(--site-accent);
+  --calendar-paper: var(--site-background);
+}
+html.dark body .heading-anchor:hover { color: var(--site-accent); }
+html.dark body .reading-progress-bar { background: var(--site-accent); }
+
+html.dark body .search-modal-content { background: var(--site-surface); }
+html.dark body .sm-mark,
+html.dark body .sm-state-glyph { color: var(--site-accent); }
+html.dark body .sm-input-wrap:focus-within { border-bottom-color: var(--site-accent); }
+html.dark body .sm-link:hover,
+html.dark body .sm-link.is-active {
+  background: rgb(var(--site-accent-rgb) / 12%);
+  border-left-color: var(--site-accent);
+}
+html.dark body .sm-link:hover .sm-folio,
+html.dark body .sm-link.is-active .sm-folio,
+html.dark body .sm-link:hover .sm-item-title,
+html.dark body .sm-link.is-active .sm-item-title,
+html.dark body .sm-arrow { color: var(--site-accent); }
+html.dark body .sm-excerpt mark {
+  background: linear-gradient(transparent 15%, rgb(var(--site-accent-rgb) / 32%) 15%);
+  color: inherit;
+}
+
+/* These colors must change together, including during view transitions. */
+html body {
+  background-color: var(--site-background);
+  color: var(--site-foreground);
+}
+html.dark body :is(.site-header, .site-footer, .footer-copy, .footer-credit,
+  .section-title, .year-heading, .back-link, .date, .related-tags, .related-label,
+  .post-nav-dir, .read-time, .entry-count, .daily-list time) { color: var(--site-muted); }
+html.dark body :is(.related, .post-nav, .site-footer, .thread, .connect-link) { border-color: var(--site-border); }
+html.dark body :is(.about-lead, .thread-body) { color: var(--site-foreground-soft); }
+html body .daily-calendar {
+  --calendar-accent: var(--site-accent);
+  --calendar-ink: var(--site-foreground);
+  --calendar-muted: var(--site-muted);
+  --calendar-rule: var(--site-border);
+  --calendar-paper: var(--site-background);
+}
+html body ::selection { background: rgb(var(--site-accent-rgb) / 24%); }
+html body .prose [data-callout][data-callout-type] {
+  --callout-color: var(--site-accent);
+  background: color-mix(in srgb, var(--callout-color) 8%, transparent);
+  border-color: color-mix(in srgb, var(--callout-color) 28%, transparent);
+}
+html body .prose [data-callout][data-callout-type] > [data-callout-title] { color: var(--callout-color); }
+html body .prose [data-callout][data-callout-type]:is([data-callout-type="abstract"], [data-callout-type="summary"],
+  [data-callout-type="tldr"], [data-callout-type="tip"], [data-callout-type="hint"],
+  [data-callout-type="important"], [data-callout-type="success"], [data-callout-type="check"],
+  [data-callout-type="done"]) { --callout-color: #60735b; }
+html.dark body .prose [data-callout][data-callout-type]:is([data-callout-type="abstract"], [data-callout-type="summary"],
+  [data-callout-type="tldr"], [data-callout-type="tip"], [data-callout-type="hint"],
+  [data-callout-type="important"], [data-callout-type="success"], [data-callout-type="check"],
+  [data-callout-type="done"]) { --callout-color: #b4bf99; }
+html body .prose [data-callout][data-callout-type]:is([data-callout-type="warning"], [data-callout-type="caution"],
+  [data-callout-type="attention"], [data-callout-type="question"], [data-callout-type="help"],
+  [data-callout-type="faq"]) { --callout-color: #996e31; }
+html.dark body .prose [data-callout][data-callout-type]:is([data-callout-type="warning"], [data-callout-type="caution"],
+  [data-callout-type="attention"], [data-callout-type="question"], [data-callout-type="help"],
+  [data-callout-type="faq"]) { --callout-color: #d7b375; }
+html body .prose [data-callout][data-callout-type]:is([data-callout-type="quote"], [data-callout-type="cite"]) { --callout-color: var(--site-muted); }

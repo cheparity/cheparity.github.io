@@ -13,7 +13,7 @@ export async function getStaticPaths() {
 type Props = CollectionEntry<'blog'>;
 
 const post = Astro.props;
-const { Content } = await render(post);
+const { Content, headings } = await render(post);
 
 // Chronological neighbours for the prev/next navigation.
 const all = (await getCollection('blog')).sort(
@@ -28,6 +28,6 @@ const nextPost =
 const relatedPosts = relatedPostsFor(post, all);
 ---
 
-<PostLayout collection="blog" {...post.data} slug={post.id} prevPost={prevPost} nextPost={nextPost} relatedPosts={relatedPosts}>
+<PostLayout headings={headings} collection="blog" {...post.data} slug={post.id} prevPost={prevPost} nextPost={nextPost} relatedPosts={relatedPosts}>
 	<Content />
 </PostLayout>

@@ -39,7 +39,7 @@ const sortedTags = [...tagCounts.entries()].sort((a, b) =>
     <ThemeScript />
   </head>
 
-  <body>
+  <body class="overview-page">
     <Header />
 
     <main>
@@ -82,15 +82,17 @@ const sortedTags = [...tagCounts.entries()].sort((a, b) =>
   .recent-posts {
     margin-top: 2.1rem;
     display: grid;
-    grid-template-columns: minmax(0, 1.85fr) minmax(0, 1fr);
-    column-gap: 3rem;
+    grid-template-columns: var(--overview-columns);
+    column-gap: var(--overview-gap);
   }
   .section-title { grid-column: 1; grid-row: 1; }
   .articles-list { grid-column: 1; grid-row: 2; min-width: 0; }
   .show-more-wrapper { grid-column: 1; grid-row: 3; }
   .home-rail { grid-column: 2; grid-row: 2 / 4; align-self: stretch; min-width: 0; margin-top: 1.4rem; }
-  .articles-list :global(.article-text) { flex: 1 1 0; min-width: 0; }
+  .articles-list :global(.article-text) { flex: 1 1 0; min-width: 0; max-width: 42rem; }
   .articles-list :global(.article-content-wrapper) { flex-wrap: wrap; }
+  .articles-list :global(.article-description) { line-height: 1.85; }
+  .articles-list :global(.article-card + .article-card) { margin-top: 0.8rem; }
 
   .section-title {
     position: relative;
@@ -162,7 +164,7 @@ const sortedTags = [...tagCounts.entries()].sort((a, b) =>
     outline-offset: 4px;
   }
 
-  @media (max-width: 900px) {
+  @media (max-width: 1000px) {
     .recent-posts { display: flex; flex-direction: column; }
     .home-rail { margin-top: 0; }
   }

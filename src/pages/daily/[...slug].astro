@@ -18,10 +18,10 @@ export async function getStaticPaths() {
 }
 
 const { entry, previous, next } = Astro.props;
-const { Content } = await render(entry);
+const { Content, headings } = await render(entry);
 const relatedPosts = relatedPostsFor(entry, await getCollection('daily'));
 ---
 
-<PostLayout collection="daily" {...entry.data} slug={entry.id} prevPost={previous} nextPost={next} relatedPosts={relatedPosts}>
+<PostLayout headings={headings} collection="daily" {...entry.data} slug={entry.id} prevPost={previous} nextPost={next} relatedPosts={relatedPosts}>
 	<Content />
 </PostLayout>

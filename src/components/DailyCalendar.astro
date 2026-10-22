@@ -219,8 +219,7 @@ const weeks = Array.from({ length: 6 }, (_, week) => ({
 		stroke-dasharray: 5 5;
 		vector-effect: non-scaling-stroke;
 	}
-	html:not(.dark) .daily-calendar-connector { color: var(--lupine-accent); }
-	html.dark .daily-calendar-connector { color: #9aa9d2; }
+	.daily-calendar-connector { color: var(--site-accent); }
 	.daily-calendar {
 		--calendar-accent: #6879a3;
 		--calendar-ink: #272722;
@@ -405,7 +404,7 @@ const weeks = Array.from({ length: 6 }, (_, week) => ({
 		background: var(--calendar-accent);
 		vertical-align: middle;
 	}
-	@media (max-width: 900px) {
+	@media (max-width: 1000px) {
 		.daily-calendar { position: static; margin: 1rem 0 2rem; }
 	}
 	@media (max-width: 560px) {

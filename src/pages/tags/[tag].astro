@@ -43,7 +43,7 @@ const posts = (await getCollection('blog'))
 					<p>{posts.length} post{posts.length !== 1 && 's'}</p>
 				</section>
 
-				<section class="archive">
+				<section class="archive tag-archive">
 					{posts.map((post) => <ArticleCard post={post} />)}
 				</section>
 			</article>

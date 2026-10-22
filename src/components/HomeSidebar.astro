@@ -46,16 +46,16 @@ const { counts, latestDaily } = Astro.props;
     top: max(2rem, calc((100vh - 32rem) / 2));
   }
   html:not(.dark) .home-sidebar {
-    --home-sidebar-ink: var(--lupine-foreground);
-    --home-sidebar-muted: var(--lupine-muted);
-    --home-sidebar-rule: var(--lupine-border);
-    --home-sidebar-accent: var(--lupine-accent);
+    --home-sidebar-ink: var(--site-foreground);
+    --home-sidebar-muted: var(--site-muted);
+    --home-sidebar-rule: var(--site-border);
+    --home-sidebar-accent: var(--site-accent);
   }
   html.dark .home-sidebar {
     --home-sidebar-ink: #ddd;
     --home-sidebar-muted: #aaa398;
     --home-sidebar-rule: rgba(221, 221, 221, 0.28);
-    --home-sidebar-accent: var(--tokyo-accent);
+    --home-sidebar-accent: var(--site-accent);
   }
   .home-sidebar__now,
   .home-sidebar__daily {

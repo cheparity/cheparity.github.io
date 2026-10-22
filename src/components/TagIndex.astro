@@ -50,16 +50,16 @@ const visibleCounts = counts.slice(0, limit);
   }
   .tag-index--static { position: static; }
   html:not(.dark) .tag-index {
-    --tag-index-ink: var(--lupine-foreground);
-    --tag-index-muted: var(--lupine-muted);
-    --tag-index-rule: var(--lupine-border);
-    --tag-index-accent: var(--lupine-accent);
+    --tag-index-ink: var(--site-foreground);
+    --tag-index-muted: var(--site-muted);
+    --tag-index-rule: var(--site-border);
+    --tag-index-accent: var(--site-accent);
   }
   html.dark .tag-index {
     --tag-index-ink: #ddd;
     --tag-index-muted: #aaa398;
     --tag-index-rule: rgba(221, 221, 221, 0.28);
-    --tag-index-accent: var(--tokyo-accent);
+    --tag-index-accent: var(--site-accent);
   }
   .tag-index__heading {
     display: flex;
