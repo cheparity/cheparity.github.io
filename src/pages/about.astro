@@ -219,7 +219,7 @@ const threads = [
 	.about-lead {
 		position: relative;
 		z-index: 1;
-		width: 60%;
+		width: var(--content-width);
 		font-family: 'et-book', serif;
 		font-size: 1.7rem;
 		line-height: 1.5;
@@ -236,10 +236,10 @@ const threads = [
 		margin: 2.4rem 0;
 	}
 	.about-body p {
-		width: 55%;
+		width: var(--content-width);
 		font-family: 'et-book', serif;
-		font-size: 1.4rem;
-		line-height: 2rem;
+		font-size: var(--reading-font-size);
+		line-height: var(--reading-line-height);
 		margin: 0 0 1.4rem;
 	}
 	.about-body p:last-child {
@@ -248,7 +248,7 @@ const threads = [
 
 	/* --- Figure, scoped to the reading measure --- */
 	.about-figure {
-		width: 62%;
+		width: var(--content-width);
 		margin: 3.5rem 0;
 	}
 	.about-photo {
@@ -289,7 +289,7 @@ const threads = [
 		list-style: none;
 		margin: 0;
 		padding: 0;
-		width: 62%;
+		width: var(--content-width);
 	}
 
 	.thread {

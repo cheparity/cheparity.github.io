@@ -1,7 +1,4 @@
-/* Tufte CSS - Fully converted to Tailwind
- * Based on https://edwardtufte.github.io/tufte-css/
- * All styles migrated to Tailwind CSS utilities
- */
+/* Shared reading layout, with Tufte-style notes in the right margin. */
 
 @import './callout.css';
 @import '@fontsource-variable/jetbrains-mono/wght.css';
@@ -13,17 +10,30 @@
 
 @layer base {
   html {
+    /* Shared outer frame; articles at 1600px use
+       180px contents / 880px reading / 240px notes. */
+    --reading-font-size: 15px;
+    --reading-line-height: 1.65;
+    --site-width: 1364px;
+    --page-gutter: 32px;
+    --toc-width: 180px;
+    --toc-gutter: 32px;
+    --margin-width: 240px;
+    --layout-gap: 32px;
+    --content-width: calc(100% - var(--margin-width) - var(--layout-gap));
     /* Monospace face for code blocks and inline code */
     --font-mono: "Go Mono";
     @apply text-[13px];
   }
 
   body {
-    @apply w-[87.5%] mx-auto pl-[12.5%] max-w-[1400px];
+    width: min(var(--site-width), calc(100% - 2 * var(--page-gutter)));
+    margin-inline: auto;
+    padding-left: calc(var(--toc-width) + var(--toc-gutter));
     @apply font-serif antialiased;
     @apply leading-[1.6];
     counter-reset: sidenote-counter katexEqnNo mmlEqnNo;
-    background-color: #faf4ed;
+    background-color: var(--site-background);
     background-image:
       repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(200, 190, 170, 0.015) 2px, rgba(200, 190, 170, 0.015) 4px),
       repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(200, 190, 170, 0.015) 2px, rgba(200, 190, 170, 0.015) 4px),
@@ -34,12 +44,12 @@
       radial-gradient(ellipse at 50% 50%, rgba(200, 190, 160, 0.025) 0%, transparent 70%),
       radial-gradient(circle at center, transparent 50%, rgba(180, 170, 150, 0.1) 100%);
     background-blend-mode: normal;
-    color: #111;
+    color: var(--site-foreground);
     background-attachment: fixed;
   }
 
   html.dark body {
-    background-color: #13141c;
+    background-color: var(--site-background);
     background-image:
       repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(70, 65, 60, 0.04) 2px, rgba(70, 65, 60, 0.04) 4px),
       repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(70, 65, 60, 0.04) 2px, rgba(70, 65, 60, 0.04) 4px),
@@ -50,7 +60,7 @@
       radial-gradient(ellipse at 50% 50%, rgba(70, 60, 50, 0.04) 0%, transparent 70%),
       radial-gradient(circle at center, transparent 50%, rgba(0, 0, 0, 0.25) 100%);
     background-blend-mode: normal;
-    color: #ddd;
+    color: var(--site-foreground);
     background-attachment: fixed;
   }
 
@@ -64,15 +74,15 @@
   }
 
   h1 {
-    @apply font-normal text-[3.2rem] leading-none mt-16 mb-6;
+    @apply font-normal text-[2.4rem] leading-none mt-16 mb-6;
   }
 
   h2 {
-    @apply font-normal italic text-[2.2rem] leading-none mt-[2.1rem] mb-[1.4rem];
+    @apply font-normal italic text-[1.7rem] leading-none mt-[2.1rem] mb-[1.4rem];
   }
 
   h3 {
-    @apply font-normal italic text-[1.7rem] leading-none mt-8 mb-[1.4rem];
+    @apply font-normal italic text-[1.4rem] leading-none mt-8 mb-[1.4rem];
   }
 
   h4,
@@ -82,14 +92,16 @@
   }
 
   hr {
-    @apply block h-px w-[60%] my-[1em] px-0 border-0 border-t-[#ccc];
+    width: var(--content-width);
+    @apply block h-px my-[1em] px-0 border-0 border-t-[#ccc];
   }
 
   p,
   dl,
   ol,
   ul {
-    @apply text-[1.2rem] leading-[2.4rem];
+    font-size: var(--reading-font-size);
+    line-height: var(--reading-line-height);
   }
 
   p {
@@ -106,36 +118,38 @@
   }
 
   blockquote {
-    @apply text-[1.2rem] ml-0 mr-10;
+    width: var(--content-width);
+    @apply text-[1.2rem] ml-0 mr-0;
   }
 
   blockquote p {
-    @apply w-[60%] mr-10;
+    width: 100%;
   }
 
   blockquote footer {
-    @apply w-[60%] text-[1.1rem] text-right;
+    width: 100%;
+    @apply text-[1.1rem] text-right;
   }
 
   blockquote > dl,
   blockquote > ol,
   blockquote > ul {
-    @apply w-[55%];
-    -webkit-padding-start: 5%;
+    width: 100%;
+    padding-inline-start: 1.6em;
   }
 
   section > p,
   section > footer,
   section > table,
   section > .expressive-code {
-    @apply w-[60%];
+    width: var(--content-width);
   }
 
   section > dl,
   section > ol,
   section > ul {
-    @apply w-[55%];
-    -webkit-padding-start: 5%;
+    width: var(--content-width);
+    padding-inline-start: 1.6em;
   }
 
   ul {
@@ -203,8 +217,8 @@
      sans stack still supplies Chinese glyphs. Headings keep their serif face. */
   .prose {
     font-family: "JetBrains Mono Variable", "Source Sans 3", "Helvetica Neue", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "微软雅黑", sans-serif;
-    font-size: 15px;
-    line-height: 1.85;
+    font-size: var(--reading-font-size);
+    line-height: var(--reading-line-height);
     position: relative;
   }
 
@@ -280,7 +294,9 @@
 
   .sidenote,
   .marginnote {
-    @apply float-right clear-right -mr-[60%] w-1/2 mt-[0.3rem] mb-0;
+    width: var(--margin-width);
+    margin-right: calc(-1 * (var(--margin-width) + var(--layout-gap)));
+    @apply float-right clear-right mt-[0.3rem] mb-0;
     @apply text-[1.1rem] leading-[1.5] align-baseline relative;
   }
 
@@ -307,11 +323,12 @@
 
   blockquote .sidenote,
   blockquote .marginnote {
-    @apply -mr-[75%] min-w-[54%] text-left;
+    @apply text-left;
   }
 
   figure {
-    @apply p-0 border-0 text-base align-baseline max-w-[60%];
+    max-width: var(--content-width);
+    @apply p-0 border-0 text-base align-baseline;
     @apply mt-0 mr-0 mb-[3em] ml-0;
   }
 
@@ -333,7 +350,8 @@
   }
 
   table {
-    @apply w-[60%] border-collapse text-[1.2rem];
+    width: var(--content-width);
+    @apply border-collapse text-[1.2rem];
   }
 
   th,
@@ -359,9 +377,9 @@
 
 
 
-  @media (max-width: 760px) {
+  @media (max-width: 1000px) {
     body {
-      @apply w-[84%] pl-[8%] pr-[8%];
+      padding-inline: 0;
     }
 
     hr,
@@ -376,11 +394,11 @@
     section > dl,
     section > ol,
     section > ul {
-      @apply w-[90%];
+      @apply w-full;
     }
 
     figure {
-      @apply max-w-[90%];
+      @apply max-w-full;
     }
 
     figcaption,
@@ -389,7 +407,7 @@
     }
 
     blockquote {
-      @apply ml-6 mr-0;
+      @apply mx-0;
     }
 
     blockquote p,
@@ -405,15 +423,15 @@
     }
 
     h1 {
-      @apply text-[2.5rem];
+      @apply text-[2.1rem];
     }
 
     h2 {
-      @apply text-[2rem];
+      @apply text-[1.6rem];
     }
 
     h3 {
-      @apply text-[1.5rem];
+      @apply text-[1.35rem];
     }
 
     label.margin-toggle:not(.sidenote-number) {
@@ -436,7 +454,7 @@
 
     .table-wrapper,
     table {
-      @apply w-[85%];
+      @apply w-full;
     }
   }
 
@@ -508,15 +526,15 @@
   overflow-y: hidden;
 }
 section > .katex-display {
-  width: 60%;
+  width: var(--content-width);
 }
 
 /* Link margin cards — float into right margin like sidenotes */
 .link-card {
   float: right;
   clear: right;
-  margin: 0.35rem -60% 0.6rem 0;
-  width: 52%;
+  margin: 0.35rem calc(-1 * (var(--margin-width) + var(--layout-gap))) 0.6rem 0;
+  width: var(--margin-width);
   display: flex;
   align-items: flex-start;
   gap: 0.55em;
@@ -600,8 +618,8 @@ section > .katex-display {
   float: none;
   clear: none;
   margin: 0;
-  right: 4%;
-  width: 31%;
+  right: 0;
+  width: var(--margin-width);
 }
 
 /* Connector lines from anchor links to their margin cards. Hidden at rest;
@@ -664,11 +682,7 @@ html.dark .link-card-connectors circle {
   fill: rgba(221, 184, 146, 0.9);
 }
 
-/* Callouts are boxed (border + background, w-[60%]); a card floated out
-   of the box would cross its border, so render inline like mobile. Plain
-   blockquotes and lists keep the margin float — blockquote lists are
-   width-constrained like section lists so the -60% offset lands in the
-   margin column instead of overflowing. */
+/* Links inside callouts stay inline so they do not cross the box border. */
 [data-callout] .link-card {
   float: none;
   clear: none;
@@ -720,7 +734,7 @@ html.dark .link-card-subtitle {
   color: #a89f8d;
 }
 
-@media (max-width: 760px) {
+@media (max-width: 1000px) {
   .link-card {
     float: none;
     clear: none;
@@ -817,4 +831,49 @@ html.dark td {
 ::view-transition-new(root) {
   z-index: 2;
   clip-path: var(--vt-clip, none);
+}
+
+/* Keep every content type on the same reading measure. */
+.prose > :is(h1, h2, h3, h4, h5, h6, pre, .table-wrapper, .iframe-wrapper),
+.post-heading > :is(h1, .date, .post-tags),
+.tags-grid,
+.tag-archive,
+.site-footer {
+  width: var(--content-width);
+}
+.prose > table { display: block; overflow-x: auto; }
+.prose :is(h1, h2, h3, h4, h5, h6) { line-height: 1.35; overflow-wrap: anywhere; }
+.prose > [data-callout] { width: var(--content-width); }
+[data-callout] :is(p, blockquote, ul, ol, table, .expressive-code) { width: 100%; }
+.prose p { overflow-wrap: anywhere; }
+.site-nav { flex-wrap: wrap; }
+
+/* Home and Daily keep the earlier, more balanced two-column proportions.
+   Their sidebar needs more room than an article's margin notes. */
+.overview-page {
+  --overview-columns: minmax(0, 1.85fr) minmax(0, 1fr);
+  --overview-gap: clamp(3rem, 4vw, 5rem);
+  --content-width: calc((100% - var(--overview-gap)) * 1.85 / 2.85);
+}
+
+/* Below the desktop contents breakpoint, the outline becomes a disclosure
+   above the article. Below 1000px, the right rail joins the document flow. */
+@media (max-width: 1199px) {
+  html { --site-width: 1152px; --toc-width: 0px; --toc-gutter: 0px; }
+}
+@media (max-width: 1000px) {
+  html {
+    --site-width: 880px;
+    --page-gutter: 24px;
+    --margin-width: 0px;
+    --layout-gap: 0px;
+  }
+  .link-card--positioned { position: static; }
+  .overview-page { --content-width: 100%; }
+}
+@media (max-width: 600px) {
+  html { --page-gutter: 20px; }
+  .site-header { padding-top: 2.5rem; }
+  header nav { gap: 0.55em; }
+  header nav a { font-size: 1.3rem; }
 }

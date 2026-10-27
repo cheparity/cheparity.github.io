@@ -15,7 +15,7 @@
 <script>
 	import { onPage } from '../utils/vt';
 
-	const MOBILE_BP = 760;
+	const MOBILE_BP = 1000;
 	const GAP = 10; // px between stacked cards
 	const SVG_NS = 'http://www.w3.org/2000/svg';
 
@@ -146,6 +146,9 @@
 			lastBottom = top + card.offsetHeight;
 		}
 
+		// Leave room for a dense stack of notes before post navigation.
+		(prose as HTMLElement).style.minHeight = `${Math.max(0, lastBottom)}px`;
+
 		// 6. Draw connector lines.
 		return drawConnectors(prose as HTMLElement, entries);
 	}
@@ -157,17 +160,21 @@
 			card.classList.remove('link-card--positioned');
 			(card as HTMLElement).style.top = '';
 		}
+		(prose as HTMLElement).style.minHeight = '';
 		const svg = prose.querySelector(':scope > svg.link-card-connectors');
 		if (svg) svg.remove();
 	}
 
 	onPage((signal) => {
-		if (window.innerWidth <= MOBILE_BP) return;
 		const prose = document.querySelector('section.prose');
 		if (!prose) return;
 
 		let pairs: Pair[] = [];
-		const run = () => { pairs = layoutCards(); };
+		const run = () => {
+			if (signal.aborted) return;
+			teardown();
+			pairs = window.innerWidth > MOBILE_BP ? layoutCards() : [];
+		};
 		requestAnimationFrame(() => requestAnimationFrame(run));
 
 		if (document.fonts?.ready) {
@@ -197,16 +204,9 @@
 		let resizeTimer: ReturnType<typeof setTimeout>;
 		const onResize = () => {
 			clearTimeout(resizeTimer);
-			resizeTimer = setTimeout(() => {
-				if (window.innerWidth <= MOBILE_BP) {
-					teardown();
-					pairs = [];
-				} else {
-					teardown();
-					pairs = layoutCards();
-				}
-			}, 150);
+			resizeTimer = setTimeout(run, 150);
 		};
 		window.addEventListener('resize', onResize, { signal });
+		signal.addEventListener('abort', () => clearTimeout(resizeTimer), { once: true });
 	});
 </script>

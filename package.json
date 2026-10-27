@@ -26,5 +26,8 @@
   },
   "devDependencies": {
     "@astrojs/tailwind": "^6.0.2"
+  },
+  "overrides": {
+    "katex": "^0.18.1"
   }
 }

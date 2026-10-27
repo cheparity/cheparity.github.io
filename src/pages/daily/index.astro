@@ -27,7 +27,7 @@ for (const entry of entries) {
     <ThemeScript />
     <script is:inline data-astro-rerun>document.documentElement.classList.add('daily-calendar-js');</script>
   </head>
-  <body>
+  <body class="overview-page">
     <Header />
     <main>
       <article>
@@ -70,10 +70,11 @@ for (const entry of entries) {
 </html>
 
 <style>
+  .intro { --content-width: 100%; }
   .daily-layout {
     display: grid;
-    grid-template-columns: minmax(0, 1.85fr) minmax(0, 1fr);
-    column-gap: 3rem;
+    grid-template-columns: var(--overview-columns);
+    column-gap: var(--overview-gap);
   }
   .intro {
     grid-column: 1;
@@ -117,13 +118,13 @@ for (const entry of entries) {
     transition: background-color 160ms ease;
   }
   .daily-list li.is-calendar-linked {
-    background: color-mix(in srgb, #6879a3 10%, transparent);
+    background: rgb(var(--site-accent-rgb) / 10%);
   }
   .daily-list a {
     display: grid;
     grid-template-columns: 9rem 1fr;
     gap: 1rem;
-    padding: 1rem 0;
+    padding: 1.2rem 0;
     color: inherit;
     text-decoration: none;
   }
@@ -135,10 +136,11 @@ for (const entry of entries) {
     color: #888;
     font-variant-numeric: tabular-nums;
   }
+  .daily-list a span { min-width: 0; overflow-wrap: anywhere; }
   html.dark .year-heading {
     color: #999;
   }
-  @media (max-width: 900px) {
+  @media (max-width: 1000px) {
     .daily-layout {
       display: flex;
       flex-direction: column;

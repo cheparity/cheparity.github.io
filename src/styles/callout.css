@@ -1,6 +1,7 @@
 [data-callout] {
   & {
-    @apply w-[60%] my-6 space-y-2 rounded-lg border border-blue-600/20 bg-blue-400/20 p-4 pb-5 dark:border-blue-800/20 dark:bg-blue-600/10;
+    width: var(--content-width);
+    @apply my-6 space-y-2 rounded-lg border border-blue-600/20 bg-blue-400/20 p-4 pb-5 dark:border-blue-800/20 dark:bg-blue-600/10;
   }
 
   & > [data-callout-title] {
@@ -383,7 +384,7 @@ details[data-callout][open] > summary[data-callout-title]::after {
   content: "Cite";
 }
 
-@media (max-width: 760px) {
+@media (max-width: 1000px) {
   [data-callout] {
     @apply w-full;
   }

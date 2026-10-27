@@ -74,10 +74,11 @@ for (const post of posts) {
 </html>
 
 <style>
+  .intro { --content-width: 100%; }
   .blog-layout {
     display: grid;
-    grid-template-columns: minmax(0, 1.85fr) minmax(0, 1fr);
-    column-gap: 3rem;
+    grid-template-columns: minmax(0, 1fr) var(--margin-width);
+    column-gap: var(--layout-gap);
   }
   .intro { grid-column: 1; grid-row: 1; }
   .tag-rail { grid-column: 2; grid-row: 2; align-self: stretch; margin-top: 4rem; min-width: 0; }
@@ -111,7 +112,7 @@ for (const post of posts) {
   html.dark .year-heading {
     color: #999;
   }
-  @media (max-width: 900px) {
+  @media (max-width: 1000px) {
     .blog-layout { display: flex; flex-direction: column; }
     .tag-rail { margin-top: 0; }
   }
