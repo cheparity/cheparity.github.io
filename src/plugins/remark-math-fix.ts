@@ -90,8 +90,12 @@ export default function remarkMathFix() {
 					// Sync to hast children — mdast-util-to-hast reads from
 					// data.hChildren, not node.value.
 					const hc = node.data?.hChildren;
-					if (hc && hc.length > 0 && hc[0].type === 'text') {
-						(hc[0] as HastText).value = cleaned;
+					const first = hc?.[0];
+					if (first?.type === 'text') {
+						first.value = cleaned;
+					} else if (first?.type === 'element' && first.tagName === 'code') {
+						// Display math stores its source inside <pre><code>.
+						first.children = [{ type: 'text', value: cleaned }];
 					}
 				}
 
